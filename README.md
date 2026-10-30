@@ -32,38 +32,43 @@ One limitation of this system is that it may not provide an accurate model for c
 - **Constraints and risks:** no images/videos, missing/incorrect audio-to-text, anonymity, sensitive conversations, English-only, human verification
 
 ### 2. Proposed technical approach
-- **Pipeline:** [List the main steps from input to output.]
-- **Baseline(s):** [Describe the simplest end-to-end method you can implement.]
-- **Proposed models/tools:** [Name, purpose, and link to each Hugging Face model or other resource.]
-- [Model name](https://huggingface.co/models) — [What it will do; why selected]
-- **Alternative approach:** [What will you try if the baseline underperforms?]
+- **Pipeline:** have transcribed data, anonymize data, process important info in the data, put new data into JSON form
+- **Baseline(s):** have audio/text, transcribe data, put data through pipeline, recompile all data, put unique data in database, checks and verification
+- **Proposed models/tools:**
+  - [openai/whisper-large-v3](https://huggingface.co/openai/whisper-large-v3) — automatic speech recognition (ASR); processes audio messages
+  - [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B) — text classification; detects important JSON entries & sensitive content
+  - [deepseek-ai/DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1) - text generation; produces JSON database
+- **Alternative approach:** find more specialized models, specific portions of data will be proccessed separately, or human intervention will occur
 
 ### 3. Proposed data
 | Dataset/source | Link or access instructions | Purpose | Size / languages | Privacy or usage considerations |
 |---|---|---|---|---|
-| [Name] | [[URL](https://huggingface.co/datasets) or other instructions] | [Training/development/evaluation] | [Details] | [Notes] |
+| HuggingFace | [espnet/yodas3](https://huggingface.co/datasets/espnet/yodas3) | Training | 55.7 TB / 100+ languages | asks for citations |
+| HuggingFace | [gaia-benchmark/GAIA](https://huggingface.co/datasets/gaia-benchmark/GAIA) | Training | 110 MB / English | no resharing the validation or test set, prevents scraping |
+| HuggingFace | [amphion/Emilia-Dataset](https://huggingface.co/datasets/amphion/Emilia-Dataset) | Training | 4.5 TB / 6 languages | asks for citations |
+| HuggingFace | [google/fleurs](https://huggingface.co/datasets/google/fleurs) | Training | 878 GB / 100+ languages | asks for citations |
 
-- **Data preparation:** [Cleaning, anonymization, annotation, splitting, deduplication, etc.]
-- **Data limitations:** [What is missing, noisy, or uncertain?]
+- **Data preparation:** compilation, annotation, anonymization, cleaning, recompilation, deduplication, verification
+- **Data limitations:** audio-to-text may be noisy, data related to sensitive info may be redacted too
 
 ### 4. Proposed evaluation
 | Metric / test | What it measures | How it will be calculated | Target / success criterion |
 |---|---|---|---|
-| [Metric - e.g Accuracy, F1, AoC] | [Quality dimension] | [Method/ Formula] | [Target] |
+| Word Error Rate (WER) | audio-to-text accuracy | (S + D + A) / N (substitutions, deletions, additions, total word count) | WER < 10% |
+| PII Scrubbing Recall | sensitive info redaction | redactions / flagged content | PSR > 95% |
+| Attribute Extraction F1 | database entry info accuracy | F1 score vs. JSON keys | F1 > 95% |
+| Filter Precision | irrelevant messages removal | removed noise / flagged noise | FP > 95% |
 
-[How will you build or select a development set?]
-- **Evaluation examples:** 
-[If relevant, who will check outputs and how?]
-- **Human verification:** 
-[At least two anticipated risks]
-- **Failure cases to watch:** incorrect audio to text, sensitive information in calls or text
+- **Evaluation examples:** checks over database entry, produces confidence level and appends it to entry
+- **Human verification:** team will check failure cases (eg. low confidence), ideally manually, or using another more specialized script
+- **Failure cases to watch:** incorrect audio-to-text, subtle sensitive information in calls or text
 
 ### 5. Team responsibilities
 | Member | Primary responsibility | Specific Weekly contribution | Planned next task |
 |---|---|---|---|
-| Terence Zhou | [Data / models / evaluation / integration / etc.] | created the repository, worked on the README | [Next action] |
-| Teresa Wei | [Data / models / evaluation / integration / etc.] | worked on the README | [Next action] |
-| Yaozheng Wang | [Data / models / evaluation / integration / etc.] | N/A | [Next action] |
+| Terence Zhou | Model Structure | created the repository, worked on the README | write Python for functionality |
+| Teresa Wei | Data (Re)Compliation | worked on the README | compile data from HuggingFace |
+| Yaozheng Wang | N/A | N/A | N/A |
 
 ---
 
