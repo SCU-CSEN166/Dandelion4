@@ -103,7 +103,9 @@ Potential challenges include:
 ### Individual contributions during that week
 | Member | What I personally implemented/tested | Result (worked / partly / failed) | Evidence (commit, PR, experiment) | Blocker / next step |
 |---|---|---|---|---|
-| [Name] | [Specific contribution] | [Status] | [Link] | [Next step] |
+| Terence Zhou | Text to JSON | TBD | TBD | TBD |
+| Teresa Wei | Audio Compilation | TBD | TBD | TBD |
+| Yaozheng Wang | Text Compilation | TBD | TBD | TBD |
 
 ---
 
