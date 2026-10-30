@@ -63,13 +63,13 @@ One limitation of this system is that it may not provide an accurate model for c
 - **Human verification:** team will check failure cases (eg. low confidence), ideally manually, or using another more specialized script
 - **Failure cases to watch:** incorrect audio-to-text, subtle sensitive information in calls or text
 
-### 5. Team Responsibilities
-
-**Responsibilities**
-- Tess: Data creation and data preparation
-- Terrence: Message filtering and classification
-- Eric: Anonymization and information extraction
-- Everyone: Evaluation, testing, and integration
+### 5. Team responsibilities
+| Member | Primary responsibility | Specific Weekly contribution | Planned next task |
+|---|---|---|---|
+| Terence Zhou | Model Structure | created the repository, worked on the README | programming, filtering, classification |
+| Teresa Wei | Data (Re)Compliation | worked on the README | compile data from HuggingFace |
+| Yaozheng Wang | Postprocessing Data | N/A | anonymization, info extraction |
+| Everyone | Core Tasks | N/A | evaluation, testing, integration |
 
 ### 6. Technical Challenges
 
