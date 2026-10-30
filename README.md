@@ -69,7 +69,18 @@ One limitation of this system is that it may not provide an accurate model for c
 - Tess: Data creation and data preparation
 - Terrence: Message filtering and classification
 - Eric: Anonymization and information extraction
-- Everyone: Evaluation, testing, and integration 
+- Everyone: Evaluation, testing, and integration
+
+### 6. Technical Challenges
+
+Potential challenges include:
+- Informal language, spelling variations, and incomplete messages.
+- Audio messages and different English accents.
+- Messages describing multiple events.
+- Multiple messages describing the same activity.
+- Missing or ambiguous dates and locations.
+- Preventing hallucinated or unsupported information.
+- Balancing privacy protection with preserving useful activity data.
 
 ---
 
