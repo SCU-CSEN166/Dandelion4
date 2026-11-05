@@ -11,35 +11,35 @@
 ## Remember - Best Practices
 
 ### Data access and privacy
-Since the Kenyan data is unavailable, our data must be sourced from elsewhere. We can create synthetic data using AI. This data will be multiple peoples' audio/text messages in English. These could be conversations with family, friends, strangers, and more. Sensitive data (eg. name, age, location, phone number) will automatically be anonymized.
+Since the Kenyan data is unavailable, our data must be out sourced. We will create synthetic data using AI. This data will consist of different audio messages and text messages in English. Sensitive info of personal lives will automatically be made anonymous. 
 
 ### Known limitations
-One limitation of this system is that it may not provide an accurate model for conversations in Kenyan civilizations. It cannot process images and videos. Audio recordings that are converted into a textual form may not be fully accurate (eg. incorrect/missing words).
+Since it cannot process videos and images it may be inaccurate for real life conversations in Kenya. Audio recording turned to text may not also be 100% accurate. 
 
 ## Week 5 — Scope: Project Plan
 
-**Deliverable during Week 6 Lab:** A project plan (write in this README file) describing your problem formulation, proposed approach, each team member's responsibilities, proposed baseline models with Hugging Face links, proposed evaluation metrics, proposed data with links, and goals for each week.
+**Deliverable during Week 6 Lab:** A full readme describing our approach, our responsibilities, goals for each week and a plan for synthesizing data. 
 
 ### 1. Problem formulation and social impact
-- **Problem:** We need to develop a pipeline that transforms WhatsApp group exports into structured, verifiable records of field activities and outcomes.
-- **Intended users:** Dandelion Africa program managers, field coordinators, volunteers → advertising what they do to supporters, tracking logistics
-- **Inputs and outputs:** The system will receive many audio/text messages. It will extract relevant info from the message, and fill out entries in a database.
+- **Problem:** We need to develop a way for WhatsApp group exports into to be made into structured records of  activities and outcomes.
+- **Intended users:** Dandelion Africa program managers and volunteers
+- **Inputs and outputs:** Input will be audio and transcribed audio as well as messages, output will consist of a structured record of events, plans and notes of the meetings. 
 
-> **Input:** Hello, everyone! My name is Terence Zhou, and I worked with a group of 2 people on the TTP4SI project in Heafey 106 on 10/30/2026. This week, we worked on the README together.<br>
+> **Input:** Hello, everyone! My name is Terence, and I worked with a group of 2 people on the TTP4SI project in Heafey 106 on 10/30/2026. This week, we worked on the README together.<br>
 > **Output:** { "name":[NAME], "date":"10/30/2026", "members":3, "location":"Heafey 106", "activityName":"TTP4SI project", "activityDesc":"working on README" }
 
-- **Success criteria:** filtering irrelevant messages, anonymization, event segmentation, attribute inference, extraction, deduplication, confidence estimation, and human verification
-- **Constraints and risks:** no images/videos, missing/incorrect audio-to-text, anonymity, sensitive conversations, English-only, human verification
+- **Success criteria:** finding relevant messages and structuring them in a readable manner 
+- **Constraints and risks:** unable to use images or videos, keeping info anonymous, model is english only based
+
 
 ### 2. Proposed technical approach
-- **Pipeline:** have transcribed data, anonymize data, process important info in the data, put new data into JSON form
-- **Baseline(s):** have audio/text, transcribe data, put data through pipeline, recompile all data, put unique data in database, checks and verification
+- **Pipeline:** have transcribed data and put new data into JSON form
+- **Baseline(s):** have audio/text, transcribe data, put data through model, recompile all data
 - **Proposed models/tools:**
   - [openai/whisper-large-v3](https://huggingface.co/openai/whisper-large-v3) — automatic speech recognition (ASR); processes audio messages
   - [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B) — text classification; detects important JSON entries & sensitive content
   - [deepseek-ai/DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1) - text generation; produces JSON database
-- **Alternative approach:** find more specialized models, specific portions of data will be proccessed separately, or human intervention will occur
-
+- **Alternative approach:** find more specialized models
 ### 3. Proposed data
 | Dataset/source | Link or access instructions | Purpose | Size / languages | Privacy or usage considerations |
 |---|---|---|---|---|
@@ -48,8 +48,8 @@ One limitation of this system is that it may not provide an accurate model for c
 | HuggingFace | [amphion/Emilia-Dataset](https://huggingface.co/datasets/amphion/Emilia-Dataset) | Training | 4.5 TB / 6 languages | asks for citations |
 | HuggingFace | [google/fleurs](https://huggingface.co/datasets/google/fleurs) | Training | 878 GB / 100+ languages | asks for citations |
 
-- **Data preparation:** compilation, annotation, anonymization, cleaning, recompilation, deduplication, verification
-- **Data limitations:** audio-to-text may be noisy, data related to sensitive info may be redacted too
+- **Data preparation:** compilation, anonymization, cleaning, recompilation
+- **Data limitations:** audio-to-text may be noisy, data related to sensitive info may be removed
 
 ### 4. Proposed evaluation
 | Metric / test | What it measures | How it will be calculated | Target / success criterion |
