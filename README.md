@@ -115,13 +115,16 @@ Potential challenges include:
 | Python generated data| Yes| Synthetic messages in JSON| Successfully generated repeatable activity reports and other messages|
 |Running Hugging Face model| Yes| generated 10 messages| The model generated varying texts but were formatted awkwardly and included repetitive language|
 |Installing hugging face and downloading model| Yes| Successful code execution| Model was able to run locally|
+| Generating test audio with edge-tts | Yes | Generated 90 audio clips | TTS audio is too clean, so we also made noisy and phone versions |
+| Transcribing the audio with Whisper | Yes | Transcripts in JSON | Mostly accurate, but often misheard place names like Narok and Kajiado |
+| Running the baseline on the transcripts | Yes | WER results in JSON | Small transcription mistakes like "screen" for "screened" changed some results |
 
 ### Individual contributions during that week
 | Member | What I personally implemented/tested | Result (worked / partly / failed) | Evidence (commit, PR, experiment) | Blocker / next step |
 |---|---|---|---|---|
 | Terence Zhou | Text to JSON | TBD | TBD | TBD |
 | Teresa Wei | Created synthetic messages and implemented Hugging face text generation using model SMOILM2-350M-Instruct Generated 50 text message samples and saved outputs to JSON format | Worked | 	Git commit 1028f59, synthetic-data branch, src/generate_data.py, and JSON files in examples/ | Improve message variations and quality|
-| Yaozheng Wang | Text Compilation | TBD | TBD | TBD |
+| Yaozheng Wang | Created test audio from 30 synthetic messages with edge-tts in clean, noisy and phone versions, transcribed it with Whisper large-v3-turbo, then ran the baseline on the transcripts and measured WER | Worked | PR #1, audio branch | Improve handling of place names and numbers written as words |
 
 ---
 
