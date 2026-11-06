@@ -148,19 +148,19 @@ Potential challenges include:
 | Attempt / change | Worked? (Yes / Partly / No) | Evidence (output, metric, link) | What we learned / next step |
 |---|---|---|---|
 | [Attempt] | [Status] | [Evidence] | [Learning] |
-| Python generated data| Yes| Synthetic messages in JSON| Successfully generated repeatable activity reports and other messages|
-|Running Hugging Face model| Yes| generated 10 messages| The model generated varying texts but were formatted awkwardly and included repetitive language|
-|Installing hugging face and downloading model| Yes| Successful code execution| Model was able to run locally|
-| Generating test audio with edge-tts | Yes | Generated 90 audio clips | TTS audio is too clean, so we also made noisy and phone versions |
-| Transcribing the audio with Whisper | Yes | Transcripts in JSON | Mostly accurate, but often misheard place names like Narok and Kajiado |
-| Running the baseline on the transcripts | Yes | WER results in JSON | Small transcription mistakes like "screen" for "screened" changed some results |
+| Python generates data | Yes | synthetic messages in JSON | successfully generated repeatable activity reports and other messages|
+| generate test audio with edge-TTS | Yes | 90 audio clips | model can make clean/noisy/phone TTS audio |
+| transcribing audio with Whisper | Yes | transcripts in JSON | model sometimes misheard names (eg. Narok, Kajiado) / improve accuracy |
+| running baseline on transcripts | Yes | WER results in JSON | model sometimes makes transcription mistakes (eg. "screen" for "screened") / change results and improve accuracy |
+| text classificaiton | Yes | model output (see [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)) | model can classify text with arbitrary keywords / change keywords for better/more accurate classification |
+| text redaction | Yes | model output (see [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)) | redact actual names instead of general text |
 
 ### Individual contributions during that week
 | Member | What I personally implemented/tested | Result (worked / partly / failed) | Evidence (commit, PR, experiment) | Blocker / next step |
 |---|---|---|---|---|
-| Terence Zhou | Text to JSON | TBD | TBD | TBD |
-| Teresa Wei | Created synthetic messages and implemented Hugging face text generation using model SMOILM2-350M-Instruct Generated 50 text message samples and saved outputs to JSON format | Worked | 	Git commit 1028f59, synthetic-data branch, src/generate_data.py, and JSON files in examples/ | Improve message variations and quality|
-| Yaozheng Wang | Created test audio from 30 synthetic messages with edge-tts in clean, noisy and phone versions, transcribed it with Whisper large-v3-turbo, then ran the baseline on the transcripts and measured WER | Worked | PR #1, audio branch | Improve handling of place names and numbers written as words |
+| Terence Zhou | Text Classification/Redaction | Worked | [cbd51fc](https://github.com/SCU-CSEN166/Dandelion4/commit/cbd51fceaeb775d6a25548ede1eb8493ade829f0) | improve accuracy, store data in JSON |
+| Teresa Wei | Message Generation & JSON Storage | Worked | [ff7c120](https://github.com/SCU-CSEN166/Dandelion4/commit/ff7c120231ad5e361d3402c4e98313612dbd48f9) | improve message variations and quality |
+| Yaozheng Wang | Audio Generation w/ TTS, Audio Transcription, WER measurements | Worked | [b76dd21](https://github.com/SCU-CSEN166/Dandelion4/commit/b76dd21452414fa495e688e2842ff85eb682b0f2) | improve handling of place names and numbers written as words |
 
 ---
 
