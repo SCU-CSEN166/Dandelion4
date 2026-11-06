@@ -113,11 +113,14 @@ Potential challenges include:
 |---|---|---|---|
 | [Attempt] | [Status] | [Evidence] | [Learning] |
 | Python generated data| Yes| Synthetic messages in JSON| Successfully generated repeatable activity reports and other messages|
+|Running Hugging Face model| Yes| generated 10 messages| The model generated varying texts but were formatted awkwardly and included repetitive language|
+|Installing hugging face and downloading model| Yes| Successful code execution| Model was able to run locally|
+
 ### Individual contributions during that week
 | Member | What I personally implemented/tested | Result (worked / partly / failed) | Evidence (commit, PR, experiment) | Blocker / next step |
 |---|---|---|---|---|
 | Terence Zhou | Text to JSON | TBD | TBD | TBD |
-| Teresa Wei | Audio Compilation | TBD | TBD | TBD |
+| Teresa Wei | Created synthetic messages and implemented Hugging face text generation using model SMOILM2-350M-Instruct Generated 50 text message samples and saved outputs to JSON format | Worked | 	Git commit 1028f59, synthetic-data branch, src/generate_data.py, and JSON files in examples/ | Improve message variations and quality|
 | Yaozheng Wang | Text Compilation | TBD | TBD | TBD |
 
 ---
