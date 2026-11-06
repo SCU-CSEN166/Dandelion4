@@ -1,0 +1,12 @@
+# Install the CUDA build of PyTorch first (NVIDIA GPU):
+#   pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
+# (CPU-only machines can skip the --index-url.)
+torch==2.6.0
+torchaudio==2.6.0
+transformers==5.22.1
+accelerate==1.15.0
+
+# Audio / speech-to-text
+jiwer==4.0.0
+soundfile==0.14.0
+librosa==1.0.0
