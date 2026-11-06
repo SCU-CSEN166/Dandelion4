@@ -1,0 +1,242 @@
+[
+  {
+    "id": "msg_001",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "location": "Baringo",
+    "reported_count": 22,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_002",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": "Nakuru",
+    "reported_count": 48,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_003",
+    "relevant": true,
+    "activity_type": "health_referral",
+    "location": "Nakuru",
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_004",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": "Baringo",
+    "reported_count": 40,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_005",
+    "relevant": true,
+    "activity_type": "health_referral",
+    "location": null,
+    "reported_count": 33,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_006",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": "Narok",
+    "reported_count": 26,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_007",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": "Nakuru",
+    "reported_count": 11,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_008",
+    "relevant": false,
+    "activity_type": null,
+    "location": "Narok",
+    "reported_count": 27,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_010",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Baringo",
+    "reported_count": 41,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_011",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "location": "Nakuru",
+    "reported_count": 23,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_012",
+    "relevant": false,
+    "activity_type": null,
+    "location": "Kajiado",
+    "reported_count": 22,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_013",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": null,
+    "reported_count": 27,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_015",
+    "relevant": true,
+    "activity_type": "health_referral",
+    "location": "Baringo",
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_016",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "location": null,
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_017",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Narok",
+    "reported_count": 18,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_018",
+    "relevant": true,
+    "activity_type": "health_referral",
+    "location": null,
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_019",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": null,
+    "reported_count": 20,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_021",
+    "relevant": true,
+    "activity_type": "health_referral",
+    "location": null,
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_023",
+    "relevant": true,
+    "activity_type": "health_referral",
+    "location": null,
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_024",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "location": null,
+    "reported_count": 48,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_025",
+    "relevant": false,
+    "activity_type": null,
+    "location": "Baringo",
+    "reported_count": 32,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_028",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": null,
+    "reported_count": 39,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_029",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Nakuru",
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_030",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Baringo",
+    "reported_count": null,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_031",
+    "relevant": false,
+    "activity_type": null,
+    "location": null,
+    "reported_count": null,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_032",
+    "relevant": false,
+    "activity_type": null,
+    "location": null,
+    "reported_count": null,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_033",
+    "relevant": false,
+    "activity_type": null,
+    "location": null,
+    "reported_count": null,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_034",
+    "relevant": false,
+    "activity_type": null,
+    "location": null,
+    "reported_count": null,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_036",
+    "relevant": false,
+    "activity_type": null,
+    "location": null,
+    "reported_count": null,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_038",
+    "relevant": false,
+    "activity_type": null,
+    "location": null,
+    "reported_count": null,
+    "verification_status": "not_applicable"
+  }
+]
