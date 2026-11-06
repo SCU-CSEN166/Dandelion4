@@ -89,17 +89,30 @@ Potential challenges include:
 **Deliverable during Week 7 Lab:** A runnable baseline, setup/run instructions, and 1–2 example inputs and outputs. Update this section with what worked, what failed, and individual contributions.
 
 ### Implementation status
-- **What runs end-to-end now?** [Describe exactly.]
-- **How to run it:** [Commands, dependencies, configuration; refer to Setup below.]
-- **Model(s) and data actually used:** [Names, versions, links, and any changes from the plan.]
-- **Example 1:** Input: [non-sensitive example] → Output: [result]
-- **Example 2:** Input: [non-sensitive example] → Output: [result]
+- **What runs end-to-end now?**
+- We have implemented a synthetic text-data generation process through python and hugging face. We were able to create 40 whatsapp messages representing different community activities and conversations that may be viewed as unrelated. We used the pretrained SmoILM2-360M instruct model to generate 10 additional whatsapp messages. Both approaches were successful in producing JSON files that could be used for developing our baseline. The Hugging Face messages include examples related to community healthcare, activities and meetings. 
+- **How to run it:**
+- To generate the synthetic data we opened the project in VS code and installed python dependencies in order to run the hugging face model. We first ran python3 -m pip install torch transformers, then ran python3 src/generate_data.py
+- This script was able to generate the whatsapp messages and saved them to our json
+- **Model(s) and data actually used:**
+- We used Hugging Face SmoILM2-360M-Instruct: pretrained language model
+- Python for synthetic data and JSOn file
+- JSON to store generates messages
+- Dataset includes 50 total generated text examples
+- Model reference: https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct
+- **Example 1:**
+- Input: We visited {n} households in {loc} today → Output: {
+  "id": "msg_001",
+  "sender_id": "worker_01",
+  "message": "We visited 25 households in Nakuru today."
+}
+- **Example 2:** Ex of generated message: We had a meeting with the clinic manager to discuss the upcoming health screening 
 
 ### Attempts and outcomes
 | Attempt / change | Worked? (Yes / Partly / No) | Evidence (output, metric, link) | What we learned / next step |
 |---|---|---|---|
 | [Attempt] | [Status] | [Evidence] | [Learning] |
-
+| Python generated data| Yes| Synthetic messages in JSON| Successfully generated repeatable activity reports and other messages|
 ### Individual contributions during that week
 | Member | What I personally implemented/tested | Result (worked / partly / failed) | Evidence (commit, PR, experiment) | Blocker / next step |
 |---|---|---|---|---|
