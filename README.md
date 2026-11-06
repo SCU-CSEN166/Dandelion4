@@ -90,23 +90,59 @@ Potential challenges include:
 
 ### Implementation status
 - **What runs end-to-end now?**
-- We have implemented a synthetic text-data generation process through python and hugging face. We were able to create 40 whatsapp messages representing different community activities and conversations that may be viewed as unrelated. We used the pretrained SmoILM2-360M instruct model to generate 10 additional whatsapp messages. Both approaches were successful in producing JSON files that could be used for developing our baseline. The Hugging Face messages include examples related to community healthcare, activities and meetings. 
+- text generation process
+  - generated 50+ WhatsApp messages related to community healthcare, activities, meetings, community activities, and miscellaneous conversations
+  - produced JSON files that can be used to develop our baseline
+- text classification + redaction process
+  - classified (most) prompted keywords in text
+  - redacted sensitive information such as names<br><br>
 - **How to run it:**
-- To generate the synthetic data we opened the project in VS code and installed python dependencies in order to run the hugging face model. We first ran python3 -m pip install torch transformers, then ran python3 src/generate_data.py
-- This script was able to generate the whatsapp messages and saved them to our json
+- text generation process
+  - open [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) model in Google Colab / VS Code
+  - import Python dependencies (python3 -m pip install torch transformers)
+  - run the model: generate WhatsApp messages, and save them to a JSON (python3 src/generate_data.py)
+- text classification + redaction process
+  - open [urchade/gliner_medium-v2.1](huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
+  - import Python dependencies (!pip install gliner)
+  - create custom input string and desired text classes
+  - input custom-made Python code for redaction process
+  - run the model: classify and redact the text<br><br>
 - **Model(s) and data actually used:**
-- We used Hugging Face SmoILM2-360M-Instruct: pretrained language model
-- Python for synthetic data and JSOn file
-- JSON to store generates messages
-- Dataset includes 50 total generated text examples
-- Model reference: https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct
-- **Example 1:**
-- Input: We visited {n} households in {loc} today → Output: {
-  "id": "msg_001",
-  "sender_id": "worker_01",
-  "message": "We visited 25 households in Nakuru today."
-}
-- **Example 2:** Ex of generated message: We had a meeting with the clinic manager to discuss the upcoming health screening 
+- [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): pretrained language model
+  - data used: generated from Python script
+  - stored generated data in JSON (50 messages)
+- [urchade/gliner_medium-v2.1](huggingface.co/urchade/gliner_medium-v2.1)
+  - data used: custom-made strings, SCU emails
+  - change of plans from using [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B), not a very specialized model
+
+> ----- Text Classification -----<br>
+> **Example (message generation):** We had a meeting with the clinic manager to discuss the upcoming health screening<br>
+>
+> **Example (JSON creation):**<br>
+> Input: We visited {n} households in {loc} today → Output: {<br>
+>   "id": "msg_001",<br>
+>   "sender_id": "worker_01",<br>
+>   "message": "We visited 25 households in Nakuru today."<br>
+> }<br>
+>
+> ----- Text Classification -----<br>
+>
+> **Full List of Inputs/Outputs:** [here](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)<br>
+>
+> **Example (message redaction):**<br>
+> **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
+> **Output:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. [REDACTED], the [REDACTED], and all [REDACTED] will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
+>
+> **Example (message classification):**<br>
+> **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
+> **Output:** ----- REDACTED LABELS -----<br>
+> EventName: Annual Tech Gala<br>
+> Date: Friday<br>
+> Date: November 12th<br>
+> Location: Grand Hotel Ballroom<br>
+> Name: [REDACTED]<br>
+> Name: [REDACTED]<br>
+> Attendees: [REDACTED]<br>
 
 ### Attempts and outcomes
 | Attempt / change | Worked? (Yes / Partly / No) | Evidence (output, metric, link) | What we learned / next step |
