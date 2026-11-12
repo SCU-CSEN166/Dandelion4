@@ -2,3 +2,18 @@
 **/.DS_Store
 **/prisma/migrations/*
 **/.vscode/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Generated audio cache
+examples/audio/.tts_cache/
+
+# Test and tooling caches
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
