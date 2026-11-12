@@ -25,7 +25,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 - **Intended users:** Dandelion Africa program managers and volunteers
 - **Inputs and outputs:** Input will be audio and transcribed audio as well as messages, output will consist of a structured record of events, plans and notes of the meetings. 
 
-> **Input:** Hello, everyone! My name is Terence, and I worked with a group of 2 people on the TTP4SI project in Heafey 106 on 10/30/2026. This week, we worked on the README together.<br>
+> **Input:** Hello, everyone! My name is Terence, and I worked with a group of 2 people on the TTP4SI project in Heafey 106 on 10/30/2026. This week, we worked on the README together.<br><br>
 > **Output:** { "name":[NAME], "date":"10/30/2026", "members":3, "location":"Heafey 106", "activityName":"TTP4SI project", "activityDesc":"working on README" }
 
 - **Success criteria:** finding relevant messages and structuring them in a readable manner 
@@ -102,40 +102,45 @@ Potential challenges include:
   - import Python dependencies (python3 -m pip install torch transformers)
   - run the model: generate WhatsApp messages, and save them to a JSON (python3 src/generate_data.py)
 - text classification + redaction process
-  - open [urchade/gliner_medium-v2.1](huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
+  - open [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
   - import Python dependencies (!pip install gliner)
-  - create custom input string and desired text classes
-  - input custom-made Python code for redaction process
-  - run the model: classify and redact the text<br><br>
+  - create input string (in "text" variable)
+  - create text classes (in "labels" array)
+  - input custom Python code for redaction process (see bottom of [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb))
+  - run the model: classify and redact text<br><br>
 - **Model(s) and data actually used:**
 - [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): pretrained language model
   - data used: generated from Python script
   - stored generated data in JSON (50 messages)
-- [urchade/gliner_medium-v2.1](huggingface.co/urchade/gliner_medium-v2.1)
+- [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1)
   - data used: custom-made strings, SCU emails
   - change of plans from using [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B), not a very specialized model
 
-> ----- Text Classification -----<br>
-> **Example (message generation):** We had a meeting with the clinic manager to discuss the upcoming health screening<br>
+> ## Text Generation<br>
+> ### **Example (message generation):**<br>
+> **Output:** We had a meeting with the clinic manager to discuss the upcoming health screening<br>
 >
-> **Example (JSON creation):**<br>
-> Input: We visited {n} households in {loc} today → Output: {<br>
+> ### **Example (JSON creation):**<br>
+> **Input:** We visited {n} households in {loc} today<br>
+> **Output:**<br>
+> {<br>
 >   "id": "msg_001",<br>
 >   "sender_id": "worker_01",<br>
 >   "message": "We visited 25 households in Nakuru today."<br>
 > }<br>
->
-> ----- Text Classification -----<br>
+
+> ## Text Processing<br>
 >
 > **Full List of Inputs/Outputs:** [here](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)<br>
 >
-> **Example (message redaction):**<br>
-> **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
+> ### **Example (message redaction):**<br>
+> **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br><br>
 > **Output:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. [REDACTED], the [REDACTED], and all [REDACTED] will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
 >
-> **Example (message classification):**<br>
-> **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
-> **Output:** ----- REDACTED LABELS -----<br>
+> ### **Example (message classification):**<br>
+> **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br><br>
+> **Output:**<br>
+> ----- REDACTED LABELS -----<br>
 > EventName: Annual Tech Gala<br>
 > Date: Friday<br>
 > Date: November 12th<br>
@@ -147,7 +152,6 @@ Potential challenges include:
 ### Attempts and outcomes
 | Attempt / change | Worked? (Yes / Partly / No) | Evidence (output, metric, link) | What we learned / next step |
 |---|---|---|---|
-| [Attempt] | [Status] | [Evidence] | [Learning] |
 | Python generates data | Yes | synthetic messages in JSON | successfully generated repeatable activity reports and other messages|
 | generate test audio with edge-TTS | Yes | 90 audio clips | model can make clean/noisy/phone TTS audio |
 | transcribing audio with Whisper | Yes | transcripts in JSON | model sometimes misheard names (eg. Narok, Kajiado) / improve accuracy |
