@@ -16,6 +16,8 @@ Since the Kenyan data is unavailable, our data must be out sourced. We will crea
 ### Known limitations
 Since it cannot process videos and images it may be inaccurate for real life conversations in Kenya. Audio recording turned to text may not also be 100% accurate. 
 
+---
+
 ## Week 5 — Scope: Project Plan
 
 **Deliverable during Week 6 Lab:** A full readme describing our approach, our responsibilities, goals for each week and a plan for synthesizing data. 
@@ -31,7 +33,6 @@ Since it cannot process videos and images it may be inaccurate for real life con
 - **Success criteria:** finding relevant messages and structuring them in a readable manner 
 - **Constraints and risks:** unable to use images or videos, keeping info anonymous, model is english only based
 
-
 ### 2. Proposed technical approach
 - **Pipeline:** have transcribed data and put new data into JSON form
 - **Baseline(s):** have audio/text, transcribe data, put data through model, recompile all data
@@ -40,6 +41,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
   - [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B) — text classification; detects important JSON entries & sensitive content
   - [deepseek-ai/DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1) - text generation; produces JSON database
 - **Alternative approach:** find more specialized models
+
 ### 3. Proposed data
 | Dataset/source | Link or access instructions | Purpose | Size / languages | Privacy or usage considerations |
 |---|---|---|---|---|
@@ -72,8 +74,6 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | Everyone | Core Tasks | N/A | evaluation, testing, integration |
 
 ### 6. Technical Challenges
-
-Potential challenges include:
 - Informal language, spelling variations, and incomplete messages.
 - Audio messages and different English accents.
 - Messages describing multiple events.
@@ -90,37 +90,37 @@ Potential challenges include:
 
 ### Implementation status
 - **What runs end-to-end now?**
-- text generation process
-  - generated 50+ WhatsApp messages related to community healthcare, activities, meetings, community activities, and miscellaneous conversations
-  - produced JSON files that can be used to develop our baseline
-- text classification + redaction process
-  - classified (most) prompted keywords in text
-  - redacted sensitive information such as names<br><br>
+1. text generation
+    - generated 50+ WhatsApp messages related to community healthcare, activities, meetings, community activities, and miscellaneous conversations
+    - produced JSON files that can be used to develop our baseline
+2. text parsing
+    - classified (most) prompted keywords in text
+    - redacted sensitive information such as names<br><br>
 - **How to run it:**
-- text generation process
-  - open [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) model in Google Colab / VS Code
-  - import Python dependencies (python3 -m pip install torch transformers)
-  - run the model: generate WhatsApp messages, and save them to a JSON (python3 src/generate_data.py)
-- text classification + redaction process
-  - open [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
-  - import Python dependencies (!pip install gliner)
-  - create input string (in "text" variable)
-  - create text classes (in "labels" array)
-  - input custom Python code for redaction process (see bottom of [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb))
-  - run the model: classify and redact text<br><br>
+1. text generation
+    - open [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) model in Google Colab / VS Code
+    - import Python dependencies (python3 -m pip install torch transformers)
+    - run the model: generate WhatsApp messages, and save them to a JSON (python3 src/generate_data.py)
+2. text parsing
+    - open [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
+    - import Python dependencies (!pip install gliner)
+    - create input string (in "text" variable)
+    - create text classes (in "labels" array)
+    - input custom Python code for redaction process (see bottom of [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb))
+    - run the model: classify and redact text<br><br>
 - **Model(s) and data actually used:**
-- [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): pretrained language model
-  - data used: generated from Python script
-  - stored generated data in JSON (50 messages)
-- [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1)
-  - data used: custom-made strings, SCU emails
-  - change of plans from using [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B), not a very specialized model
+1. [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): pretrained language model
+    - data used: generated from Python script
+    - stored generated data in JSON (50 messages)
+2. [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1)
+    - data used: custom-made strings, SCU emails
+    - change of plans from using [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B), not a very specialized model<br><br>
 
-> ## Text Generation<br>
-> ### **Example (message generation):**<br>
+- **Example 1: Text Generation**
+> ### **<< Message Generation >>**<br>
 > **Output:** We had a meeting with the clinic manager to discuss the upcoming health screening<br>
->
-> ### **Example (JSON creation):**<br>
+
+> ### **<< JSON Creation >>**<br>
 > **Input:** We visited {n} households in {loc} today<br>
 > **Output:**<br>
 > {<br>
@@ -129,15 +129,14 @@ Potential challenges include:
 >   "message": "We visited 25 households in Nakuru today."<br>
 > }<br>
 
-> ## Text Processing<br>
->
+- **Example 2: Text Processing**
 > **Full List of Inputs/Outputs:** [here](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)<br>
->
-> ### **Example (message redaction):**<br>
+
+> ### **<< Message Redaction >>**<br>
 > **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br><br>
 > **Output:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. [REDACTED], the [REDACTED], and all [REDACTED] will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br>
->
-> ### **Example (message classification):**<br>
+
+> ### **<< Message Classification >>**<br>
 > **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br><br>
 > **Output:**<br>
 > ----- REDACTED LABELS -----<br>
@@ -174,27 +173,51 @@ Potential challenges include:
 
 ### Evaluation setup
 - **Development data:** [Source, size, selection, annotations, link or access instructions]
+1. text parsing
+    - source: pre-generated WhatsApp logs from Google Gemini
+    - size: 5 prompts, each 1-3 large paragraphs
+    - selection: related to field reports, announcements, urgent updates, summaries
+    - annotations: specific NER categories, sensitive information redaction, storing data in JSONs
+    - access: see [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week7_gliner_medium_v2_1.ipynb)<br><br>
+
 - **Metrics and rationale:** [Why these metrics reflect the intended use]
+1. text parsing
+    - PII Scrubbing Recall: checks for redactions / flagged content rate (must be > 95%)
+    - Attribute Extraction F1: checks for database entry label accuracy (must be > 95%)<br><br>
+
 - **Comparison:** [Baseline versus current approach, if different]
+1. text parsing: N/A (same as baseline approach)
 
 | System / version | Metric 1 | Metric 2 | Notes |
 |---|---:|---:|---|
 | Baseline | [Value] | [Value] | [Notes] |
 | Current | [Value] | [Value] | [Notes] |
 
+| System / version | PII Scrubbing Recall | Attribute Extraction F1 | Notes |
+|---|---:|---:|---|
+| Baseline | 100% | 68% | miss 6, mislabel 2, total 25 |
+| Current | 100% | 64.4% | miss 36, mislabel 6, total 118 |
+
 ### Successes, failures, and interpretation
 | Example / category | Expected behavior | Actual behavior | Success or failure? | Likely reason |
 |---|---|---|---|---|
 | [Case] | [Expected] | [Observed] | [Status] | [Hypothesis] |
+| text parsing | improved F1 score | worse F1 score | Failure | message truncation, bad labelling |<br><br>
 
 - **What improved?** [Evidence]
+1. text parsing: data is more related to setting, more NER categories (labels), JSON conversion<br><br>
 - **What did not improve?** [Evidence]
+1. text parsing: still misses/mislabels some text, has some false positives<br><br>
 - **Next experiment:** [Specific change and how you will measure it]
+1. text parsing:
+    - changes: use shorter messages (so no truncation), add specialized keywords to fish out false positives, improve current keywords to have more comprehensive searches
+    - measure: manual checks, and metric checking: PII > 95% and F1 > 95% (redaction and label accuracy)<br><br>
 
 ### Individual contributions during that week
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
 | [Name] | [Specific work] | [Status] | [Link] | [Next step] |
+| Terence Zhou | improved text parsing and redaction, added partial JSON conversion | Partly | [commit]() | parse data sourced from teammates, improve keyword searching, redact JSONs, store in actual JSON file |
 
 ---
 
@@ -299,5 +322,3 @@ project/
 ├── evaluation/
 └── examples/
 ```
-
-
