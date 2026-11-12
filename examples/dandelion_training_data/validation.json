@@ -1,0 +1,6302 @@
+[
+  {
+    "id": "msg_00563",
+    "sender_id": "worker_18",
+    "message": "Our workshop in Marigat on Wednesday trained 908 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 48,
+        "text": "908",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 49,
+        "end": 58,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 67,
+        "end": 82,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00968",
+    "sender_id": "worker_04",
+    "message": "Our team revisited 755 households in Marigat as part of a follow-up visit on this morning.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "755",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 89,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00163",
+    "sender_id": "worker_15",
+    "message": "The team completed a health screening in Naivasha on yesterday, reaching 900 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 62,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 73,
+        "end": 76,
+        "text": "900",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 77,
+        "end": 82,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00353",
+    "sender_id": "worker_02",
+    "message": "Our team checked on 243 households in Narok during household outreach on Monday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "243",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 43,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 69,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 79,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00151",
+    "sender_id": "worker_09",
+    "message": "The team completed a health screening in Naivasha on Friday, reaching 213 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 59,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 70,
+        "end": 73,
+        "text": "213",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 74,
+        "end": 79,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00360",
+    "sender_id": "worker_17",
+    "message": "Our team checked on 561 households in Baringo during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "561",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00359",
+    "sender_id": "worker_19",
+    "message": "Our team checked on 310 households in Marigat during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "310",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00164",
+    "sender_id": "worker_14",
+    "message": "The team completed a health screening in Naivasha on Friday, reaching 152 young adults.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 59,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 70,
+        "end": 73,
+        "text": "152",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 74,
+        "end": 86,
+        "text": "young adults",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01148",
+    "sender_id": "worker_05",
+    "message": "I ordered 119 cups for the staff room in Nakuru on Monday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 47,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 57,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00943",
+    "sender_id": "worker_10",
+    "message": "Our team revisited 645 households in Nakuru as part of a follow-up visit on Wednesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "645",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 43,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 57,
+        "end": 72,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 85,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01161",
+    "sender_id": "worker_17",
+    "message": "I ordered 564 cups for the staff room in Baringo on Tuesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 59,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00149",
+    "sender_id": "worker_13",
+    "message": "The team completed a health screening in Baringo on Wednesday, reaching 998 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 72,
+        "end": 75,
+        "text": "998",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 76,
+        "end": 81,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00960",
+    "sender_id": "worker_15",
+    "message": "Our team revisited 116 households in Kajiado as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "116",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 86,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00148",
+    "sender_id": "worker_15",
+    "message": "The team completed a health screening in Baringo on this morning, reaching 42 families.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 75,
+        "end": 77,
+        "text": "42",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 78,
+        "end": 86,
+        "text": "families",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00363",
+    "sender_id": "worker_07",
+    "message": "Our team checked on 695 households in Marigat during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "695",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00355",
+    "sender_id": "worker_16",
+    "message": "Our team checked on 962 households in Naivasha during household outreach on Tuesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "962",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 46,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 54,
+        "end": 72,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 83,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00763",
+    "sender_id": "worker_15",
+    "message": "Discussion in Marigat: 148 families attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "148",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 35,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 49,
+        "end": 66,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 70,
+        "end": 77,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00150",
+    "sender_id": "worker_07",
+    "message": "The team completed a health screening in Marigat on yesterday, reaching 60 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 72,
+        "end": 74,
+        "text": "60",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00146",
+    "sender_id": "worker_14",
+    "message": "The team completed a health screening in Marigat on Friday, reaching 361 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 69,
+        "end": 72,
+        "text": "361",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 73,
+        "end": 82,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00550",
+    "sender_id": "worker_04",
+    "message": "Our workshop in Narok on Friday trained 421 volunteers through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 31,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 40,
+        "end": 43,
+        "text": "421",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 44,
+        "end": 54,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 63,
+        "end": 78,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01153",
+    "sender_id": "worker_19",
+    "message": "I ordered 316 cups for the staff room in Naivasha on this morning.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 65,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01168",
+    "sender_id": "worker_13",
+    "message": "I ordered 374 cups for the staff room in Baringo on yesterday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00562",
+    "sender_id": "worker_20",
+    "message": "Our workshop in Baringo on Wednesday trained 40 parents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 47,
+        "text": "40",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 48,
+        "end": 55,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 64,
+        "end": 79,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00948",
+    "sender_id": "worker_05",
+    "message": "Our team revisited 673 households in Kajiado as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "673",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 86,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00553",
+    "sender_id": "worker_08",
+    "message": "Our workshop in Narok on Wednesday trained 733 women through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 34,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 43,
+        "end": 46,
+        "text": "733",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 47,
+        "end": 52,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 61,
+        "end": 76,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00345",
+    "sender_id": "worker_11",
+    "message": "Our team checked on 390 households in Naivasha during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "390",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 46,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 54,
+        "end": 72,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 85,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00352",
+    "sender_id": "worker_20",
+    "message": "Our team checked on 116 households in Naivasha during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "116",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 46,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 54,
+        "end": 72,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 85,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00156",
+    "sender_id": "worker_05",
+    "message": "The team completed a health screening in Kajiado on Friday, reaching 569 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 69,
+        "end": 72,
+        "text": "569",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 73,
+        "end": 82,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00154",
+    "sender_id": "worker_04",
+    "message": "The team completed a health screening in Nakuru on Tuesday, reaching 974 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 47,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 58,
+        "text": "Tuesday",
+        "label": "Date"
+      },
+      {
+        "start": 69,
+        "end": 72,
+        "text": "974",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 73,
+        "end": 82,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00347",
+    "sender_id": "worker_08",
+    "message": "Our team checked on 310 households in Narok during household outreach on Tuesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "310",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 43,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 69,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 80,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00169",
+    "sender_id": "worker_11",
+    "message": "The team completed a health screening in Narok on this morning, reaching 52 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 62,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 73,
+        "end": 75,
+        "text": "52",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 76,
+        "end": 81,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00750",
+    "sender_id": "worker_03",
+    "message": "Discussion in Naivasha: 692 volunteers attended the community meeting on Friday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 22,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 24,
+        "end": 27,
+        "text": "692",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 28,
+        "end": 38,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 52,
+        "end": 69,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 79,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01155",
+    "sender_id": "worker_06",
+    "message": "I ordered 471 cups for the staff room in Nakuru on Tuesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 47,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 58,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00955",
+    "sender_id": "worker_13",
+    "message": "Our team revisited 877 households in Marigat as part of a follow-up visit on this morning.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "877",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 89,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00566",
+    "sender_id": "worker_16",
+    "message": "Our workshop in Kajiado on this morning trained 562 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 48,
+        "end": 51,
+        "text": "562",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 70,
+        "end": 85,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00749",
+    "sender_id": "worker_19",
+    "message": "Discussion in Narok: 823 young adults attended the community meeting on Monday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 19,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 21,
+        "end": 24,
+        "text": "823",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 25,
+        "end": 37,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 51,
+        "end": 68,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 72,
+        "end": 78,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00344",
+    "sender_id": "worker_17",
+    "message": "Our team checked on 146 households in Marigat during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "146",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 87,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00551",
+    "sender_id": "worker_04",
+    "message": "Our workshop in Narok on Friday trained 276 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 31,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 40,
+        "end": 43,
+        "text": "276",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 44,
+        "end": 53,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 62,
+        "end": 77,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00555",
+    "sender_id": "worker_18",
+    "message": "Our workshop in Nakuru on Friday trained 771 families through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 32,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 41,
+        "end": 44,
+        "text": "771",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 45,
+        "end": 53,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 62,
+        "end": 77,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00354",
+    "sender_id": "worker_05",
+    "message": "Our team checked on 702 households in Kajiado during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "702",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00350",
+    "sender_id": "worker_10",
+    "message": "Our team checked on 48 households in Kajiado during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 22,
+        "text": "48",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 70,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 83,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00941",
+    "sender_id": "worker_01",
+    "message": "Our team revisited 953 households in Narok as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "953",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 42,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 56,
+        "end": 71,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01169",
+    "sender_id": "worker_01",
+    "message": "I ordered 386 cups for the staff room in Marigat on Friday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00552",
+    "sender_id": "worker_20",
+    "message": "Our workshop in Narok on this morning trained 718 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 37,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 46,
+        "end": 49,
+        "text": "718",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 50,
+        "end": 62,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 71,
+        "end": 86,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01147",
+    "sender_id": "worker_06",
+    "message": "I ordered 405 cups for the staff room in Narok on Friday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 56,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00364",
+    "sender_id": "worker_11",
+    "message": "Our team checked on 532 households in Naivasha during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "532",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 46,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 54,
+        "end": 72,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 88,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00959",
+    "sender_id": "worker_13",
+    "message": "Our team revisited 627 households in Narok as part of a follow-up visit on Friday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "627",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 42,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 56,
+        "end": 71,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 81,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00761",
+    "sender_id": "worker_19",
+    "message": "Discussion in Marigat: 233 residents attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "233",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 50,
+        "end": 67,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 71,
+        "end": 78,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00346",
+    "sender_id": "worker_09",
+    "message": "Our team checked on 367 households in Kajiado during household outreach on yesterday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "367",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01164",
+    "sender_id": "worker_13",
+    "message": "I ordered 30 cups for the staff room in Nakuru on Tuesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 40,
+        "end": 46,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 57,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01141",
+    "sender_id": "worker_06",
+    "message": "I ordered 380 cups for the staff room in Kajiado on yesterday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01149",
+    "sender_id": "worker_18",
+    "message": "I ordered 431 cups for the staff room in Narok on Tuesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 57,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00956",
+    "sender_id": "worker_02",
+    "message": "Our team revisited 236 households in Kajiado as part of a follow-up visit on Tuesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "236",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 84,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01165",
+    "sender_id": "worker_20",
+    "message": "I ordered 61 cups for the staff room in Kajiado on Wednesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 40,
+        "end": 47,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 60,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00742",
+    "sender_id": "worker_20",
+    "message": "Discussion in Naivasha: 313 young adults attended the community meeting on Monday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 22,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 24,
+        "end": 27,
+        "text": "313",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 28,
+        "end": 40,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 54,
+        "end": 71,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 81,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00953",
+    "sender_id": "worker_08",
+    "message": "Our team revisited 242 households in Naivasha as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "242",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 45,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 59,
+        "end": 74,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 78,
+        "end": 87,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01146",
+    "sender_id": "worker_12",
+    "message": "I ordered 640 cups for the staff room in Marigat on yesterday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00964",
+    "sender_id": "worker_15",
+    "message": "Our team revisited 854 households in Marigat as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "854",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 86,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00351",
+    "sender_id": "worker_07",
+    "message": "Our team checked on 495 households in Baringo during household outreach on Friday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "495",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 81,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00147",
+    "sender_id": "worker_14",
+    "message": "The team completed a health screening in Baringo on this morning, reaching 342 parents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 75,
+        "end": 78,
+        "text": "342",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 79,
+        "end": 86,
+        "text": "parents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00141",
+    "sender_id": "worker_13",
+    "message": "The team completed a health screening in Kajiado on Monday, reaching 316 young adults.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Monday",
+        "label": "Date"
+      },
+      {
+        "start": 69,
+        "end": 72,
+        "text": "316",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 73,
+        "end": 85,
+        "text": "young adults",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00554",
+    "sender_id": "worker_09",
+    "message": "Our workshop in Kajiado on yesterday trained 311 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 48,
+        "text": "311",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 49,
+        "end": 61,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 70,
+        "end": 85,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00961",
+    "sender_id": "worker_18",
+    "message": "Our team revisited 45 households in Nakuru as part of a follow-up visit on Tuesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 21,
+        "text": "45",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 36,
+        "end": 42,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 56,
+        "end": 71,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 82,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00770",
+    "sender_id": "worker_12",
+    "message": "Discussion in Kajiado: 841 volunteers attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "841",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 37,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 51,
+        "end": 68,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 72,
+        "end": 79,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00348",
+    "sender_id": "worker_16",
+    "message": "Our team checked on 726 households in Baringo during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "726",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 87,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00166",
+    "sender_id": "worker_16",
+    "message": "The team completed a health screening in Baringo on this morning, reaching 646 volunteers.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 75,
+        "end": 78,
+        "text": "646",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 79,
+        "end": 89,
+        "text": "volunteers",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00342",
+    "sender_id": "worker_15",
+    "message": "Our team checked on 24 households in Naivasha during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 22,
+        "text": "24",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 45,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 87,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00368",
+    "sender_id": "worker_06",
+    "message": "Our team checked on 319 households in Nakuru during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "319",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 44,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 70,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 86,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01163",
+    "sender_id": "worker_04",
+    "message": "I ordered 710 cups for the staff room in Naivasha on this morning.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 65,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01160",
+    "sender_id": "worker_05",
+    "message": "I ordered 791 cups for the staff room in Nakuru on Monday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 47,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 57,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00765",
+    "sender_id": "worker_09",
+    "message": "Discussion in Nakuru: 69 parents attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 20,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 22,
+        "end": 24,
+        "text": "69",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 25,
+        "end": 32,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 46,
+        "end": 63,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 67,
+        "end": 74,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00367",
+    "sender_id": "worker_12",
+    "message": "Our team checked on 674 households in Baringo during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "674",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01159",
+    "sender_id": "worker_06",
+    "message": "I ordered 557 cups for the staff room in Baringo on Tuesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 59,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00946",
+    "sender_id": "worker_20",
+    "message": "Our team revisited 988 households in Nakuru as part of a follow-up visit on this morning.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "988",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 43,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 57,
+        "end": 72,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 88,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00747",
+    "sender_id": "worker_12",
+    "message": "Discussion in Naivasha: 220 volunteers attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 22,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 24,
+        "end": 27,
+        "text": "220",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 28,
+        "end": 38,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 52,
+        "end": 69,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 82,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00768",
+    "sender_id": "worker_19",
+    "message": "Discussion in Marigat: 274 young adults attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "274",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 53,
+        "end": 70,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 83,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00957",
+    "sender_id": "worker_07",
+    "message": "Our team revisited 765 households in Nakuru as part of a follow-up visit on Wednesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "765",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 43,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 57,
+        "end": 72,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 85,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00541",
+    "sender_id": "worker_01",
+    "message": "Our workshop in Narok on yesterday trained 864 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 34,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 43,
+        "end": 46,
+        "text": "864",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 47,
+        "end": 59,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 68,
+        "end": 83,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00965",
+    "sender_id": "worker_19",
+    "message": "Our team revisited 802 households in Marigat as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "802",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 86,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00370",
+    "sender_id": "worker_05",
+    "message": "Our team checked on 494 households in Naivasha during household outreach on Tuesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "494",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 46,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 54,
+        "end": 72,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 83,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00754",
+    "sender_id": "worker_08",
+    "message": "Discussion in Baringo: 325 women attended the community meeting on Friday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "325",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 32,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 46,
+        "end": 63,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 67,
+        "end": 73,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01144",
+    "sender_id": "worker_03",
+    "message": "I ordered 60 cups for the staff room in Baringo on Wednesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 40,
+        "end": 47,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 60,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00744",
+    "sender_id": "worker_13",
+    "message": "Discussion in Narok: 769 parents attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 19,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 21,
+        "end": 24,
+        "text": "769",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 25,
+        "end": 32,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 46,
+        "end": 63,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 67,
+        "end": 76,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00549",
+    "sender_id": "worker_05",
+    "message": "Our workshop in Nakuru on Tuesday trained 116 families through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 33,
+        "text": "Tuesday",
+        "label": "Date"
+      },
+      {
+        "start": 42,
+        "end": 45,
+        "text": "116",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 46,
+        "end": 54,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 63,
+        "end": 78,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00963",
+    "sender_id": "worker_10",
+    "message": "Our team revisited 437 households in Baringo as part of a follow-up visit on Wednesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "437",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 86,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00366",
+    "sender_id": "worker_15",
+    "message": "Our team checked on 246 households in Narok during household outreach on Monday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "246",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 43,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 69,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 79,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00341",
+    "sender_id": "worker_08",
+    "message": "Our team checked on 846 households in Narok during household outreach on yesterday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "846",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 43,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 69,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 82,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00745",
+    "sender_id": "worker_12",
+    "message": "Discussion in Marigat: 913 young adults attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "913",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 53,
+        "end": 70,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 81,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00159",
+    "sender_id": "worker_18",
+    "message": "The team completed a health screening in Narok on Friday, reaching 345 volunteers.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 56,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 67,
+        "end": 70,
+        "text": "345",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 71,
+        "end": 81,
+        "text": "volunteers",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00945",
+    "sender_id": "worker_13",
+    "message": "Our team revisited 354 households in Naivasha as part of a follow-up visit on Wednesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "354",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 45,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 59,
+        "end": 74,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 78,
+        "end": 87,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00944",
+    "sender_id": "worker_13",
+    "message": "Our team revisited 268 households in Naivasha as part of a follow-up visit on Wednesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "268",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 45,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 59,
+        "end": 74,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 78,
+        "end": 87,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00167",
+    "sender_id": "worker_10",
+    "message": "The team completed a health screening in Naivasha on Monday, reaching 705 young adults.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 59,
+        "text": "Monday",
+        "label": "Date"
+      },
+      {
+        "start": 70,
+        "end": 73,
+        "text": "705",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 74,
+        "end": 86,
+        "text": "young adults",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00144",
+    "sender_id": "worker_09",
+    "message": "The team completed a health screening in Narok on this morning, reaching 846 young adults.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 62,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 73,
+        "end": 76,
+        "text": "846",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 77,
+        "end": 89,
+        "text": "young adults",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00748",
+    "sender_id": "worker_08",
+    "message": "Discussion in Kajiado: 193 parents attended the community meeting on this morning.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "193",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 34,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 48,
+        "end": 65,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 69,
+        "end": 81,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00570",
+    "sender_id": "worker_02",
+    "message": "Our workshop in Narok on this morning trained 551 volunteers through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 37,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 46,
+        "end": 49,
+        "text": "551",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 50,
+        "end": 60,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 69,
+        "end": 84,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00143",
+    "sender_id": "worker_01",
+    "message": "The team completed a health screening in Kajiado on this morning, reaching 261 families.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 75,
+        "end": 78,
+        "text": "261",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 79,
+        "end": 87,
+        "text": "families",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00155",
+    "sender_id": "worker_09",
+    "message": "The team completed a health screening in Kajiado on this morning, reaching 727 families.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 75,
+        "end": 78,
+        "text": "727",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 79,
+        "end": 87,
+        "text": "families",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01152",
+    "sender_id": "worker_11",
+    "message": "I ordered 666 cups for the staff room in Kajiado on yesterday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00947",
+    "sender_id": "worker_10",
+    "message": "Our team revisited 998 households in Kajiado as part of a follow-up visit on Tuesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "998",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 84,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00158",
+    "sender_id": "worker_10",
+    "message": "The team completed a health screening in Naivasha on Wednesday, reaching 748 volunteers.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 62,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 73,
+        "end": 76,
+        "text": "748",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 77,
+        "end": 87,
+        "text": "volunteers",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00157",
+    "sender_id": "worker_14",
+    "message": "The team completed a health screening in Narok on yesterday, reaching 287 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 59,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 70,
+        "end": 73,
+        "text": "287",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 74,
+        "end": 79,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00967",
+    "sender_id": "worker_09",
+    "message": "Our team revisited 97 households in Naivasha as part of a follow-up visit on this morning.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 21,
+        "text": "97",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 36,
+        "end": 44,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 89,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00764",
+    "sender_id": "worker_16",
+    "message": "Discussion in Narok: 754 young adults attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 19,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 21,
+        "end": 24,
+        "text": "754",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 25,
+        "end": 37,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 51,
+        "end": 68,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 72,
+        "end": 81,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00753",
+    "sender_id": "worker_05",
+    "message": "Discussion in Baringo: 603 young adults attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "603",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 53,
+        "end": 70,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 83,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00361",
+    "sender_id": "worker_04",
+    "message": "Our team checked on 202 households in Narok during household outreach on yesterday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "202",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 43,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 69,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 82,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00758",
+    "sender_id": "worker_03",
+    "message": "Discussion in Baringo: 756 volunteers attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "756",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 37,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 51,
+        "end": 68,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 72,
+        "end": 79,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01154",
+    "sender_id": "worker_12",
+    "message": "I ordered 500 cups for the staff room in Baringo on Tuesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 59,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00567",
+    "sender_id": "worker_06",
+    "message": "Our workshop in Naivasha on yesterday trained 281 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 24,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 28,
+        "end": 37,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 46,
+        "end": 49,
+        "text": "281",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 50,
+        "end": 59,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 68,
+        "end": 83,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00942",
+    "sender_id": "worker_13",
+    "message": "Our team revisited 506 households in Narok as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "506",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 42,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 56,
+        "end": 71,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00969",
+    "sender_id": "worker_03",
+    "message": "Our team revisited 376 households in Nakuru as part of a follow-up visit on this morning.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "376",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 43,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 57,
+        "end": 72,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 88,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00559",
+    "sender_id": "worker_15",
+    "message": "Our workshop in Nakuru on Wednesday trained 969 women through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 35,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 44,
+        "end": 47,
+        "text": "969",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 48,
+        "end": 53,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 62,
+        "end": 77,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00755",
+    "sender_id": "worker_12",
+    "message": "Discussion in Marigat: 865 volunteers attended the community meeting on this morning.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "865",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 37,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 51,
+        "end": 68,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 72,
+        "end": 84,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00560",
+    "sender_id": "worker_16",
+    "message": "Our workshop in Narok on yesterday trained 409 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 34,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 43,
+        "end": 46,
+        "text": "409",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 47,
+        "end": 59,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 68,
+        "end": 83,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01170",
+    "sender_id": "worker_18",
+    "message": "I ordered 900 cups for the staff room in Baringo on Wednesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00543",
+    "sender_id": "worker_02",
+    "message": "Our workshop in Narok on yesterday trained 508 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 34,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 43,
+        "end": 46,
+        "text": "508",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 47,
+        "end": 56,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 65,
+        "end": 80,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00743",
+    "sender_id": "worker_01",
+    "message": "Discussion in Baringo: 846 residents attended the community meeting on Friday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "846",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 50,
+        "end": 67,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 71,
+        "end": 77,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00558",
+    "sender_id": "worker_15",
+    "message": "Our workshop in Nakuru on Monday trained 929 parents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 32,
+        "text": "Monday",
+        "label": "Date"
+      },
+      {
+        "start": 41,
+        "end": 44,
+        "text": "929",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 45,
+        "end": 52,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 61,
+        "end": 76,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00746",
+    "sender_id": "worker_01",
+    "message": "Discussion in Naivasha: 47 women attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 22,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 24,
+        "end": 26,
+        "text": "47",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 32,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 46,
+        "end": 63,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 67,
+        "end": 76,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00565",
+    "sender_id": "worker_18",
+    "message": "Our workshop in Marigat on yesterday trained 826 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 48,
+        "text": "826",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 49,
+        "end": 61,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 70,
+        "end": 85,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01157",
+    "sender_id": "worker_05",
+    "message": "I ordered 593 cups for the staff room in Narok on Monday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 56,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00362",
+    "sender_id": "worker_06",
+    "message": "Our team checked on 268 households in Narok during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "268",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 43,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 69,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 73,
+        "end": 85,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00569",
+    "sender_id": "worker_06",
+    "message": "Our workshop in Kajiado on yesterday trained 243 families through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 48,
+        "text": "243",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 49,
+        "end": 57,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 66,
+        "end": 81,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00369",
+    "sender_id": "worker_10",
+    "message": "Our team checked on 125 households in Marigat during household outreach on yesterday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "125",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00542",
+    "sender_id": "worker_10",
+    "message": "Our workshop in Nakuru on this morning trained 749 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 38,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 47,
+        "end": 50,
+        "text": "749",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 51,
+        "end": 63,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 72,
+        "end": 87,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00564",
+    "sender_id": "worker_14",
+    "message": "Our workshop in Nakuru on Monday trained 145 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 32,
+        "text": "Monday",
+        "label": "Date"
+      },
+      {
+        "start": 41,
+        "end": 44,
+        "text": "145",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 45,
+        "end": 54,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 63,
+        "end": 78,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01150",
+    "sender_id": "worker_01",
+    "message": "I ordered 760 cups for the staff room in Kajiado on Wednesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00950",
+    "sender_id": "worker_05",
+    "message": "Our team revisited 330 households in Baringo as part of a follow-up visit on Monday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "330",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 83,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01142",
+    "sender_id": "worker_08",
+    "message": "I ordered 347 cups for the staff room in Naivasha on this morning.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 65,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00752",
+    "sender_id": "worker_16",
+    "message": "Discussion in Nakuru: 330 parents attended the community meeting on Wednesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 20,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 22,
+        "end": 25,
+        "text": "330",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 26,
+        "end": 33,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 47,
+        "end": 64,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 68,
+        "end": 77,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00142",
+    "sender_id": "worker_20",
+    "message": "The team completed a health screening in Naivasha on yesterday, reaching 87 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 62,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 73,
+        "end": 75,
+        "text": "87",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 76,
+        "end": 85,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01143",
+    "sender_id": "worker_08",
+    "message": "I ordered 784 cups for the staff room in Marigat on Friday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00762",
+    "sender_id": "worker_17",
+    "message": "Discussion in Narok: 377 residents attended the community meeting on Friday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 19,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 21,
+        "end": 24,
+        "text": "377",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 25,
+        "end": 34,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 48,
+        "end": 65,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 69,
+        "end": 75,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01156",
+    "sender_id": "worker_05",
+    "message": "I ordered 184 cups for the staff room in Marigat on yesterday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00547",
+    "sender_id": "worker_09",
+    "message": "Our workshop in Kajiado on this morning trained 303 parents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 48,
+        "end": 51,
+        "text": "303",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 52,
+        "end": 59,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 68,
+        "end": 83,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01145",
+    "sender_id": "worker_04",
+    "message": "I ordered 544 cups for the staff room in Baringo on Friday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00958",
+    "sender_id": "worker_11",
+    "message": "Our team revisited 506 households in Nakuru as part of a follow-up visit on Tuesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "506",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 43,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 57,
+        "end": 72,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 83,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00365",
+    "sender_id": "worker_16",
+    "message": "Our team checked on 148 households in Kajiado during household outreach on this morning.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "148",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 87,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00358",
+    "sender_id": "worker_16",
+    "message": "Our team checked on 811 households in Kajiado during household outreach on Tuesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "811",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 82,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00568",
+    "sender_id": "worker_09",
+    "message": "Our workshop in Baringo on yesterday trained 922 women through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "yesterday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 48,
+        "text": "922",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 49,
+        "end": 54,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 63,
+        "end": 78,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00548",
+    "sender_id": "worker_09",
+    "message": "Our workshop in Kajiado on this morning trained 468 volunteers through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 48,
+        "end": 51,
+        "text": "468",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 52,
+        "end": 62,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 71,
+        "end": 86,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00766",
+    "sender_id": "worker_12",
+    "message": "Discussion in Narok: 934 families attended the community meeting on Monday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 19,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 21,
+        "end": 24,
+        "text": "934",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 25,
+        "end": 33,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 47,
+        "end": 64,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 68,
+        "end": 74,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00767",
+    "sender_id": "worker_11",
+    "message": "Discussion in Kajiado: 669 women attended the community meeting on Friday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "669",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 32,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 46,
+        "end": 63,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 67,
+        "end": 73,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00561",
+    "sender_id": "worker_07",
+    "message": "Our workshop in Kajiado on this morning trained 367 parents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 48,
+        "end": 51,
+        "text": "367",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 52,
+        "end": 59,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 68,
+        "end": 83,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01167",
+    "sender_id": "worker_07",
+    "message": "I ordered 408 cups for the staff room in Naivasha on Friday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 59,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00757",
+    "sender_id": "worker_20",
+    "message": "Discussion in Baringo: 666 parents attended the community meeting on Friday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "666",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 34,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 48,
+        "end": 65,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 69,
+        "end": 75,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00162",
+    "sender_id": "worker_02",
+    "message": "The team completed a health screening in Kajiado on this morning, reaching 992 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      },
+      {
+        "start": 75,
+        "end": 78,
+        "text": "992",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 79,
+        "end": 88,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01158",
+    "sender_id": "worker_02",
+    "message": "I ordered 580 cups for the staff room in Baringo on Wednesday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00751",
+    "sender_id": "worker_05",
+    "message": "Discussion in Nakuru: 370 volunteers attended the community meeting on Tuesday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 20,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 22,
+        "end": 25,
+        "text": "370",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 26,
+        "end": 36,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 50,
+        "end": 67,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 71,
+        "end": 78,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00357",
+    "sender_id": "worker_02",
+    "message": "Our team checked on 761 households in Marigat during household outreach on yesterday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "761",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00356",
+    "sender_id": "worker_02",
+    "message": "Our team checked on 297 households in Marigat during household outreach on Tuesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "297",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 82,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01151",
+    "sender_id": "worker_17",
+    "message": "I ordered 859 cups for the staff room in Narok on Monday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 56,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00170",
+    "sender_id": "worker_08",
+    "message": "The team completed a health screening in Baringo on Wednesday, reaching 154 residents.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 72,
+        "end": 75,
+        "text": "154",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 76,
+        "end": 85,
+        "text": "residents",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00145",
+    "sender_id": "worker_19",
+    "message": "The team completed a health screening in Narok on Friday, reaching 190 volunteers.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 56,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 67,
+        "end": 70,
+        "text": "190",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 71,
+        "end": 81,
+        "text": "volunteers",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00949",
+    "sender_id": "worker_05",
+    "message": "Our team revisited 935 households in Narok as part of a follow-up visit on Wednesday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "935",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 42,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 56,
+        "end": 71,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00161",
+    "sender_id": "worker_16",
+    "message": "The team completed a health screening in Narok on Friday, reaching 767 volunteers.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 46,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 50,
+        "end": 56,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 67,
+        "end": 70,
+        "text": "767",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 71,
+        "end": 81,
+        "text": "volunteers",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00970",
+    "sender_id": "worker_13",
+    "message": "Our team revisited 568 households in Marigat as part of a follow-up visit on yesterday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "568",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 86,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00546",
+    "sender_id": "worker_19",
+    "message": "Our workshop in Naivasha on Tuesday trained 611 women through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 24,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 28,
+        "end": 35,
+        "text": "Tuesday",
+        "label": "Date"
+      },
+      {
+        "start": 44,
+        "end": 47,
+        "text": "611",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 48,
+        "end": 53,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 62,
+        "end": 77,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00741",
+    "sender_id": "worker_03",
+    "message": "Discussion in Marigat: 873 young adults attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "873",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 39,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 53,
+        "end": 70,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 83,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00545",
+    "sender_id": "worker_19",
+    "message": "Our workshop in Marigat on Wednesday trained 91 young adults through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 47,
+        "text": "91",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 48,
+        "end": 60,
+        "text": "young adults",
+        "label": "Attendees"
+      },
+      {
+        "start": 69,
+        "end": 84,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01162",
+    "sender_id": "worker_10",
+    "message": "I ordered 922 cups for the staff room in Marigat on this morning.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 64,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00769",
+    "sender_id": "worker_03",
+    "message": "Discussion in Kajiado: 606 volunteers attended the community meeting on this morning.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "606",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 37,
+        "text": "volunteers",
+        "label": "Attendees"
+      },
+      {
+        "start": 51,
+        "end": 68,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 72,
+        "end": 84,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00165",
+    "sender_id": "worker_13",
+    "message": "The team completed a health screening in Nakuru on Friday, reaching 643 volunteers.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 47,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 51,
+        "end": 57,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 68,
+        "end": 71,
+        "text": "643",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 72,
+        "end": 82,
+        "text": "volunteers",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00756",
+    "sender_id": "worker_15",
+    "message": "Discussion in Marigat: 478 residents attended the community meeting on this morning.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 21,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 23,
+        "end": 26,
+        "text": "478",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 50,
+        "end": 67,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 71,
+        "end": 83,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00759",
+    "sender_id": "worker_13",
+    "message": "Discussion in Nakuru: 597 families attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 20,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 22,
+        "end": 25,
+        "text": "597",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 26,
+        "end": 34,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 48,
+        "end": 65,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 69,
+        "end": 78,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00951",
+    "sender_id": "worker_09",
+    "message": "Our team revisited 458 households in Baringo as part of a follow-up visit on Friday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "458",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 83,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00168",
+    "sender_id": "worker_04",
+    "message": "The team completed a health screening in Marigat on Monday, reaching 783 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Monday",
+        "label": "Date"
+      },
+      {
+        "start": 69,
+        "end": 72,
+        "text": "783",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 73,
+        "end": 78,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00952",
+    "sender_id": "worker_20",
+    "message": "Our team revisited 31 households in Narok as part of a follow-up visit on Monday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 21,
+        "text": "31",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 36,
+        "end": 41,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 55,
+        "end": 70,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 74,
+        "end": 80,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00152",
+    "sender_id": "worker_20",
+    "message": "The team completed a health screening in Baringo on Friday, reaching 34 women.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 58,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 69,
+        "end": 71,
+        "text": "34",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 72,
+        "end": 77,
+        "text": "women",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00160",
+    "sender_id": "worker_19",
+    "message": "The team completed a health screening in Kajiado on Wednesday, reaching 249 young adults.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 61,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 72,
+        "end": 75,
+        "text": "249",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 76,
+        "end": 88,
+        "text": "young adults",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00962",
+    "sender_id": "worker_15",
+    "message": "Our team revisited 303 households in Naivasha as part of a follow-up visit on this morning.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "303",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 45,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 59,
+        "end": 74,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 78,
+        "end": 90,
+        "text": "this morning",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00153",
+    "sender_id": "worker_18",
+    "message": "The team completed a health screening in Marigat on Tuesday, reaching 19 families.",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "entities": [
+      {
+        "start": 21,
+        "end": 37,
+        "text": "health screening",
+        "label": "EventName"
+      },
+      {
+        "start": 41,
+        "end": 48,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 52,
+        "end": 59,
+        "text": "Tuesday",
+        "label": "Date"
+      },
+      {
+        "start": 70,
+        "end": 72,
+        "text": "19",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 73,
+        "end": 81,
+        "text": "families",
+        "label": "Attendees"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00966",
+    "sender_id": "worker_06",
+    "message": "Our team revisited 30 households in Kajiado as part of a follow-up visit on Friday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 21,
+        "text": "30",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 36,
+        "end": 43,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 57,
+        "end": 72,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 76,
+        "end": 82,
+        "text": "Friday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00556",
+    "sender_id": "worker_01",
+    "message": "Our workshop in Nakuru on Friday trained 129 parents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 22,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 26,
+        "end": 32,
+        "text": "Friday",
+        "label": "Date"
+      },
+      {
+        "start": 41,
+        "end": 44,
+        "text": "129",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 45,
+        "end": 52,
+        "text": "parents",
+        "label": "Attendees"
+      },
+      {
+        "start": 61,
+        "end": 76,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00760",
+    "sender_id": "worker_18",
+    "message": "Discussion in Nakuru: 920 families attended the community meeting on yesterday.",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "entities": [
+      {
+        "start": 14,
+        "end": 20,
+        "text": "Nakuru",
+        "label": "Location"
+      },
+      {
+        "start": 22,
+        "end": 25,
+        "text": "920",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 26,
+        "end": 34,
+        "text": "families",
+        "label": "Attendees"
+      },
+      {
+        "start": 48,
+        "end": 65,
+        "text": "community meeting",
+        "label": "EventName"
+      },
+      {
+        "start": 69,
+        "end": 78,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00954",
+    "sender_id": "worker_20",
+    "message": "Our team revisited 519 households in Baringo as part of a follow-up visit on Monday.",
+    "relevant": true,
+    "activity_type": "follow_up",
+    "entities": [
+      {
+        "start": 19,
+        "end": 22,
+        "text": "519",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 37,
+        "end": 44,
+        "text": "Baringo",
+        "label": "Location"
+      },
+      {
+        "start": 58,
+        "end": 73,
+        "text": "follow-up visit",
+        "label": "EventName"
+      },
+      {
+        "start": 77,
+        "end": 83,
+        "text": "Monday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00544",
+    "sender_id": "worker_08",
+    "message": "Our workshop in Marigat on Wednesday trained 948 women through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 23,
+        "text": "Marigat",
+        "label": "Location"
+      },
+      {
+        "start": 27,
+        "end": 36,
+        "text": "Wednesday",
+        "label": "Date"
+      },
+      {
+        "start": 45,
+        "end": 48,
+        "text": "948",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 49,
+        "end": 54,
+        "text": "women",
+        "label": "Attendees"
+      },
+      {
+        "start": 63,
+        "end": 78,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00557",
+    "sender_id": "worker_03",
+    "message": "Our workshop in Narok on Tuesday trained 386 residents through health training.",
+    "relevant": true,
+    "activity_type": "community_training",
+    "entities": [
+      {
+        "start": 16,
+        "end": 21,
+        "text": "Narok",
+        "label": "Location"
+      },
+      {
+        "start": 25,
+        "end": 32,
+        "text": "Tuesday",
+        "label": "Date"
+      },
+      {
+        "start": 41,
+        "end": 44,
+        "text": "386",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 45,
+        "end": 54,
+        "text": "residents",
+        "label": "Attendees"
+      },
+      {
+        "start": 63,
+        "end": 78,
+        "text": "health training",
+        "label": "EventName"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_01166",
+    "sender_id": "worker_01",
+    "message": "I ordered 205 cups for the staff room in Naivasha on yesterday.",
+    "relevant": false,
+    "activity_type": null,
+    "entities": [
+      {
+        "start": 41,
+        "end": 49,
+        "text": "Naivasha",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 62,
+        "text": "yesterday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00343",
+    "sender_id": "worker_14",
+    "message": "Our team checked on 213 households in Kajiado during household outreach on Tuesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "213",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 82,
+        "text": "Tuesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  },
+  {
+    "id": "msg_00349",
+    "sender_id": "worker_19",
+    "message": "Our team checked on 129 households in Kajiado during household outreach on Wednesday.",
+    "relevant": true,
+    "activity_type": "household_outreach",
+    "entities": [
+      {
+        "start": 20,
+        "end": 23,
+        "text": "129",
+        "label": "ReportedCount"
+      },
+      {
+        "start": 38,
+        "end": 45,
+        "text": "Kajiado",
+        "label": "Location"
+      },
+      {
+        "start": 53,
+        "end": 71,
+        "text": "household outreach",
+        "label": "EventName"
+      },
+      {
+        "start": 75,
+        "end": 84,
+        "text": "Wednesday",
+        "label": "Date"
+      }
+    ],
+    "source": "synthetic_python_template"
+  }
+]
