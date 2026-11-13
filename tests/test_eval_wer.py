@@ -6,8 +6,7 @@ from typing import Any
 
 import pytest
 
-import baseline_runner
-import eval_wer
+from evaluation import baseline_runner, eval_wer
 
 Record = dict[str, Any]
 
@@ -49,7 +48,7 @@ def make_manifest(messages: list[Record], voices: list[str] | None = None) -> Re
                     "noise_seed": 1 if version == "noisy" else None,
                 }
             )
-    return {"generator": {"script": "src/make_audio.py"}, "clips": clips}
+    return {"generator": {"script": "src/training/make_audio.py"}, "clips": clips}
 
 
 def records(messages: list[Record], texts: dict[str, str] | None = None) -> list[Record]:

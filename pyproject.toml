@@ -4,9 +4,8 @@
 line-length = 100
 target-version = "py312"
 extend-exclude = [
-    "src/baseline.py",
-    "src/generate_data.py",
-    "evaluation/evaluate.py",
+    "notebooks",
+    "src/legacy",
     ".venv",
     ".temp",
 ]
@@ -15,18 +14,20 @@ extend-exclude = [
 select = ["E", "F", "W", "I", "B", "UP", "N", "SIM", "RUF", "PT"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["make_audio", "transcribe", "baseline_runner", "eval_wer"]
+known-first-party = ["demo", "evaluation", "src"]
 
 [tool.mypy]
 strict = true
 python_version = "3.12"
-mypy_path = ["src", "evaluation"]
+mypy_path = ["."]
 explicit_package_bases = true
 files = [
-    "src/make_audio.py",
-    "src/transcribe.py",
-    "evaluation/baseline_runner.py",
-    "evaluation/eval_wer.py",
+    "src/core",
+    "src/asr",
+    "src/nlp",
+    "src/pipeline",
+    "src/training",
+    "evaluation",
     "tests",
 ]
 

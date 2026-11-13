@@ -1,4 +1,4 @@
-"""Tests for M2 (src/transcribe.py). No GPU, network or model download except @slow."""
+"""Tests for M2 (src/asr/transcribe.py). No GPU, network or model download except @slow."""
 
 import json
 import sys
@@ -12,9 +12,9 @@ import numpy.typing as npt
 import pytest
 import soundfile
 
-import transcribe
-from baseline_runner import run_baseline
-from transcribe import (
+from evaluation.baseline_runner import run_baseline
+from src.asr import transcribe
+from src.asr.transcribe import (
     ASR_METADATA_KEYS,
     WhisperASR,
     build_metadata,

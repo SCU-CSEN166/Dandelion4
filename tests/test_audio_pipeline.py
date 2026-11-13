@@ -1,4 +1,4 @@
-"""Offline tests for src/audio_pipeline.py covering Stage B -> Stage C v2 contracts."""
+"""Offline tests for src/asr/audio_pipeline.py covering Stage B -> Stage C v2 contracts."""
 
 from __future__ import annotations
 
@@ -11,10 +11,9 @@ from typing import Any
 import numpy as np
 import pytest
 
-import audio_pipeline
-import contracts
-import make_audio
-import transcribe
+from src.asr import audio_pipeline, transcribe
+from src.core import contracts
+from src.training import make_audio
 
 FIXED_NOW = datetime(2026, 11, 13, 12, 30, 0, tzinfo=UTC)
 
@@ -176,7 +175,7 @@ def test_baseline_v2_system_end_to_end_and_error(
     assert records[1]["relevant"] is False
     assert hashlib.sha256(committed.read_bytes()).hexdigest() == before
 
-    import baseline_runner
+    from evaluation import baseline_runner
 
     def boom(_path: Path) -> list[dict[str, Any]]:
         raise baseline_runner.BaselineError("broken baseline")
@@ -386,12 +385,12 @@ def test_run_system_contract_error_cases() -> None:
 
 def test_load_system_resolution() -> None:
     assert audio_pipeline.load_system("baseline") is audio_pipeline.baseline_v2_system
-    loaded = audio_pipeline.load_system("audio_pipeline:baseline_v2_system")
+    loaded = audio_pipeline.load_system("src.asr.audio_pipeline:baseline_v2_system")
     assert loaded is audio_pipeline.baseline_v2_system
     with pytest.raises(ValueError, match="invalid system specification"):
         audio_pipeline.load_system(":attr")
     with pytest.raises(ValueError, match="not callable"):
-        audio_pipeline.load_system("audio_pipeline:_PHONE_PATTERN")
+        audio_pipeline.load_system("src.asr.audio_pipeline:_PHONE_PATTERN")
 
 
 def test_cli_main_success_and_error(

@@ -1,4 +1,4 @@
-"""Offline unit tests for src/finetune_whisper.py."""
+"""Offline unit tests for src/training/finetune_whisper.py."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ import pytest
 import soundfile
 import torch
 
-import finetune_whisper
-from finetune_whisper import (
+from src.training import finetune_whisper
+from src.training.finetune_whisper import (
     ASR_SAMPLE_RATE,
     LazyWhisperDataset,
     TrainingSample,

@@ -5,7 +5,8 @@ Produces:
   normalized text in ``message``)
 - Validated Interface Spec v2 ``Record[]`` extractions (with ``NAME``/``PHONE`` redactions and
   resolved ``[LOCATION]`` spans)
-- ``hidden_test_outputs.csv`` matching the schema required by ``Dandelion Hidden Test.pdf``:
+- ``demo/outputs/predicted_outputs.csv`` matching the schema required by
+  ``Dandelion Hidden Test.pdf``:
   ``Message_id,anonymized_text,relevance,activity_type,participants,duplicate_of``
 """
 
@@ -15,27 +16,29 @@ import argparse
 import csv
 import json
 import re
+import sys
 import tempfile
 import time
 import zipfile
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime
 from difflib import SequenceMatcher
-from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    import clean_transcripts
-    import contracts
-    import gliner_system
-    import transcribe
-else:
-    _pkg = f"{__package__}." if __package__ else ""
-    clean_transcripts = import_module(f"{_pkg}clean_transcripts")
-    contracts = import_module(f"{_pkg}contracts")
-    gliner_system = import_module(f"{_pkg}gliner_system")
-    transcribe = import_module(f"{_pkg}transcribe")
+import jiwer
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.asr import clean_transcripts, transcribe  # noqa: E402
+from src.core import contracts  # noqa: E402
+from src.nlp import gliner_system  # noqa: E402
+
+DEFAULT_INPUT = REPO_ROOT / "demo" / "inputs" / "dandelion_audio.zip"
+DEFAULT_OUT_CSV = REPO_ROOT / "demo" / "outputs" / "predicted_outputs.csv"
+DEFAULT_EXPECTED_CSV = REPO_ROOT / "demo" / "expected" / "hidden_test_outputs.csv"
 
 CSV_COLUMNS: tuple[str, ...] = (
     "Message_id",
@@ -423,66 +426,204 @@ def write_outputs_csv(path: Path, rows: Sequence[dict[str, str]]) -> None:
             writer.writerow({col: row.get(col, "") for col in CSV_COLUMNS})
 
 
+_MESSAGE_ID_KEYS = ("Message_id", "message_id")
+_ANONYMIZED_TEXT_KEYS = ("anonymized_text", "expected_anonymized_text")
+_PLACEHOLDERS = ("[NAME]", "[LOCATION]", "[PHONE]")
+_WER_APOSTROPHES = re.compile("['\u2019]")
+_WER_NON_ALNUM = re.compile(r"[^a-z0-9]+")
+
+
+def _csv_field(row: dict[str, str], keys: str | tuple[str, ...]) -> str:
+    candidates = (keys,) if isinstance(keys, str) else keys
+    for key in candidates:
+        if key in row:
+            return row[key] or ""
+    return ""
+
+
+def _norm_message_id(raw: str) -> str:
+    stripped = raw.strip()
+    try:
+        return str(parse_numeric_message_id(stripped))
+    except ValueError:
+        return stripped.casefold()
+
+
+def _norm_dup_value(raw: str) -> str:
+    val = raw.strip().casefold()
+    if val in {"", "none", "na", "n/a", "null", "0"}:
+        return "none"
+    return _norm_message_id(val)
+
+
+def _prf1(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
+    precision = tp / (tp + fp) if (tp + fp) else 1.0
+    recall = tp / (tp + fn) if (tp + fn) else 1.0
+    f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+    return precision, recall, f1
+
+
+def _norm_wer_text(text: str) -> str:
+    lowered = text.lower()
+    without_apostrophes = _WER_APOSTROPHES.sub("", lowered)
+    return " ".join(_WER_NON_ALNUM.sub(" ", without_apostrophes).split())
+
+
+def load_csv_rows(path: Path) -> list[dict[str, str]]:
+    """Read a CSV file into a list of string dictionaries, stripping any UTF-8 BOM."""
+    with path.open("r", encoding="utf-8-sig", newline="") as handle:
+        reader = csv.DictReader(handle)
+        return [
+            {str(k): (v or "") for k, v in row.items() if k is not None}
+            for row in reader
+        ]
+
+
 def evaluate_csv_outputs(
     pred_rows: Sequence[dict[str, str]],
-    gold_rows: Sequence[dict[str, str]],
+    expected_rows: Sequence[dict[str, str]],
 ) -> dict[str, float]:
-    """Compute the four metrics recommended in ``Dandelion Hidden Test.pdf``."""
-    gold_by_id = {str(r["Message_id"]): r for r in gold_rows}
-    if len(pred_rows) != len(gold_rows):
-        raise ValueError(f"row count mismatch: {len(pred_rows)} pred vs {len(gold_rows)} gold")
+    """Compute hidden-test evaluation metrics comparing predicted vs expected CSV rows."""
+    expected_by_id = {
+        _norm_message_id(_csv_field(r, _MESSAGE_ID_KEYS)): r for r in expected_rows
+    }
+    if len(pred_rows) != len(expected_rows):
+        raise ValueError(
+            f"row count mismatch: {len(pred_rows)} pred vs {len(expected_rows)} expected"
+        )
 
     rel_ok = 0
+    tp_ev = 0
+    fp_ev = 0
+    fn_ev = 0
     attr_total = 0
     attr_ok = 0
+    act_ok = 0
+    part_ok = 0
+    dup_ok = 0
     tp_dup = 0
     fp_dup = 0
     fn_dup = 0
     placeholder_pred_count = 0
-    placeholder_gold_count = 0
+    placeholder_expected_count = 0
+    over_redaction_count = 0
 
     for pred in pred_rows:
-        mid = str(pred["Message_id"])
-        gold = gold_by_id[mid]
-        if pred["relevance"] == gold["relevance"]:
+        mid = _norm_message_id(_csv_field(pred, _MESSAGE_ID_KEYS))
+        expected = expected_by_id[mid]
+        p_rel = _csv_field(pred, "relevance").strip()
+        e_rel = _csv_field(expected, "relevance").strip()
+        if p_rel.casefold() == e_rel.casefold():
             rel_ok += 1
-        if gold["relevance"] == "Event":
+
+        p_is_ev = p_rel.casefold() == "event"
+        e_is_ev = e_rel.casefold() == "event"
+        if p_is_ev and e_is_ev:
+            tp_ev += 1
+        elif p_is_ev and not e_is_ev:
+            fp_ev += 1
+        elif not p_is_ev and e_is_ev:
+            fn_ev += 1
+
+        if e_is_ev:
             attr_total += 1
-            if (
-                pred["activity_type"].strip().casefold() == gold["activity_type"].strip().casefold()
-                and pred["participants"].strip() == gold["participants"].strip()
-            ):
+            same_act = (
+                _csv_field(pred, "activity_type").strip().casefold()
+                == _csv_field(expected, "activity_type").strip().casefold()
+            )
+            same_part = (
+                _csv_field(pred, "participants").strip()
+                == _csv_field(expected, "participants").strip()
+            )
+            if same_act:
+                act_ok += 1
+            if same_part:
+                part_ok += 1
+            if same_act and same_part:
                 attr_ok += 1
-        p_dup = pred["duplicate_of"].strip().lower()
-        g_dup = gold["duplicate_of"].strip().lower()
-        if p_dup != "none" and p_dup == g_dup:
+
+        p_dup = _norm_dup_value(_csv_field(pred, "duplicate_of"))
+        e_dup = _norm_dup_value(_csv_field(expected, "duplicate_of"))
+        if p_dup == e_dup:
+            dup_ok += 1
+        if p_dup != "none" and p_dup == e_dup:
             tp_dup += 1
-        elif p_dup != "none" and p_dup != g_dup:
+        elif p_dup != "none" and p_dup != e_dup:
             fp_dup += 1
-        elif g_dup != "none" and p_dup == "none":
+        elif e_dup != "none" and p_dup == "none":
             fn_dup += 1
 
-        for ph in ("[NAME]", "[LOCATION]", "[PHONE]"):
-            g_cnt = gold["anonymized_text"].count(ph)
-            p_cnt = pred["anonymized_text"].count(ph)
-            placeholder_gold_count += g_cnt
-            placeholder_pred_count += min(p_cnt, g_cnt)
+        e_text = _csv_field(expected, _ANONYMIZED_TEXT_KEYS)
+        p_text = _csv_field(pred, _ANONYMIZED_TEXT_KEYS)
+        for ph in _PLACEHOLDERS:
+            e_cnt = e_text.count(ph)
+            p_cnt = p_text.count(ph)
+            placeholder_expected_count += e_cnt
+            placeholder_pred_count += min(p_cnt, e_cnt)
+            if p_cnt > e_cnt:
+                over_redaction_count += p_cnt - e_cnt
 
-    n = len(gold_rows) or 1
-    precision = tp_dup / (tp_dup + fp_dup) if (tp_dup + fp_dup) else 1.0
-    recall = tp_dup / (tp_dup + fn_dup) if (tp_dup + fn_dup) else 1.0
-    dup_f1 = (2 * precision * recall / (precision + recall)) if (precision + recall) else 0.0
+    n = len(expected_rows) or 1
+    ev_p, ev_r, ev_f1 = _prf1(tp_ev, fp_ev, fn_ev)
+    _, _, dup_f1 = _prf1(tp_dup, fp_dup, fn_dup)
     return {
         "classification_accuracy_pct": round(100.0 * rel_ok / n, 2),
+        "event_precision_pct": round(100.0 * ev_p, 2),
+        "event_recall_pct": round(100.0 * ev_r, 2),
+        "event_f1_pct": round(100.0 * ev_f1, 2),
         "ner_redaction_recall_pct": round(
-            100.0 * placeholder_pred_count / placeholder_gold_count, 2
+            100.0 * placeholder_pred_count / placeholder_expected_count, 2
         )
-        if placeholder_gold_count
+        if placeholder_expected_count
         else 100.0,
+        "ner_over_redaction_count": float(over_redaction_count),
         "attribute_exact_match_pct": (
             round(100.0 * attr_ok / attr_total, 2) if attr_total else 100.0
         ),
+        "activity_exact_match_pct": (
+            round(100.0 * act_ok / attr_total, 2) if attr_total else 100.0
+        ),
+        "participants_exact_match_pct": (
+            round(100.0 * part_ok / attr_total, 2) if attr_total else 100.0
+        ),
         "duplication_f1_pct": round(100.0 * dup_f1, 2),
+        "duplication_accuracy_pct": round(100.0 * dup_ok / n, 2),
+    }
+
+
+def evaluate_transcript_wer(
+    messages: Sequence[dict[str, Any]],
+    expected_rows: Sequence[dict[str, str]],
+) -> dict[str, float]:
+    """Compute corpus-level raw and cleaned ASR WER against expected ``transcript`` rows."""
+    expected_by_id = {
+        _norm_message_id(_csv_field(r, _MESSAGE_ID_KEYS)): r for r in expected_rows
+    }
+    refs: list[str] = []
+    raw_hyps: list[str] = []
+    clean_hyps: list[str] = []
+
+    for msg in messages:
+        mid = _norm_message_id(str(msg["id"]))
+        expected = expected_by_id.get(mid)
+        if expected is None:
+            continue
+        ref = _norm_wer_text(_csv_field(expected, "transcript"))
+        if not ref:
+            continue
+        refs.append(ref)
+        raw_text = msg.get("asr_text")
+        clean_text = msg.get("message")
+        raw_hyps.append(_norm_wer_text(str(raw_text if raw_text is not None else clean_text or "")))
+        clean_hyps.append(_norm_wer_text(str(clean_text or "")))
+
+    if not refs:
+        return {}
+    raw_out = jiwer.process_words(refs, raw_hyps)
+    clean_out = jiwer.process_words(refs, clean_hyps)
+    return {
+        "asr_raw_wer_pct": round(100.0 * float(raw_out.wer), 2),
+        "asr_clean_wer_pct": round(100.0 * float(clean_out.wer), 2),
     }
 
 
@@ -490,7 +631,7 @@ def run_hidden_test_pipeline(
     *,
     input_audio: Path | None = None,
     transcripts_path: Path | None = None,
-    out_csv: Path = Path("hidden_test_outputs.csv"),
+    out_csv: Path = DEFAULT_OUT_CSV,
     artifacts_dir: Path | None = None,
     clean: bool = True,
     make_asr: Callable[..., transcribe.ASRBackend] = transcribe.make_whisper,
@@ -545,10 +686,10 @@ def run_hidden_test_pipeline(
 
     if artifacts_dir is not None:
         artifacts_dir.mkdir(parents=True, exist_ok=True)
-        contracts.write_json(artifacts_dir / "hidden_test_transcripts.json", messages)
-        contracts.write_json(artifacts_dir / "hidden_test_records.json", records)
+        contracts.write_json(artifacts_dir / "predicted_transcripts.json", messages)
+        contracts.write_json(artifacts_dir / "predicted_records.json", records)
         if meta is not None:
-            (artifacts_dir / "hidden_test_transcripts.meta.json").write_text(
+            (artifacts_dir / "predicted_transcripts.meta.json").write_text(
                 json.dumps(meta, indent=2, ensure_ascii=False) + "\n",
                 encoding="utf-8",
                 newline="\n",
@@ -560,10 +701,16 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the Dandelion hidden-test pipeline (Whisper + GLiNER + dedup -> CSV)."
     )
-    parser.add_argument("--input", type=Path, default=Path("dandelion_audio.zip"))
+    parser.add_argument("--input", type=Path, default=DEFAULT_INPUT)
     parser.add_argument("--transcripts", type=Path, default=None)
-    parser.add_argument("--out", type=Path, default=Path("hidden_test_outputs.csv"))
+    parser.add_argument("--out", type=Path, default=DEFAULT_OUT_CSV)
     parser.add_argument("--artifacts-dir", type=Path, default=None)
+    parser.add_argument(
+        "--expected",
+        type=Path,
+        default=None,
+        help="Optional expected CSV path to compute validation metrics.",
+    )
     parser.add_argument("--no-clean", action="store_true")
     parser.add_argument("--model", default=None)
     parser.add_argument("--device", default="auto")
@@ -583,7 +730,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         device=args.device,
         batch_size=args.batch_size,
     )
-    print(f"Wrote {len(rows)} hidden test rows -> {args.out}")
+    print(f"Wrote {len(rows)} predicted rows -> {args.out}")
+    if args.expected is not None:
+        metrics = evaluate_csv_outputs(rows, load_csv_rows(args.expected))
+        print("Validation metrics:", json.dumps(metrics, indent=2))
     return 0
 
 

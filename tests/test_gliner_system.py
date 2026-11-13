@@ -1,4 +1,4 @@
-"""Unit tests for src/gliner_system.py (fast offline tests without downloading weights)."""
+"""Unit tests for src/nlp/gliner_system.py (fast offline tests without downloading weights)."""
 
 from __future__ import annotations
 
@@ -8,12 +8,12 @@ from typing import Any
 
 import pytest
 
-SRC = Path(__file__).resolve().parent.parent / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-import contracts  # noqa: E402
-import gliner_system  # noqa: E402
+from src.core import contracts  # noqa: E402
+from src.nlp import gliner_system  # noqa: E402
 
 
 class FakeGLiNERSystem(gliner_system.GLiNERSystem):

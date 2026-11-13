@@ -25,9 +25,12 @@ import numpy as np
 import numpy.typing as npt
 import soundfile
 
-import contracts
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from src.core import contracts  # noqa: E402
+
 DEFAULT_CONFIG = "en_us"
 DEFAULT_SPLIT = "test"
 DEFAULT_LIMIT = 20
@@ -269,7 +272,7 @@ def fetch_fleurs(
 
     manifest: dict[str, Any] = {
         "generator": {
-            "script": "src/fetch_fleurs.py",
+            "script": "src/training/fetch_fleurs.py",
             "created_utc": format_utc(now()),
             "dataset": DATASET_ID,
             "config": config,

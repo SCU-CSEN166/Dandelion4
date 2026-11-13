@@ -1,4 +1,4 @@
-"""Unit tests for src/hidden_test_pipeline.py (MP4/zip, dedup, CSV schema, metrics)."""
+"""Unit tests for src/pipeline/hidden_test_pipeline.py (MP4/zip, dedup, CSV schema, metrics)."""
 
 from __future__ import annotations
 
@@ -12,13 +12,13 @@ import av
 import numpy as np
 import pytest
 
-SRC = Path(__file__).resolve().parent.parent / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
+REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-import gliner_system  # noqa: E402
-import hidden_test_pipeline  # noqa: E402
-import transcribe  # noqa: E402
+from src.asr import transcribe  # noqa: E402
+from src.nlp import gliner_system  # noqa: E402
+from src.pipeline import hidden_test_pipeline  # noqa: E402
 
 
 class _FakeASR:
@@ -147,7 +147,7 @@ def test_end_to_end_pipeline_zip_dedup_and_csv_schema(tmp_path: Path) -> None:
             "kitchen garden training for women farmers. 18 women attended. Call 0712-000765."
         ),
     ]
-    out_csv = tmp_path / "hidden_test_outputs.csv"
+    out_csv = tmp_path / "predicted_outputs.csv"
     artifacts_dir = tmp_path / "artifacts"
 
     rows = hidden_test_pipeline.run_hidden_test_pipeline(
@@ -159,6 +159,8 @@ def test_end_to_end_pipeline_zip_dedup_and_csv_schema(tmp_path: Path) -> None:
         nlp_system=_StubNLP(),
     )
     assert len(rows) == 4
+    assert (artifacts_dir / "predicted_transcripts.json").is_file()
+    assert (artifacts_dir / "predicted_records.json").is_file()
     with out_csv.open(encoding="utf-8", newline="") as handle:
         reader = list(csv.DictReader(handle))
     assert list(reader[0].keys()) == list(hidden_test_pipeline.CSV_COLUMNS)
@@ -190,12 +192,68 @@ def test_end_to_end_pipeline_zip_dedup_and_csv_schema(tmp_path: Path) -> None:
     metrics = hidden_test_pipeline.evaluate_csv_outputs(reader, reader)
     assert metrics == {
         "classification_accuracy_pct": 100.0,
+        "event_precision_pct": 100.0,
+        "event_recall_pct": 100.0,
+        "event_f1_pct": 100.0,
         "ner_redaction_recall_pct": 100.0,
+        "ner_over_redaction_count": 0.0,
         "attribute_exact_match_pct": 100.0,
+        "activity_exact_match_pct": 100.0,
+        "participants_exact_match_pct": 100.0,
         "duplication_f1_pct": 100.0,
+        "duplication_accuracy_pct": 100.0,
     }
 
 
 def test_parse_numeric_message_id_errors_on_missing_number() -> None:
     with pytest.raises(ValueError, match="cannot parse numeric message id"):
         hidden_test_pipeline.parse_numeric_message_id("no_digits_here")
+
+
+def test_evaluate_expected_schema_and_transcript_wer(tmp_path: Path) -> None:
+    expected_csv = tmp_path / "expected.csv"
+    expected_csv.write_text(
+        "\ufeffmessage_id,relevance,activity_type,participants,duplicate_of,"
+        "expected_anonymized_text,transcript\n"
+        'msg01.mp4,Event,Family planning,12,none,"Hi [NAME] at [LOCATION]",'
+        '"Hi Grace at Nakuru"\n'
+        'msg02.mp4,Chit-chat,,,"msg01.mp4","Thanks [NAME]",'
+        '"Thanks Peter"\n',
+        encoding="utf-8",
+    )
+    expected_rows = hidden_test_pipeline.load_csv_rows(expected_csv)
+    pred_rows = [
+        {
+            "Message_id": "1",
+            "relevance": "Event",
+            "activity_type": "Family planning",
+            "participants": "12",
+            "duplicate_of": "none",
+            "anonymized_text": "Hi [NAME] at [LOCATION] [PHONE]",
+        },
+        {
+            "Message_id": "2",
+            "relevance": "Event",
+            "activity_type": "",
+            "participants": "",
+            "duplicate_of": "none",
+            "anonymized_text": "Thanks Peter",
+        },
+    ]
+    metrics = hidden_test_pipeline.evaluate_csv_outputs(pred_rows, expected_rows)
+    assert metrics["classification_accuracy_pct"] == 50.0
+    assert metrics["event_precision_pct"] == 50.0
+    assert metrics["event_recall_pct"] == 100.0
+    assert metrics["attribute_exact_match_pct"] == 100.0
+    assert metrics["ner_redaction_recall_pct"] == 66.67
+    assert metrics["ner_over_redaction_count"] == 1.0
+    assert metrics["duplication_f1_pct"] == 0.0
+    assert metrics["duplication_accuracy_pct"] == 50.0
+
+    messages = [
+        {"id": "msg01.mp4", "asr_text": "Hi Grace uh at Nakuru", "message": "Hi Grace at Nakuru"},
+        {"id": "msg02.mp4", "asr_text": "Thanks Peter", "message": "Thanks Peter"},
+    ]
+    wer_metrics = hidden_test_pipeline.evaluate_transcript_wer(messages, expected_rows)
+    assert wer_metrics["asr_raw_wer_pct"] > 0.0
+    assert wer_metrics["asr_clean_wer_pct"] == 0.0

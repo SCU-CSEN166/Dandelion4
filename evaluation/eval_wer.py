@@ -37,6 +37,8 @@ Record = dict[str, Any]
 RunBaseline = Callable[[Path], list[Record]]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 VERSIONS: tuple[str, ...] = ("clean", "noisy", "phone")
 SYSTEMS: tuple[str, ...] = ("original_text", *VERSIONS)
@@ -590,7 +592,7 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point. Stops (SystemExit with a message) on any input error."""
     args = build_parser().parse_args(argv)
-    import baseline_runner  # CLI shell only: evaluate() itself never imports M3
+    from evaluation import baseline_runner  # CLI shell only: evaluate() itself never imports M3
 
     raw_predictions: dict[str, list[Record]] = {}
 

@@ -1,6 +1,6 @@
 """M3 - Baseline runner: run the unmodified text baseline without touching the repo.
 
-``src/baseline.py`` runs all of its code at import time and always writes
+``src/legacy/baseline.py`` runs all of its code at import time and always writes
 ``examples/baseline_output.json`` relative to the current working directory. This module
 runs it as a subprocess inside a temporary working directory, so the committed
 ``examples/baseline_output.json`` is never overwritten, and returns the records it wrote.
@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_BASELINE_SCRIPT = REPO_ROOT / "src" / "baseline.py"
+DEFAULT_BASELINE_SCRIPT = REPO_ROOT / "src" / "legacy" / "baseline.py"
 TIMEOUT_SECONDS = 60
 OUTPUT_RELATIVE_PATH = Path("examples") / "baseline_output.json"
 

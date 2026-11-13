@@ -35,7 +35,7 @@ import numpy as np
 import numpy.typing as npt
 import soundfile as sf
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 SELECTED_REPORT_IDS = [
     "msg_001", "msg_002", "msg_003", "msg_004", "msg_005", "msg_006",
@@ -590,7 +590,7 @@ def generate(
 
     manifest: dict[str, Any] = {
         "generator": {
-            "script": "src/make_audio.py",
+            "script": "src/training/make_audio.py",
             "created_utc": created,
             "tts_backend": tts.name,
             "tts_backend_version": tts.version,

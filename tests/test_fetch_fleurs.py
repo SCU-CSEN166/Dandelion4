@@ -1,4 +1,4 @@
-"""Offline unit tests for src/fetch_fleurs.py."""
+"""Offline unit tests for src/training/fetch_fleurs.py."""
 
 from __future__ import annotations
 
@@ -14,10 +14,10 @@ import numpy.typing as npt
 import pytest
 import soundfile
 
-import contracts
-import fetch_fleurs
-import transcribe
-from fetch_fleurs import FleursSample, main, to_mono_16k
+from src.asr import transcribe
+from src.core import contracts
+from src.training import fetch_fleurs
+from src.training.fetch_fleurs import FleursSample, main, to_mono_16k
 
 FIXED_NOW = datetime(2026, 11, 13, 9, 0, 0, tzinfo=UTC)
 
@@ -69,7 +69,7 @@ def test_fetch_fleurs_writes_wavs_manifest_and_valid_messages(tmp_path: Path) ->
         now=lambda: FIXED_NOW,
     )
 
-    assert manifest["generator"]["script"] == "src/fetch_fleurs.py"
+    assert manifest["generator"]["script"] == "src/training/fetch_fleurs.py"
     assert manifest["generator"]["created_utc"] == "2026-11-13T09:00:00Z"
     assert manifest["generator"]["dataset"] == "google/fleurs"
     assert manifest["generator"]["config"] == "en_us"

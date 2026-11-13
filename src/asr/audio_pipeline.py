@@ -30,19 +30,16 @@ from datetime import UTC, datetime
 from importlib import import_module
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
+from numpy.typing import NDArray
 
-    import clean_transcripts
-    import contracts
-    import transcribe
-else:
-    _pkg = f"{__package__}." if __package__ else ""
-    clean_transcripts = import_module(f"{_pkg}clean_transcripts")
-    contracts = import_module(f"{_pkg}contracts")
-    transcribe = import_module(f"{_pkg}transcribe")
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from src.asr import clean_transcripts, transcribe  # noqa: E402
+from src.core import contracts  # noqa: E402
 
 JsonDict = dict[str, Any]
 ProcessMessagesFn = Callable[[list[JsonDict]], list[JsonDict]]
@@ -66,13 +63,9 @@ class PipelineResult:
 
 def _import_baseline_runner() -> Any:
     """Import evaluation/baseline_runner.py regardless of current sys.path layout."""
-    try:
-        return import_module("baseline_runner")
-    except ModuleNotFoundError:
-        eval_dir = str(transcribe.REPO_ROOT / "evaluation")
-        if eval_dir not in sys.path:
-            sys.path.insert(0, eval_dir)
-        return import_module("baseline_runner")
+    from evaluation import baseline_runner
+
+    return baseline_runner
 
 
 def _display_model(model_id: str, repo_root: Path = transcribe.REPO_ROOT) -> str:

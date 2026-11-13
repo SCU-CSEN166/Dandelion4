@@ -1,4 +1,4 @@
-"""Offline unit tests for src/clean_transcripts.py."""
+"""Offline unit tests for src/asr/clean_transcripts.py."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from typing import Any
 
 import pytest
 
-import clean_transcripts
-import contracts
+from src.asr import clean_transcripts
+from src.core import contracts
 
 
 @pytest.mark.parametrize(

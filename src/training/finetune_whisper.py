@@ -3,7 +3,7 @@
 Streams samples from ``intronhealth/afrispeech-200`` (filtered to Kenyan accents by default,
 or all accents with ``--all-accents``) and optionally mixes in a local audio manifest
 (``audio_manifest.json`` format), trains a PEFT LoRA adapter on ``WhisperForConditionalGeneration``,
-and merges + saves the resulting model + processor so ``src/transcribe.py --model <out-dir>``
+and merges + saves the resulting model + processor so ``src/asr/transcribe.py --model <out-dir>``
 can load it directly.
 """
 
@@ -22,7 +22,7 @@ import numpy as np
 import numpy.typing as npt
 import soundfile
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_BASE_MODEL = "openai/whisper-small"
 DEFAULT_DATASET = "robello2/mini_afrispeech"
 DEFAULT_DATASET_CONFIG = "default"

@@ -22,20 +22,18 @@ from __future__ import annotations
 import argparse
 import copy
 import re
+import sys
 import unicodedata
-from importlib import import_module
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    import clean_transcripts
-    import contracts
-else:
-    _pkg = f"{__package__}." if __package__ else ""
-    clean_transcripts = import_module(f"{_pkg}clean_transcripts")
-    contracts = import_module(f"{_pkg}contracts")
+REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+from src.asr import clean_transcripts  # noqa: E402
+from src.core import contracts  # noqa: E402
+
 MODEL_ID = "urchade/gliner_medium-v2.1"
 LOCAL_MODEL_DIR = REPO_ROOT / "models" / "gliner_medium-v2.1"
 LOCAL_DEBERTA_DIR = REPO_ROOT / "models" / "deberta-v3-base"
@@ -765,8 +763,10 @@ class GLiNERSystem:
 
     def _load_model(self) -> Any:
         if self._model is None:  # pragma: no cover - requires model weights
+            import importlib
+
             resolved, local_only = resolve_gliner_model(self.model_id)
-            gliner = import_module("gliner")
+            gliner = importlib.import_module("gliner")
             model_path = Path(resolved)
             if (
                 local_only

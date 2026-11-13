@@ -1,4 +1,4 @@
-"""Tests for M1 src/make_audio.py (design §3, §8.2). No network unless marked slow."""
+"""Tests for M1 src/training/make_audio.py (design §3, §8.2). No network unless marked slow."""
 
 from __future__ import annotations
 
@@ -15,8 +15,8 @@ import numpy.typing as npt
 import pytest
 import soundfile as sf
 
-import make_audio
-from make_audio import (
+from src.training import make_audio
+from src.training.make_audio import (
     SELECTED_CHAT_IDS,
     SELECTED_IDS,
     SELECTED_REPORT_IDS,
@@ -140,7 +140,7 @@ def validate_manifest(manifest: dict[str, Any], root: Path, n_messages: int) -> 
     assert list(manifest) == ["generator", "clips"]
     gen = manifest["generator"]
     assert list(gen) == GENERATOR_KEYS
-    assert gen["script"] == "src/make_audio.py"
+    assert gen["script"] == "src/training/make_audio.py"
     assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ", gen["created_utc"])
     assert gen["voices"] == VOICES
     assert gen["source_messages"] == "examples/synthetic_messages.json"
@@ -490,10 +490,10 @@ def test_edge_tts_backend_decodes_its_mp3(monkeypatch: pytest.MonkeyPatch) -> No
 
 
 def test_edge_tts_is_imported_lazily(repo_root: Path) -> None:
-    code = "import sys, make_audio; print('edge_tts' in sys.modules)"
+    code = "import sys; from src.training import make_audio; print('edge_tts' in sys.modules)"
     result = subprocess.run(
         [sys.executable, "-c", code],
-        cwd=repo_root / "src",
+        cwd=repo_root,
         capture_output=True,
         text=True,
         check=True,

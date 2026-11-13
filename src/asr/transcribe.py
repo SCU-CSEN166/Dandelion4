@@ -26,7 +26,7 @@ import numpy as np
 import numpy.typing as npt
 import soundfile
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_MANIFEST = REPO_ROOT / "examples" / "audio_manifest.json"
 DEFAULT_OUT_DIR = REPO_ROOT / "examples"
 BASE_MODEL = "openai/whisper-large-v3-turbo"
@@ -227,11 +227,13 @@ def write_json(path: Path, data: object) -> None:
 
 
 def _import_contracts() -> Any:
-    """Import the sibling contracts module in both script and package modes."""
+    """Import ``src.core.contracts`` (falling back to ``contracts`` if run standalone)."""
     import importlib
 
-    module_name = f"{__package__}.contracts" if __package__ else "contracts"
-    return importlib.import_module(module_name)
+    try:
+        return importlib.import_module("src.core.contracts")
+    except ModuleNotFoundError:  # pragma: no cover
+        return importlib.import_module("contracts")
 
 
 def validate_transcript_records(records: Sequence[Record]) -> list[str]:
