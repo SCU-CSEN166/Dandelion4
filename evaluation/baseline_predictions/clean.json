@@ -20,22 +20,22 @@
     "relevant": true,
     "activity_type": "health_referral",
     "location": "Nakuru",
-    "reported_count": null,
+    "reported_count": 6,
     "verification_status": "pending"
   },
   {
     "id": "msg_004",
-    "relevant": false,
-    "activity_type": null,
-    "location": "Baringo",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": null,
     "reported_count": 40,
-    "verification_status": "not_applicable"
+    "verification_status": "pending"
   },
   {
     "id": "msg_005",
     "relevant": true,
     "activity_type": "health_referral",
-    "location": null,
+    "location": "Narok",
     "reported_count": 33,
     "verification_status": "pending"
   },
@@ -83,7 +83,7 @@
     "id": "msg_012",
     "relevant": false,
     "activity_type": null,
-    "location": null,
+    "location": "Kajiado",
     "reported_count": 22,
     "verification_status": "not_applicable"
   },
@@ -107,8 +107,8 @@
     "id": "msg_016",
     "relevant": true,
     "activity_type": "household_outreach",
-    "location": null,
-    "reported_count": null,
+    "location": "Narok",
+    "reported_count": 7,
     "verification_status": "pending"
   },
   {
@@ -123,7 +123,7 @@
     "id": "msg_018",
     "relevant": true,
     "activity_type": "health_referral",
-    "location": null,
+    "location": "Kajiado",
     "reported_count": null,
     "verification_status": "pending"
   },
@@ -140,14 +140,14 @@
     "relevant": true,
     "activity_type": "health_referral",
     "location": "Nakuru",
-    "reported_count": null,
+    "reported_count": 8,
     "verification_status": "pending"
   },
   {
     "id": "msg_023",
     "relevant": true,
     "activity_type": "health_referral",
-    "location": null,
+    "location": "Narok",
     "reported_count": null,
     "verification_status": "pending"
   },
@@ -155,7 +155,7 @@
     "id": "msg_024",
     "relevant": true,
     "activity_type": "household_outreach",
-    "location": null,
+    "location": "Narok",
     "reported_count": 48,
     "verification_status": "pending"
   },
@@ -180,7 +180,7 @@
     "relevant": true,
     "activity_type": "community_meeting",
     "location": "Nakuru",
-    "reported_count": null,
+    "reported_count": 6,
     "verification_status": "pending"
   },
   {
@@ -188,7 +188,7 @@
     "relevant": true,
     "activity_type": "community_meeting",
     "location": "Baringo",
-    "reported_count": null,
+    "reported_count": 8,
     "verification_status": "pending"
   },
   {

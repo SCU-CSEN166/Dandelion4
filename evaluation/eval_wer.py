@@ -182,15 +182,21 @@ def reference_location(ref: str) -> str | None:
     return None
 
 
-def location_token_ok(ref: str, hyp: str) -> bool | None:
-    """True if the reference's location (lowercase) is a token of the normalized hypothesis.
+def location_token_ok(
+    ref: str, hyp: str, expected_location: str | None = None
+) -> bool | None:
+    """True if the expected location appears in the normalized hypothesis.
 
-    Returns ``None`` if the reference contains no location.
+    Uses ``expected_location`` when provided; otherwise falls back to ``reference_location(ref)``.
+    Returns ``None`` if neither provides a location.
     """
-    location = reference_location(ref)
+    location = reference_location(ref) if expected_location is None else expected_location
     if location is None:
         return None
-    return location.lower() in normalize(hyp).split()
+    needle = normalize(location).split()
+    if not needle:
+        return None
+    return _contains_sequence(normalize(hyp).split(), needle)
 
 
 def classification_ok(pred: Record, gold: Record) -> bool:
@@ -367,11 +373,18 @@ def evaluate(
 
     def gold_for(message_id: str) -> Record:
         original = predictions["original_text"][message_id]
+        gold_entry = expected_index[message_id]
         return {
-            "relevant": expected_index[message_id]["relevant"],
-            "activity_type": expected_index[message_id]["activity_type"],
-            "location": original["location"],
-            "reported_count": original["reported_count"],
+            "relevant": gold_entry["relevant"],
+            "activity_type": gold_entry["activity_type"],
+            "location": (
+                gold_entry["location"] if "location" in gold_entry else original["location"]
+            ),
+            "reported_count": (
+                gold_entry["reported_count"]
+                if "reported_count" in gold_entry
+                else original["reported_count"]
+            ),
         }
 
     original_acc, original_n = _ratio_pct(
@@ -382,10 +395,13 @@ def evaluate(
     per_version: dict[str, list[Record]] = {v: [] for v in VERSIONS}
     for message_id in ids:
         gold = gold_for(message_id)
+        gold_location = expected_index[message_id].get("location")
         for version in VERSIONS:
             clip = clip_index[(message_id, version)]
             reference = clip["reference_text"]
-            hypothesis = transcript_index[version][message_id]["message"]
+            transcript = transcript_index[version][message_id]
+            asr_raw = transcript.get("asr_text")
+            hypothesis = transcript["message"] if asr_raw is None else asr_raw
             stats = wer_stats(reference, hypothesis)
             raw_pred = predictions[version][message_id]
             pred = {field: raw_pred[field] for field in PRED_FIELDS}
@@ -405,7 +421,7 @@ def evaluate(
                 "ref_words": stats["ref_words"],
                 "hyp_words": stats["hyp_words"],
                 "number_token_ok": number_token_ok(reference, hypothesis),
-                "location_token_ok": location_token_ok(reference, hypothesis),
+                "location_token_ok": location_token_ok(reference, hypothesis, gold_location),
                 "pred": pred,
                 "gold": dict(gold),
                 "count_field_ok": (
@@ -561,6 +577,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--expected", type=Path, default=REPO_ROOT / "examples" / "expected_outputs.json"
     )
+    parser.add_argument(
+        "--predictions-dir",
+        type=Path,
+        default=None,
+        help="directory of precomputed Record files (original_text, clean, noisy, phone)",
+    )
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "evaluation" / "wer_results.json")
     return parser
 
@@ -572,7 +594,12 @@ def main(argv: list[str] | None = None) -> int:
 
     raw_predictions: dict[str, list[Record]] = {}
 
-    def recording_baseline(input_json: Path) -> list[Record]:
+    def run_system(input_json: Path) -> list[Record]:
+        if args.predictions_dir is not None:
+            pred_path = args.predictions_dir / f"{input_json.stem}.json"
+            records: list[Record] = _load_json(pred_path)
+            raw_predictions[input_json.stem] = records
+            return records
         records = baseline_runner.run_baseline(input_json)
         raw_predictions[input_json.stem] = records
         return records
@@ -588,7 +615,7 @@ def main(argv: list[str] | None = None) -> int:
                 transcripts,
                 messages,
                 expected,
-                recording_baseline,
+                run_system,
                 Path(tmp),
                 manifest_path=_display_path(args.manifest),
                 asr_model=read_asr_model(args.transcripts_dir),
@@ -600,14 +627,16 @@ def main(argv: list[str] | None = None) -> int:
     out_path: Path = args.out
     out_path.parent.mkdir(parents=True, exist_ok=True)
     _write_json(out_path, rounded)
-    predictions_dir = out_path.parent / "baseline_predictions"
-    predictions_dir.mkdir(parents=True, exist_ok=True)
-    for system in SYSTEMS:
-        _write_json(predictions_dir / f"{system}.json", raw_predictions[system])
+    if args.predictions_dir is None:
+        predictions_dir = out_path.parent / "baseline_predictions"
+        predictions_dir.mkdir(parents=True, exist_ok=True)
+        for system in SYSTEMS:
+            _write_json(predictions_dir / f"{system}.json", raw_predictions[system])
 
     print(format_summary_table(rounded["summary"]))
     print(f"\nResults written to {out_path}")
-    print(f"Baseline predictions written to {predictions_dir}")
+    if args.predictions_dir is None:
+        print(f"Baseline predictions written to {predictions_dir}")
     return 0
 
 

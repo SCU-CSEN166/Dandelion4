@@ -625,6 +625,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=1234)
     parser.add_argument("--noise-dir", type=Path, default=None, help="default: pink noise")
     parser.add_argument("--force", action="store_true", help="ignore the TTS cache")
+    parser.add_argument(
+        "--ids",
+        nargs="+",
+        default=None,
+        help="message IDs to voice, or 'all' for all in --messages (default: 30 Week 7 IDs)",
+    )
     return parser.parse_args(argv)
 
 
@@ -641,14 +647,20 @@ def main(
         noise: NoiseSource = (
             PinkNoiseSource() if args.noise_dir is None else FileNoiseSource(args.noise_dir)
         )
+        messages = load_messages(args.messages)
+        if args.ids == ["all"]:
+            ids: list[str] | None = [m["id"] for m in messages]
+        else:
+            ids = args.ids
         manifest = generate(
-            load_messages(args.messages),
+            messages,
             tts=tts_factory(),
             noise=noise,
             out_dir=args.out_dir,
             manifest_path=args.manifest,
             settings=settings,
             source_messages=args.messages,
+            ids=ids,
         )
     except (ValueError, TTSError, SNRError, OSError) as error:
         print(f"error: {error}", file=sys.stderr)

@@ -3,8 +3,8 @@
 Reads the clips of one or all versions (clean, noisy, phone) from the audio manifest,
 transcribes them in English with greedy decoding, and writes for each version:
 
-- ``<out-dir>/transcripts_<version>.json``: the existing message format
-  (``id``, ``sender_id``, ``message``), so ``src/baseline.py`` can read it unchanged.
+- ``<out-dir>/transcripts_<version>.json``: the v2 message format
+  (``id``, ``sender_id``, ``source``, ``message``), with ``source="audio"``.
 - ``<out-dir>/transcripts_<version>.meta.json``: model and runtime facts for the run.
 
 The core functions contain no model code. ``torch`` and ``transformers`` are imported
@@ -29,7 +29,19 @@ import soundfile
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_MANIFEST = REPO_ROOT / "examples" / "audio_manifest.json"
 DEFAULT_OUT_DIR = REPO_ROOT / "examples"
-DEFAULT_MODEL = "openai/whisper-large-v3-turbo"
+BASE_MODEL = "openai/whisper-large-v3-turbo"
+FINETUNED_MODEL_DIR = REPO_ROOT / "models" / "whisper-large-v3-turbo-v3"
+
+
+def resolve_default_model(model_dir: Path | None = None) -> str:
+    """Return the local fine-tuned checkpoint path when present, else BASE_MODEL."""
+    target = FINETUNED_MODEL_DIR if model_dir is None else model_dir
+    if (target / "config.json").is_file():
+        return str(target)
+    return BASE_MODEL
+
+
+DEFAULT_MODEL = resolve_default_model()
 DEFAULT_BATCH_SIZE = 8
 
 VERSIONS: tuple[str, ...] = ("clean", "noisy", "phone")
@@ -44,6 +56,7 @@ ASR_METADATA_KEYS: tuple[str, ...] = (
     "language",
     "task",
     "decoding",
+    "initial_prompt",
     "device",
     "dtype",
     "torch_version",
@@ -109,7 +122,7 @@ def load_for_asr(wave: npt.NDArray[Any], sr: int) -> FloatArray:
 
 
 def to_transcript_records(clips: Sequence[Clip], texts: Sequence[str]) -> list[Record]:
-    """Zip clips with texts into {"id": message_id, "sender_id", "message": text.strip()}.
+    """Zip clips with texts into {"id", "sender_id", "source": "audio", "message": text.strip()}.
 
     Raises ValueError if the lengths differ.
     """
@@ -119,6 +132,7 @@ def to_transcript_records(clips: Sequence[Clip], texts: Sequence[str]) -> list[R
         {
             "id": str(clip["message_id"]),
             "sender_id": str(clip["sender_id"]),
+            "source": "audio",
             "message": text.strip(),
         }
         for clip, text in zip(clips, texts, strict=True)
@@ -182,12 +196,36 @@ def write_json(path: Path, data: object) -> None:
     path.write_text(text, encoding="utf-8", newline="\n")
 
 
+def _import_contracts() -> Any:
+    """Import the sibling contracts module in both script and package modes."""
+    import importlib
+
+    module_name = f"{__package__}.contracts" if __package__ else "contracts"
+    return importlib.import_module(module_name)
+
+
+def validate_transcript_records(records: Sequence[Record]) -> list[str]:
+    """Return Interface Spec v2 ``transcripts`` validation problems (empty if valid)."""
+    problems = _import_contracts().validate_file("transcripts", list(records))
+    return [str(problem) for problem in problems]
+
+
 def write_transcripts(path: Path, records: Sequence[Record]) -> None:
-    """Write transcript records in the message format, sorted by id, keys in contract order."""
-    ordered = [
-        {"id": r["id"], "sender_id": r["sender_id"], "message": r["message"]}
-        for r in sorted(records, key=lambda r: r["id"])
-    ]
+    """Validate and write transcript records in Interface Spec v2 Message format."""
+    ordered: list[Record] = []
+    for r in sorted(records, key=lambda rec: str(rec.get("id", ""))):
+        item: Record = {
+            "id": r["id"],
+            "sender_id": r["sender_id"],
+            "source": r.get("source", "audio"),
+            "message": r["message"],
+        }
+        if "asr_text" in r:
+            item["asr_text"] = r["asr_text"]
+        ordered.append(item)
+    problems = validate_transcript_records(ordered)
+    if problems:
+        raise ValueError("Invalid transcript records:\n" + "\n".join(problems))
     write_json(path, ordered)
 
 
@@ -226,13 +264,20 @@ class WhisperASR:
     no timestamps. float16 on CUDA, float32 otherwise.
     """
 
-    def __init__(self, model_id: str, device: str, batch_size: int = DEFAULT_BATCH_SIZE) -> None:
+    def __init__(
+        self,
+        model_id: str,
+        device: str,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        initial_prompt: str | None = None,
+    ) -> None:
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         self.model_id = model_id
         self.device = device
         self.batch_size = batch_size
-        self._pipe: Callable[..., Any] | None = None
+        self.initial_prompt = initial_prompt
+        self._pipe: Any = None
 
     @property
     def dtype_name(self) -> str:
@@ -264,11 +309,16 @@ class WhisperASR:
             return []
         self.load()
         assert self._pipe is not None
+        generate_kwargs: dict[str, Any] = {"language": LANGUAGE, "task": TASK, **DECODING}
+        if self.initial_prompt:
+            generate_kwargs["prompt_ids"] = self._pipe.tokenizer.get_prompt_ids(
+                self.initial_prompt, return_tensors="pt"
+            )
         outputs = self._pipe(
             [{"raw": wave, "sampling_rate": ASR_SAMPLE_RATE} for wave in waves],
             batch_size=self.batch_size,
             return_timestamps=False,
-            generate_kwargs={"language": LANGUAGE, "task": TASK, **DECODING},
+            generate_kwargs=generate_kwargs,
         )
         if len(outputs) != len(waves):
             raise RuntimeError(f"pipeline returned {len(outputs)} results for {len(waves)} clips")
@@ -281,6 +331,7 @@ class WhisperASR:
             "language": LANGUAGE,
             "task": TASK,
             "decoding": dict(DECODING),
+            "initial_prompt": self.initial_prompt,
             "device": self.device,
             "dtype": self.dtype_name,
             "torch_version": _package_version("torch"),
@@ -345,11 +396,16 @@ def transcribe_versions(
     return written
 
 
-def make_whisper(model_id: str, device: str, batch_size: int) -> ASRBackend:
+def make_whisper(
+    model_id: str,
+    device: str,
+    batch_size: int,
+    initial_prompt: str | None = None,
+) -> ASRBackend:
     """Resolve the device, print it, and return an (unloaded) WhisperASR."""
     resolved = resolve_device(device)
     print(f"device: {resolved}")
-    return WhisperASR(model_id, resolved, batch_size)
+    return WhisperASR(model_id, resolved, batch_size, initial_prompt=initial_prompt)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -359,16 +415,24 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--version", choices=[*VERSIONS, "all"], default="all")
-    parser.add_argument("--model", default=DEFAULT_MODEL)
+    parser.add_argument("--model", default=None)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--device", default="auto", help='"auto", "cpu", "cuda:0", ...')
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
-    return parser.parse_args(argv)
+    parser.add_argument(
+        "--initial-prompt",
+        default=None,
+        help="Optional Whisper initial prompt (e.g. domain terms or place names).",
+    )
+    args = parser.parse_args(argv)
+    if args.model is None:
+        args.model = resolve_default_model()
+    return args
 
 
 def main(
     argv: Sequence[str] | None = None,
-    make_asr: Callable[[str, str, int], ASRBackend] = make_whisper,
+    make_asr: Callable[..., ASRBackend] = make_whisper,
     read_wav: ReadWav = read_wav,
     root: Path = REPO_ROOT,
 ) -> int:
@@ -382,13 +446,19 @@ def main(
         print(f"error: --batch-size must be >= 1, got {args.batch_size}", file=sys.stderr)
         return 2
     versions = list(VERSIONS) if args.version == "all" else [args.version]
+
+    def _build_asr() -> ASRBackend:
+        if args.initial_prompt is not None:
+            return make_asr(args.model, args.device, args.batch_size, args.initial_prompt)
+        return make_asr(args.model, args.device, args.batch_size)
+
     try:
         manifest = load_manifest(args.manifest)
         transcribe_versions(
             manifest,
             versions,
             args.out_dir,
-            lambda: make_asr(args.model, args.device, args.batch_size),
+            _build_asr,
             read_wav=read_wav,
             root=root,
         )

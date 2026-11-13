@@ -811,3 +811,93 @@ def test_format_summary_table_uses_two_decimals_and_dash_for_none() -> None:
     assert lines[2].split() == [
         "clean", "1.50", "2.00", "-", "100.00", "33.33", "0.00", "90.00", "-3.33", "2",
     ]  # fmt: skip
+
+
+def test_location_token_ok_uses_expected_location_when_provided() -> None:
+    assert eval_wer.location_token_ok(
+        "Visited Grand Hotel today.", "visited grand hotel", "Grand Hotel"
+    )
+    assert not eval_wer.location_token_ok(
+        "Visited Grand Hotel today.", "visited hotel", "Grand Hotel"
+    )
+    assert eval_wer.location_token_ok("Visited somewhere.", "visited somewhere", "") is None
+
+
+def test_evaluate_uses_asr_text_and_gold_location(tmp_path: Path) -> None:
+    messages = [
+        {"id": "msg_001", "sender_id": "w1", "message": "We visited 7 households in Kisumu today."}
+    ]
+    manifest = make_manifest(messages, voices=["v1"])
+    transcripts = {
+        v: [
+            {
+                "id": "msg_001",
+                "sender_id": "w1",
+                "source": "audio",
+                "message": "We visited 7 households in Kisumu today.",
+                "asr_text": "We visited seven households in Kisumu today.",
+            }
+        ]
+        for v in eval_wer.VERSIONS
+    }
+    expected = [
+        {
+            "id": "msg_001",
+            "relevant": True,
+            "activity_type": "household_outreach",
+            "location": "Kisumu",
+            "reported_count": 7,
+        }
+    ]
+    res = eval_wer.evaluate(
+        manifest, transcripts, messages, expected, rule_baseline, tmp_path / "work"
+    )
+    clean_clip = res["clips"][0]
+    assert clean_clip["hypothesis"] == "We visited seven households in Kisumu today."
+    assert clean_clip["wer_pct"] > 0.0
+    assert clean_clip["location_token_ok"] is True
+    assert clean_clip["gold"]["location"] == "Kisumu"
+    assert clean_clip["gold"]["reported_count"] == 7
+
+
+def test_main_with_predictions_dir(tmp_path: Path) -> None:
+    messages = [{"id": "msg_001", "sender_id": "w1", "message": "We screened 5 women in Nakuru."}]
+    manifest = make_manifest(messages, voices=["v1"])
+    t_dir = tmp_path / "transcripts"
+    t_dir.mkdir()
+    (tmp_path / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    (tmp_path / "messages.json").write_text(json.dumps(messages), encoding="utf-8")
+    (tmp_path / "expected.json").write_text(
+        json.dumps([{"id": "msg_001", "relevant": True, "activity_type": "health_screening"}]),
+        encoding="utf-8",
+    )
+    for v in eval_wer.VERSIONS:
+        (t_dir / f"transcripts_{v}.json").write_text(
+            json.dumps(records(messages)), encoding="utf-8"
+        )
+    pred_dir = tmp_path / "gliner_preds"
+    pred_dir.mkdir()
+    sample_pred = [pred("msg_001", True, "health_screening", "Nakuru", 5)]
+    for system in eval_wer.SYSTEMS:
+        (pred_dir / f"{system}.json").write_text(json.dumps(sample_pred), encoding="utf-8")
+
+    out_file = tmp_path / "out" / "gliner_wer.json"
+    rc = eval_wer.main(
+        [
+            "--manifest",
+            str(tmp_path / "manifest.json"),
+            "--transcripts-dir",
+            str(t_dir),
+            "--messages",
+            str(tmp_path / "messages.json"),
+            "--expected",
+            str(tmp_path / "expected.json"),
+            "--predictions-dir",
+            str(pred_dir),
+            "--out",
+            str(out_file),
+        ]
+    )
+    assert rc == 0
+    assert out_file.is_file()
+    assert not (out_file.parent / "baseline_predictions").exists()

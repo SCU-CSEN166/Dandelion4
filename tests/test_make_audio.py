@@ -839,6 +839,48 @@ def test_parse_args_defaults(repo_root: Path) -> None:
     assert (args.snr_db, args.pad_seconds, args.seed) == (10.0, 1.0, 1234)
     assert args.noise_dir is None
     assert args.force is False
+    assert args.ids is None
+
+
+def test_main_custom_ids_and_all(tmp_path: Path) -> None:
+    messages_file = tmp_path / "custom_messages.json"
+    messages_file.write_text(
+        json.dumps(
+            [
+                {"id": "hf_001", "sender_id": "w1", "message": "First custom message."},
+                {"id": "hf_002", "sender_id": "w2", "message": "Second custom message."},
+            ]
+        ),
+        encoding="utf-8",
+    )
+    argv_one = [
+        "--messages",
+        str(messages_file),
+        "--out-dir",
+        str(tmp_path / "audio_one"),
+        "--manifest",
+        str(tmp_path / "manifest_one.json"),
+        "--ids",
+        "hf_002",
+    ]
+    assert make_audio.main(argv_one, tts_factory=FakeTTS) == 0
+    m1 = json.loads((tmp_path / "manifest_one.json").read_text(encoding="utf-8"))
+    assert [c["message_id"] for c in m1["clips"]] == ["hf_002"] * 3
+
+    argv_all = [
+        "--messages",
+        str(messages_file),
+        "--out-dir",
+        str(tmp_path / "audio_all"),
+        "--manifest",
+        str(tmp_path / "manifest_all.json"),
+        "--ids",
+        "all",
+    ]
+    assert make_audio.main(argv_all, tts_factory=FakeTTS) == 0
+    m2 = json.loads((tmp_path / "manifest_all.json").read_text(encoding="utf-8"))
+    assert len(m2["clips"]) == 6
+    assert {c["message_id"] for c in m2["clips"]} == {"hf_001", "hf_002"}
 
 
 # --------------------------------------------------------------------------------------
