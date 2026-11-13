@@ -183,8 +183,38 @@ def build_metadata(
 # ----------------------------------------------------------------------- adapters
 
 
+CONTAINER_AUDIO_SUFFIXES = frozenset({".mp4", ".m4a", ".aac", ".mov", ".mp3", ".webm", ".opus"})
+WHISPER_CHUNK_SECONDS = 30
+WHISPER_STRIDE_SECONDS = (4, 2)
+
+
 def read_wav(path: Path) -> tuple[npt.NDArray[Any], int]:
-    """Read a WAV file as float32 samples and its sample rate."""
+    """Read a WAV (or container audio/video file via PyAV) as float32 samples and sample rate."""
+    if path.suffix.lower() in CONTAINER_AUDIO_SUFFIXES:
+        import av
+
+        resampler = av.AudioResampler(format="flt", layout="mono", rate=ASR_SAMPLE_RATE)
+        chunks: list[npt.NDArray[np.float32]] = []
+        with av.open(str(path)) as container:
+            stream = next(
+                (s for s in container.streams if s.type == "audio"),
+                None,
+            )
+            if stream is None:
+                raise ValueError(f"no audio stream found in {path}")
+            for frame in container.decode(stream):
+                if not isinstance(frame, av.AudioFrame):
+                    continue
+                for resampled in resampler.resample(frame):
+                    arr = resampled.to_ndarray().reshape(-1).astype(np.float32)
+                    if arr.size:
+                        chunks.append(arr)
+            for resampled in resampler.resample(None):
+                arr = resampled.to_ndarray().reshape(-1).astype(np.float32)
+                if arr.size:
+                    chunks.append(arr)
+        wave = np.concatenate(chunks) if chunks else np.zeros(0, dtype=np.float32)
+        return wave, ASR_SAMPLE_RATE
     data, sample_rate = soundfile.read(path, dtype="float32")
     return np.asarray(data, dtype=np.float32), int(sample_rate)
 
@@ -278,6 +308,7 @@ class WhisperASR:
         self.batch_size = batch_size
         self.initial_prompt = initial_prompt
         self._pipe: Any = None
+        self._chunked_pipe: Any = None
 
     @property
     def dtype_name(self) -> str:
@@ -303,6 +334,23 @@ class WhisperASR:
                 device=self.device,
             )
 
+    def _get_chunked_pipe(self) -> Any:  # pragma: no cover - long-audio Whisper helper
+        """Build a chunked pipeline reusing the loaded model for clips >30 s."""
+        if self._chunked_pipe is None:
+            from transformers import pipeline
+
+            self._chunked_pipe = pipeline(
+                "automatic-speech-recognition",
+                model=self._pipe.model,
+                tokenizer=self._pipe.tokenizer,
+                feature_extractor=self._pipe.feature_extractor,
+                device=self.device,
+                chunk_length_s=WHISPER_CHUNK_SECONDS,
+                stride_length_s=WHISPER_STRIDE_SECONDS,
+                ignore_warning=True,
+            )
+        return self._chunked_pipe
+
     def __call__(self, waves: list[FloatArray]) -> list[str]:  # pragma: no cover - real model
         """Transcribe 16 kHz float32 mono waves, returning one text per wave."""
         if not waves:
@@ -314,15 +362,35 @@ class WhisperASR:
             generate_kwargs["prompt_ids"] = self._pipe.tokenizer.get_prompt_ids(
                 self.initial_prompt, return_tensors="pt"
             )
-        outputs = self._pipe(
-            [{"raw": wave, "sampling_rate": ASR_SAMPLE_RATE} for wave in waves],
-            batch_size=self.batch_size,
-            return_timestamps=False,
-            generate_kwargs=generate_kwargs,
-        )
-        if len(outputs) != len(waves):
-            raise RuntimeError(f"pipeline returned {len(outputs)} results for {len(waves)} clips")
-        return [str(output["text"]) for output in outputs]
+        max_short = WHISPER_CHUNK_SECONDS * ASR_SAMPLE_RATE
+        short_indices = [i for i, wave in enumerate(waves) if len(wave) <= max_short]
+        long_indices = [i for i, wave in enumerate(waves) if len(wave) > max_short]
+
+        texts = [""] * len(waves)
+        if short_indices:
+            outputs = self._pipe(
+                [{"raw": waves[i], "sampling_rate": ASR_SAMPLE_RATE} for i in short_indices],
+                batch_size=self.batch_size,
+                return_timestamps=False,
+                generate_kwargs=generate_kwargs,
+            )
+            if len(outputs) != len(short_indices):
+                raise RuntimeError(
+                    f"pipeline returned {len(outputs)} results for {len(short_indices)} clips"
+                )
+            for idx, output in zip(short_indices, outputs, strict=True):
+                texts[idx] = str(output["text"])
+
+        if long_indices:
+            chunked_pipe = self._get_chunked_pipe()
+            for idx in long_indices:
+                output = chunked_pipe(
+                    {"array": waves[idx], "sampling_rate": ASR_SAMPLE_RATE},
+                    batch_size=self.batch_size,
+                    generate_kwargs=generate_kwargs,
+                )
+                texts[idx] = str(output["text"])
+        return texts
 
     def metadata(self) -> dict[str, Any]:
         """Model and runtime fields for the .meta.json file (design §2.6)."""

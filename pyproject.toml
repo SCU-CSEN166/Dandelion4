@@ -33,5 +33,5 @@ files = [
 # Third-party packages installed without a py.typed marker or stubs.
 # (librosa, jiwer, edge_tts, transformers, torch and numpy all ship py.typed.)
 [[tool.mypy.overrides]]
-module = ["soundfile"]
+module = ["soundfile", "av"]
 ignore_missing_imports = true
