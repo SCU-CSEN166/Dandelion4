@@ -22,6 +22,7 @@ python_version = "3.12"
 mypy_path = ["."]
 explicit_package_bases = true
 files = [
+    "demo",
     "src/core",
     "src/asr",
     "src/nlp",

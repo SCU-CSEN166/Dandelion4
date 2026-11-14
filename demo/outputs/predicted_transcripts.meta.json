@@ -1,6 +1,6 @@
 {
   "version": "hidden_test",
-  "model": "models/whisper-large-v3-turbo-v3",
+  "model": "C:\\Things\\Dandelion4\\models\\whisper-large-v3-turbo-v3",
   "language": "en",
   "task": "transcribe",
   "decoding": {
@@ -14,6 +14,6 @@
   "transformers_version": "5.22.1",
   "n_clips": 10,
   "audio_seconds_total": 373.2,
-  "wall_seconds": 6.77,
-  "created_utc": "2026-11-13T22:37:07Z"
+  "wall_seconds": 6.64,
+  "created_utc": "2026-11-13T23:57:18Z"
 }
