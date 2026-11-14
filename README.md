@@ -191,6 +191,27 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | Whisper | (https://huggingface.co/openai/whisper-large-v3-turbo) | OpenAI pretrained speech to text, accessed through transformers | Converts audio into English transcriptions|
 |SmolLM2 | https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct | Hugging Face pretrained instruction model | Experiment with generating fictional whatsApp messages|
 |Rule based baseline | Project Python Keyword | Team implementation | Provide a simple classification and extraction comparison |
+### Model Setup and initial execution
+1. GLiNER: The week 7 notebook installs the gliner package, imports GLiNER, and loads the model. We used GLiNER to identify important information is Whatsapp messages like names, dates, locations, event names, phone numbers and email addresses. We also tested removing sensitive information by replacing it with [REDACTED]. Finally, we started organizing the extracted info into a JSON file so that it could be stored easily. 
+2. Whisper (Audio Transcription): We obtained the pretrained model openai/whisper-large-v3-turbo. We were able to use Whisper to convert audio recordings into written text, and the system successfully processed audio files and saved the transcriptions in a compatible format. This also allowed us to eventually process both written Whatsapp messages as well as recordings.
+3. Synthetic Text generation: We used the pretrained Hugging Face model HuggingFaceTB/SmolLM2-360M-Instruct to generate fictional whatsapp messages. We generated 10 sample messages about community activities in Kenya and saved them in a JSON format. Following this we also experimented with Python generated messages to create testing data without using real personal information. This provided a starting point for week 8 synthetic data.
+4. Combining the Models: Our goal is to connect the different components into one system. First, Whisper converts audio recordings into text. Next, GLiNER identifies the important details and removes sensitive information. During week 7, we focused on getting the pretrained models working individually and testing their initial capabilities. Fine tuning and further improvements will begin week 8.
+### Development data - audio and transcription
+- Source: sythetic messages from the team's audio generation script rather than recordings from real community workers
+- Size: 30 source messages with 3 audio conditions resulting in 90 total clips: clean, noisy and simulated phone quality audio.
+- Selection: The generator selects community activity and irrelevant chat examples, it used Kenyan and English text to speech voices, adds noise for one condition and lowers sample rate for phone quality simulation.
+- Annotations: The original written messages are reference transcripts; the audio associates each clip with its message and generation condition.
+- Access: - [`src/make_audio.py`](src/make_audio.py), [`examples/audio_manifest.json`](examples/audio_manifest.json), [`src/transcribe.py`](src/transcribe.py), and [`evaluation/wer_results.json`](evaluation/wer_results.json).
+### Text generation and baseline data
+- Used 40 fictional text messages and corresponding expected output. The team also tested a hugging face model SmolLM2 to generate messages outside of the python template.
+### Metrics and Rationale
+| Component | Metric | Why it matters | Week 7 interpretation |
+|---|---:|---:|---|
+| GLiNER redaction | PII Scrubbing recall | Missing a person name, phone number, email, or ID can expose private info | Team target was to get >95% |
+| GliNER extraction | F1 | Balances missed certain entities and incorrect extraction from dataset | Target was >95%; extraction quality still requires improvement |
+| Whisper transcription | WER | Measures substitutions, deletions and insertions against a given transcript | Lower is better, we aimed for <10%|
+| Whisper downstream impact | Baseline classification for accuracy| Shows whether the transcription mistakes affect subsequent relevance/activity predictions | Compares predictions from original text with predictions from transcripts |
+
 - **Comparison:** [Baseline versus current approach, if different]
 1. text parsing: N/A (same as baseline approach)
 
