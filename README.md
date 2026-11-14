@@ -184,7 +184,13 @@ Since it cannot process videos and images it may be inaccurate for real life con
 1. text parsing
     - PII Scrubbing Recall: checks for redactions / flagged content rate (must be > 95%)
     - Attribute Extraction F1: checks for database entry label accuracy (must be > 95%)<br><br>
-
+### Models Obtained
+| Model/Tool| Model | Where it came from | Intended Role|
+|---|---:|---:|---|
+| GLiNER | https://huggingface.co/urchade/gliner_medium-v2.1 | Pretrained model from Hugging face; | Identify event, location, date, participant and sensitive information |
+| Whisper | (https://huggingface.co/openai/whisper-large-v3-turbo) | OpenAI pretrained speech to text, accessed through transformers | Converts audio into English transcriptions|
+|SmolLM2 | https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct | Hugging Face pretrained instruction model | Experiment with generating fictional whatsApp messages|
+|Rule based baseline | Project Python Keyword | Team implementation | Provide a simple classification and extraction comparison |
 - **Comparison:** [Baseline versus current approach, if different]
 1. text parsing: N/A (same as baseline approach)
 
