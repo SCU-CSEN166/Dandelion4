@@ -37,9 +37,9 @@ Since it cannot process videos and images it may be inaccurate for real life con
 - **Pipeline:** have transcribed data and put new data into JSON form
 - **Baseline(s):** have audio/text, transcribe data, put data through model, recompile all data
 - **Proposed models/tools:**
-  - [openai/whisper-large-v3](https://huggingface.co/openai/whisper-large-v3) — automatic speech recognition (ASR); processes audio messages
-  - [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B) — text classification; detects important JSON entries & sensitive content
-  - [deepseek-ai/DeepSeek-R1](https://huggingface.co/deepseek-ai/DeepSeek-R1) - text generation; produces JSON database
+  - [`openai/whisper-large-v3`](https://huggingface.co/openai/whisper-large-v3) — automatic speech recognition (ASR); processes audio messages
+  - [`autotrust/JEV-35B`](https://huggingface.co/autotrust/JEV-35B) — text classification; detects important JSON entries & sensitive content
+  - [`deepseek-ai/DeepSeek-R1`](https://huggingface.co/deepseek-ai/DeepSeek-R1) - text generation; produces JSON database
 - **Alternative approach:** find more specialized models
 
 ### 3. Proposed data
@@ -98,23 +98,23 @@ Since it cannot process videos and images it may be inaccurate for real life con
     - redacted sensitive information such as names<br><br>
 - **How to run it:**
 1. text generation
-    - open [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) model in Google Colab / VS Code
+    - open [`HuggingFaceTB/SmolLM2-360M-Instruct`](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) model in Google Colab / VS Code
     - import Python dependencies (python3 -m pip install torch transformers)
     - run the model: generate WhatsApp messages, and save them to a JSON (python3 src/generate_data.py)
 2. text parsing
-    - open [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
+    - open [`urchade/gliner_medium-v2.1`](https://huggingface.co/urchade/gliner_medium-v2.1) model in Google Colab / VS Code
     - import Python dependencies (!pip install gliner)
     - create input string (in "text" variable)
     - create text classes (in "labels" array)
-    - input custom Python code for redaction process (see bottom of [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb))
+    - input custom Python code for redaction process (see bottom of [`file`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb))
     - run the model: classify and redact text<br><br>
 - **Model(s) and data actually used:**
-1. [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): pretrained language model
+1. [`HuggingFaceTB/SmolLM2-360M-Instruct`](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct): pretrained language model
     - data used: generated from Python script
     - stored generated data in JSON (50 messages)
-2. [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1)
+2. [`urchade/gliner_medium-v2.1]`(https://huggingface.co/urchade/gliner_medium-v2.1)
     - data used: custom-made strings, SCU emails
-    - change of plans from using [autotrust/JEV-35B](https://huggingface.co/autotrust/JEV-35B), not a very specialized model<br><br>
+    - change of plans from using [`autotrust/JEV-35B`](https://huggingface.co/autotrust/JEV-35B), not a very specialized model<br><br>
 
 - **Example 1: Text Generation**
 > ### **<< Message Generation >>**<br>
@@ -130,7 +130,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 > }<br>
 
 - **Example 2: Text Processing**
-> **Full List of Inputs/Outputs:** [here](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)<br>
+> **Full List of Inputs/Outputs:** [`here`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week6_gliner_medium_v2_1.ipynb)<br>
 
 > ### **<< Message Redaction >>**<br>
 > **Input:** Hi team, please RSVP for the Annual Tech Gala by this Friday. The event takes place on November 12th at the Grand Hotel Ballroom. CEO Melon Usk, the VP of Sales, and all regional managers will be there. We will be celebrating our yearly milestones and handing out leadership awards.<br><br>
@@ -172,91 +172,82 @@ Since it cannot process videos and images it may be inaccurate for real life con
 **Deliverable during Week 8 Lab:** Preliminary evaluation results, metrics, development-set details, and 2–3 representative successes or failures. Include what you will improve next.
 
 ### Evaluation setup
-- **Development data:** [Source, size, selection, annotations, link or access instructions]
+- **Development data:**
 1. text parsing
     - source: pre-generated WhatsApp logs from Google Gemini
     - size: 5 prompts, each 1-3 large paragraphs
     - selection: related to field reports, announcements, urgent updates, summaries
     - annotations: specific NER categories, sensitive information redaction, storing data in JSONs
-    - access: see [file](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week7_gliner_medium_v2_1.ipynb)<br><br>
+    - access: see [`file`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/week7_gliner_medium_v2_1.ipynb)
+2. audio and transcription
+    - source: sythetic messages from audio generation script, not recordings from real community workers
+    - size: 30 source messages with 3 audio conditions (clean, noisy, and phone simulation, 90 total clips)
+    - selection: community activities, irrelevant chat messages, Kenyan and English text to speech voices, adds on noise for one condition, lowers sample rate for phone simulation
+    - annotations: original written messages reference transcripts, audio associates each clip with its message and generation condition
+    - access: see [`src/training/make_audio.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/training/make_audio.py), [`examples/audio_manifest.json`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/examples/audio_manifest.json), [`src/asr/transcribe.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/asr/transcribe.py), and [`evaluation/wer_results.json`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/evaluation/wer_results.json)<br><br>
 
-- **Metrics and rationale:** [Why these metrics reflect the intended use]
+- **Metrics and rationale:**
 1. text parsing
     - PII Scrubbing Recall: checks for redactions / flagged content rate (must be > 95%)
-    - Attribute Extraction F1: checks for database entry label accuracy (must be > 95%)<br><br>
-### Models Obtained
-| Model/Tool| Model | Where it came from | Intended Role|
-|---|---:|---:|---|
-| GLiNER | https://huggingface.co/urchade/gliner_medium-v2.1 | Pretrained model from Hugging face; | Identify event, location, date, participant and sensitive information |
-| Whisper | (https://huggingface.co/openai/whisper-large-v3-turbo) | OpenAI pretrained speech to text, accessed through transformers | Converts audio into English transcriptions|
-|SmolLM2 | https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct | Hugging Face pretrained instruction model | Experiment with generating fictional whatsApp messages|
-|Rule based baseline | Project Python Keyword | Team implementation | Provide a simple classification and extraction comparison |
-### Model Setup and initial execution
-1. GLiNER: The week 7 notebook installs the gliner package, imports GLiNER, and loads the model. We used GLiNER to identify important information is Whatsapp messages like names, dates, locations, event names, phone numbers and email addresses. We also tested removing sensitive information by replacing it with [REDACTED]. Finally, we started organizing the extracted info into a JSON file so that it could be stored easily. 
-2. Whisper (Audio Transcription): We obtained the pretrained model openai/whisper-large-v3-turbo. We were able to use Whisper to convert audio recordings into written text, and the system successfully processed audio files and saved the transcriptions in a compatible format. This also allowed us to eventually process both written Whatsapp messages as well as recordings.
-3. Synthetic Text generation: We used the pretrained Hugging Face model HuggingFaceTB/SmolLM2-360M-Instruct to generate fictional whatsapp messages. We generated 10 sample messages about community activities in Kenya and saved them in a JSON format. Following this we also experimented with Python generated messages to create testing data without using real personal information. This provided a starting point for week 8 synthetic data.
-4. Combining the Models: Our goal is to connect the different components into one system. First, Whisper converts audio recordings into text. Next, GLiNER identifies the important details and removes sensitive information. During week 7, we focused on getting the pretrained models working individually and testing their initial capabilities. Fine tuning and further improvements will begin week 8.
-### Development data - audio and transcription
-- Source: sythetic messages from the team's audio generation script rather than recordings from real community workers
-- Size: 30 source messages with 3 audio conditions resulting in 90 total clips: clean, noisy and simulated phone quality audio.
-- Selection: The generator selects community activity and irrelevant chat examples, it used Kenyan and English text to speech voices, adds noise for one condition and lowers sample rate for phone quality simulation.
-- Annotations: The original written messages are reference transcripts; the audio associates each clip with its message and generation condition.
-- Access: - [`src/make_audio.py`](src/make_audio.py), [`examples/audio_manifest.json`](examples/audio_manifest.json), [`src/transcribe.py`](src/transcribe.py), and [`evaluation/wer_results.json`](evaluation/wer_results.json).
-### Text generation and baseline data
-- Used 40 fictional text messages and corresponding expected output. The team also tested a hugging face model SmolLM2 to generate messages outside of the python template.
-### Metrics and Rationale
-| Component | Metric | Why it matters | Week 7 interpretation |
-|---|---:|---:|---|
-| GLiNER redaction | PII Scrubbing recall | Missing a person name, phone number, email, or ID can expose private info | Team target was to get >95% |
-| GliNER extraction | F1 | Balances missed certain entities and incorrect extraction from dataset | Target was >95%; extraction quality still requires improvement |
-| Whisper transcription | WER | Measures substitutions, deletions and insertions against a given transcript | Lower is better, we aimed for <10%|
-| Whisper downstream impact | Baseline classification for accuracy| Shows whether the transcription mistakes affect subsequent relevance/activity predictions | Compares predictions from original text with predictions from transcripts |
+    - Attribute Extraction F1: checks for database entry label accuracy (must be > 95%)
+2. audio and transcription
+    - WER: measures substitutions, deletions, and insertions against given transcripts (must be < 10%)
+    - Whisper downstream impact: shows if transcription mistakes affect later relevance/activity predictions (compares original text to transcript predictions)<br><br>
 
 - **Comparison:** [Baseline versus current approach, if different]
 1. text parsing: N/A (same as baseline approach)
-
-| System / version | Metric 1 | Metric 2 | Notes |
-|---|---:|---:|---|
-| Baseline | [Value] | [Value] | [Notes] |
-| Current | [Value] | [Value] | [Notes] |
+    - PII scrubbing recall: model successfully found all sensitive items, does not guarantee all future redactions are processed
+    - Attribute Extraction F1: model failed to accurately attribute text, missing/unchecked attributes are still a major limitation
 
 | System / version | PII Scrubbing Recall | Attribute Extraction F1 | Notes |
 |---|---:|---:|---|
 | Baseline | 100% | 68% | miss 6, mislabel 2, total 25 |
 | Current | 100% | 64.4% | miss 36, mislabel 6, total 118 |
-## PII scrubbing recall:
-The reported 100% means the model found all sensitive items in the examples included in that evaluation. It does not establish that every future name, phone number, or ID will be be redacted.
-## Attribute Extraction F1:
-The larger test returned 64.4% lower than the initial 68%. The example sets have different sizes and difficulty, so this is not a valid before/after improvement measurement. Missing attributes remain a major limitation.
-## Targets:
-The team's stated goals are more than 95% PII recall and more than 95% extraction F1
-# Whisper pretrained transcription
-The teams earlier evaluated experiment seen in valuation/wer_results.json tested 30 synthetic messages in each audio condition, for 90 total clips.
 
-| Audio Condition | Clips | WER | Correct Location Tokens | Activity Classification |
+2. Whisper transcription: N/A (baseline results: [`evaluation/wer_results.json`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/evaluation/wer_results.json))
+    - model tested 30 synthetic messages for each audio condition
+    - WER: model successfully did not make many errors on synthetic speech, but place name errors continued to be an issue
+    - correct location tokens: model successfully achieved 87.5% accuracy for 40 message rule based text
+    - activity classification: model successfully classified 90% of the 30 source messages, but small transcription errors can affect later activity classifications
+
+| System / version | Clips | WER | Correct Location Tokens | Activity Classification |
 |---|---:|---:|---:|---:|
 | Clean | 30 | 6.07% | 75.00% | 83.33% |
 | Noisy | 30 | 6.54% | 62.50% | 90.00% |
-| Phone Quality | 30 | 6.54% | 70.83% | 83.33% |
+| Phone | 30 | 6.54% | 70.83% | 83.33% |
 
-The original text baseline classified 90% of the 30 source messages correctly. The comparison with the transcribed versions shows that even a small transcription error can affect later activity classifications. While the team initially started with WER below 10% on synthetic speech, all three audio conditions met that initial goal, but place name errors continued to be an issue. The separate 40 message rule based text baseline achieved 35/40 accuracy. 
+3. text generation (for baseline data): N/A
+    - model generated 40 fictional text messages and corresponding expected output
+    - used [`HuggingFaceTB/SmolLM2-360M-Instruct`](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) to generate messages not in the Python template
 
 ### Successes, failures, and interpretation
 | Example / category | Expected behavior | Actual behavior | Success or failure? | Likely reason |
 |---|---|---|---|---|
-| Category/Example | [Expected] | [Observed] | [Status] | [Hypothesis] |
 | text parsing | improved F1 score | worse F1 score | Failure | message truncation, bad labelling |
-| GLiNER model setup | Downloaded and run a pretrained model for item extraction| Loaded urchade/gliner_medium-v2.1 and tested custome NER labels in the notebook | Success| Created a working check point for text extraction |
-| PII redaction | Replace sensitive informations with [redacted] | recorded 100% recall on examples | Partial Success | Redaction depends on accurate item detection and false positives still remain a concern| 
-| Organize extracted fields into a JSON | Notebook demonstrated partial JSON conversion but not a complete structured output | Partial success | Field mapping and handling duplicate items still needs work| 
-|Whisper Speech transcription | Turn audio reports into text under different recording conditions| WER of 6.07% clean, 6.54% noisy, 6.54% phone quality| Success on synthetic audio | Pretrained speec model can handle simulated conditions but not cover all real world accents |
-| Location transcription| Preserve important Kenyan place names | Location token correctness was 62.5% on noisy audio | Failure | Unfamiliar names and audio distortion caused substitutions even when the rest of the sentence was readable|<br><br>
+| GLiNER model setup | download and run a pretrained model for item extraction | loaded [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1), tested custome NER labels in the notebook | Success | created a working baseline for text extraction |
+| PII redaction | replace sensitive informations with [REDACTED] | recorded 100% recall on examples | Partial Success | redactions require accurate item descriptions, false positives still a concern| 
+| JSON organization of extracted fields | comprehensive, structured JSON ouput | partial JSON conversion, not completely structured | Partial Success | field mapping, handling duplicate items need improvement | 
+| Whisper speech transcription | convet audio to text under different recording conditions | WER of 6.07% (clean), 6.54% (noisy), 6.54% (phone) | Success (on synthetic audio) | pretrained speech model can handle simulated conditions, but not all real world accents |
+| location transcription | preserve important Kenyan location names | location token correctness of 62.5% (noisy) | Failure | unfamiliar names and audio distortion produced unnecessary substitutions, rest of the sentence was readable |<br><br>
 
-- **What improved?** [Evidence]
+### Models Obtained
+| Model/Tool| Model | Where it came from | Intended Role|
+|---|---:|---:|---|
+| GLiNER | [urchade/gliner_medium-v2.1](https://huggingface.co/urchade/gliner_medium-v2.1) | Pretrained model from Hugging face; | Identify event, location, date, participant and sensitive information |
+| Whisper | [openai/whisper-large-v3-turbo](https://huggingface.co/openai/whisper-large-v3-turbo) | OpenAI pretrained speech to text, accessed through transformers | Converts audio into English transcriptions|
+| SmolLM2 | [HuggingFaceTB/SmolLM2-360M-Instruct](https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct) | Hugging Face pretrained instruction model | Experiment with generating fictional whatsApp messages|
+| Rule based baseline | Project Python Keyword | Team implementation | Provide a simple classification and extraction comparison |
+### Model Setup and initial execution
+1. GLiNER: The week 7 notebook installs the gliner package, imports GLiNER, and loads the model. We used GLiNER to identify important information is Whatsapp messages like names, dates, locations, event names, phone numbers and email addresses. We also tested removing sensitive information by replacing it with [REDACTED]. Finally, we started organizing the extracted info into a JSON file so that it could be stored easily. 
+2. Whisper (Audio Transcription): We obtained the pretrained model openai/whisper-large-v3-turbo. We were able to use Whisper to convert audio recordings into written text, and the system successfully processed audio files and saved the transcriptions in a compatible format. This also allowed us to eventually process both written Whatsapp messages as well as recordings.
+3. Synthetic Text generation: We used the pretrained Hugging Face model HuggingFaceTB/SmolLM2-360M-Instruct to generate fictional whatsapp messages. We generated 10 sample messages about community activities in Kenya and saved them in a JSON format. Following this we also experimented with Python generated messages to create testing data without using real personal information. This provided a starting point for week 8 synthetic data.
+4. Combining the Models: Our goal is to connect the different components into one system. First, Whisper converts audio recordings into text. Next, GLiNER identifies the important details and removes sensitive information. During week 7, we focused on getting the pretrained models working individually and testing their initial capabilities. Fine tuning and further improvements will begin week 8.<br><br>
+
+- **What improved?**
 1. text parsing: data is more related to setting, more NER categories (labels), JSON conversion<br><br>
-- **What did not improve?** [Evidence]
+- **What did not improve?**
 1. text parsing: still misses/mislabels some text, has some false positives<br><br>
-- **Next experiment:** [Specific change and how you will measure it]
+- **Next experiment:**
 1. text parsing:
     - changes: use shorter messages (so no truncation), add specialized keywords to fish out false positives, improve current keywords to have more comprehensive searches
     - measure: manual checks, and metric checking: PII > 95% and F1 > 95% (redaction and label accuracy)<br><br>
@@ -264,8 +255,7 @@ The original text baseline classified 90% of the 30 source messages correctly. T
 ### Individual contributions during that week
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
-| [Name] | [Specific work] | [Status] | [Link] | [Next step] |
-| Terence Zhou | improved text parsing and redaction, added partial JSON conversion | Partly | [commit]() | parse data sourced from teammates, improve keyword searching, redact JSONs, store in actual JSON file |
+| Terence Zhou | improved text parsing and redaction, added partial JSON conversion | Partly | [4181acb](https://github.com/SCU-CSEN166/Dandelion4/commit/4181acbf69f7993b08182da285774ebfbe401bc1) | parse data sourced from teammates, improve keyword searching, redact JSONs, store in actual JSON file |
 
 ---
 
@@ -273,25 +263,30 @@ The original text baseline classified 90% of the 30 source messages correctly. T
 
 **Deliverable during Week 9 Lab:** Hidden-test results (as provided by the TA), analysis of at least three important failure cases, and a prioritized improvement plan.
 
-- **Submitted system version / commit:** [Commit hash]
-- **Hidden-test metrics and leaderboard result:** [Results, when available]
-- **Difference from development results:** [Compare; do not assume the hidden set is identical]
+### Baseline
+- **Submitted system version / commit:** [`f0d2c3d`](https://github.com/SCU-CSEN166/Dandelion4/commit/f0d2c3da71ebd72b2d0e4f1b78b7a5a8c47a42ea)
+- **Hidden-test metrics and leaderboard result:** [`results`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/hidden_test_outputs.csv)
+- **Difference from development results:** redacted labels are vaguely labelled as [REDACTED] instead of: eg. [NAME], [LOCATION], [PERSON]; duplicate functionality unimplemented
 
 | Failure case / category | What went wrong | Possible cause | Severity / user impact | Proposed fix |
 |---|---|---|---|---|
-| [Case 1] | [Observation] | [Hypothesis] | [Impact] | [Fix] |
-| [Case 2] | [Observation] | [Hypothesis] | [Impact] | [Fix] |
-| [Case 3] | [Observation] | [Hypothesis] | [Impact] | [Fix] |
+| keyword redaction | redacted labels are vaguely labelled as [REDACTED] | small code issue | little impact | insert keyword into redaction label |
+| duplicate checking | duplicates were not marked | unimplemented in code | medium impact | implement it |
 
 ### Changes attempted after stress-testing
+- **Submitted system version / commit:** [`28f0c8f`](https://github.com/SCU-CSEN166/Dandelion4/commit/28f0c8f639fa6e6c26caefbbfd5893bb4464d693)
+- **Hidden-test metrics and leaderboard result:** [`results`](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/demo/expected/hidden_test_outputs.csv)
+- **Difference from development results:** csv formatting (very little to no effect)
+
 | Change | Worked? (Yes / Partly / No) | Evidence | Keep, revise, or revert? |
 |---|---|---|---|
-| [Change] | [Status] | [Result] | [Decision] |
+| better keyword redaction | Yes | [REDACTED] made less vague, see [anonymize_csv_text](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/src/pipeline/hidden_test_pipeline.py#L177) function | Keep |
+| implemented duplicate checking | Yes | duplicates are now marked, see [find_duplicate_events](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/src/pipeline/hidden_test_pipeline.py#L313) function | Keep |
 
 ### Individual contributions during that week
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
-| [Name] | [Specific work] | [Status] | [Link] | [Next step] |
+| Terence Zhou | processed baseline hidden test csv file | Partly | [f0d2c3d](https://github.com/SCU-CSEN166/Dandelion4/commit/f0d2c3da71ebd72b2d0e4f1b78b7a5a8c47a42ea) | tune model against teammate's generated code |
 
 ---
 
