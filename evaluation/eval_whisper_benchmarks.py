@@ -10,6 +10,7 @@ import argparse
 import gc
 import io
 import json
+import os
 import re
 import sys
 from collections import defaultdict
@@ -309,6 +310,12 @@ def run_benchmarks(
         "kenyan_ea_test": load_kenyan_ea_test,
         "fleurs_all": load_fleurs_all,
     }
+    if os.environ.get("HF_HUB_OFFLINE") != "1":
+        from evaluation import fetch_public_datasets
+
+        for name in suites:
+            if name in loaders:
+                fetch_public_datasets.prepare_suite(name)
     loaded_suites = {name: loaders[name]() for name in suites}
     whisper_norm = _load_whisper_normalizer()
     resolved_device = transcribe.resolve_device(device)

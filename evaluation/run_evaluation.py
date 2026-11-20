@@ -34,7 +34,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--cpu", action="store_true", help="Force CPU; otherwise use CUDA when available."
     )
-    parser.add_argument("--suites", nargs="+", choices=SUITES, default=list(SUITES))
+    parser.add_argument(
+        "--suites",
+        nargs="+",
+        choices=SUITES,
+        default=list(SUITES),
+        help="Suites to run (public suites auto-download if missing unless HF_HUB_OFFLINE=1).",
+    )
     parser.add_argument("--modes", nargs="+", choices=tuple(BEAMS), default=["greedy", "beam3"])
     parser.add_argument("--batch-size", type=int, default=1)
     parser.add_argument("--out-dir", type=Path, default=None, help="New or empty output directory.")
