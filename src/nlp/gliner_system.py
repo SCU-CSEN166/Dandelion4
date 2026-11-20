@@ -32,7 +32,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.asr import clean_transcripts  # noqa: E402
-from src.core import contracts  # noqa: E402
+from src.core import contracts, runtime  # noqa: E402
 
 MODEL_ID = "urchade/gliner_medium-v2.1"
 LOCAL_MODEL_DIR = REPO_ROOT / "models" / "gliner_medium-v2.1"
@@ -376,15 +376,11 @@ _SUBSET_SENTENCE_RE = re.compile(
 
 
 def resolve_gliner_model(model_id: str | None = None) -> tuple[str, bool]:
-    """Return ``(model_source, local_files_only)``, preferring ``models/gliner_medium-v2.1``."""
+    """Return ``(model_source, local_files_only)``, preferring the local GLiNER model."""
     if model_id is not None:
         p = Path(model_id)
-        return (str(p), True) if p.is_dir() else (model_id, False)
-    if (LOCAL_MODEL_DIR / "gliner_config.json").is_file() and (
-        LOCAL_MODEL_DIR / "pytorch_model.bin"
-    ).is_file():
-        return str(LOCAL_MODEL_DIR), True
-    return MODEL_ID, False
+        return (str(p), True) if p.is_dir() else (model_id, True)
+    return str(LOCAL_MODEL_DIR), True
 
 
 def trim_copied_value(value: str | None, text_redacted: str | None = None) -> str | None:
@@ -765,21 +761,9 @@ class GLiNERSystem:
         if self._model is None:  # pragma: no cover - requires model weights
             import importlib
 
+            runtime.configure_torch_cpu_threads()
             resolved, local_only = resolve_gliner_model(self.model_id)
             gliner = importlib.import_module("gliner")
-            model_path = Path(resolved)
-            if (
-                local_only
-                and (model_path / "gliner_config.json").is_file()
-                and LOCAL_DEBERTA_DIR.is_dir()
-            ):
-                import json as _json
-
-                cfg_path = model_path / "gliner_config.json"
-                cfg = _json.loads(cfg_path.read_text(encoding="utf-8"))
-                if cfg.get("model_name") == "microsoft/deberta-v3-base":
-                    cfg["model_name"] = str(LOCAL_DEBERTA_DIR)
-                    cfg_path.write_text(_json.dumps(cfg, indent=2), encoding="utf-8")
             self._model = gliner.GLiNER.from_pretrained(resolved, local_files_only=local_only)
         return self._model
 

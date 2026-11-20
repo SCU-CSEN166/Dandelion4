@@ -10,6 +10,11 @@ __pycache__/
 
 # Generated audio cache
 examples/audio/.tts_cache/
+evaluation/runs/
+evaluation/datasets/
+models/
+.models/
+examples/fleurs_audio/
 
 # Test and tooling caches
 .coverage

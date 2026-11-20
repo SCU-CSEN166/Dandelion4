@@ -257,3 +257,60 @@ def test_evaluate_expected_schema_and_transcript_wer(tmp_path: Path) -> None:
     wer_metrics = hidden_test_pipeline.evaluate_transcript_wer(messages, expected_rows)
     assert wer_metrics["asr_raw_wer_pct"] > 0.0
     assert wer_metrics["asr_clean_wer_pct"] == 0.0
+
+
+def test_initial_prompt_cli_and_forwarding(tmp_path: Path) -> None:
+    default_args = hidden_test_pipeline.parse_args([])
+    assert default_args.initial_prompt is None
+    assert default_args.kenyan_prompt is False
+    assert (
+        hidden_test_pipeline.resolve_initial_prompt(
+            default_args.initial_prompt, kenyan_prompt=default_args.kenyan_prompt
+        )
+        is None
+    )
+
+    kenyan_args = hidden_test_pipeline.parse_args(["--kenyan-prompt"])
+    assert kenyan_args.kenyan_prompt is True
+    assert (
+        hidden_test_pipeline.resolve_initial_prompt(
+            kenyan_args.initial_prompt, kenyan_prompt=kenyan_args.kenyan_prompt
+        )
+        == transcribe.KENYAN_CHW_INITIAL_PROMPT
+    )
+
+    custom_args = hidden_test_pipeline.parse_args(["--kenyan-prompt", "--initial-prompt", "Habari"])
+    assert (
+        hidden_test_pipeline.resolve_initial_prompt(
+            custom_args.initial_prompt, kenyan_prompt=custom_args.kenyan_prompt
+        )
+        == "Habari"
+    )
+
+    mp4 = tmp_path / "seed.mp4"
+    _write_test_mp4(mp4, seconds=0.25)
+    zip_path = tmp_path / "one.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("msg01.mp4", mp4.read_bytes())
+
+    seen_calls: list[tuple[tuple[Any, ...], dict[str, Any]]] = []
+
+    def spy_make_asr(*args: Any, **kwargs: Any) -> _FakeASR:
+        seen_calls.append((args, kwargs))
+        return _FakeASR(["Hello team Grace Wanjiru from Rongai."])
+
+    hidden_test_pipeline.run_hidden_test_pipeline(
+        input_audio=zip_path,
+        out_csv=tmp_path / "out_none.csv",
+        make_asr=spy_make_asr,
+        nlp_system=_StubNLP(),
+    )
+    hidden_test_pipeline.run_hidden_test_pipeline(
+        input_audio=zip_path,
+        out_csv=tmp_path / "out_prompt.csv",
+        make_asr=spy_make_asr,
+        initial_prompt="Habari",
+        nlp_system=_StubNLP(),
+    )
+    assert seen_calls[0][1] == {}
+    assert seen_calls[1][1] == {"initial_prompt": "Habari"}

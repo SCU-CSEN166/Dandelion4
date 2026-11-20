@@ -4,8 +4,7 @@ Flow for each requested manifest version (``clean``, ``noisy``, ``phone``):
 
 1. Validate manifest clips and check that every referenced WAV exists before loading ASR weights.
 2. Transcribe clips once-per-run with Whisper (defaulting to the local
-   ``models/whisper-large-v3-turbo-v3`` checkpoint when present, else
-   ``openai/whisper-large-v3-turbo``).
+   v5 INT8 on CPU and v5 Hugging Face on CUDA, with local fallbacks).
 3. Emit Interface Spec v2 audio ``Message`` items (optionally applying deterministic transcript
    cleaning via ``clean_transcripts.clean_message``, preserving raw Whisper output in ``asr_text``)
    and validate them against ``contracts.validate_file("transcripts", ...)``.
@@ -43,7 +42,7 @@ from src.core import contracts  # noqa: E402
 
 JsonDict = dict[str, Any]
 ProcessMessagesFn = Callable[[list[JsonDict]], list[JsonDict]]
-MakeASRFn = Callable[[str, str, int, str | None], transcribe.ASRBackend]
+MakeASRFn = Callable[..., transcribe.ASRBackend]
 ReadWavFn = Callable[[Path], tuple[Any, int]]
 
 _PHONE_PATTERN = re.compile(r"(?<!\w)(?:\+?254|0)[\s-]?[17](?:[\s-]?\d){8}(?!\w)")
@@ -230,6 +229,7 @@ def run_pipeline(
     device: str = "auto",
     batch_size: int = transcribe.DEFAULT_BATCH_SIZE,
     initial_prompt: str | None = None,
+    num_beams: int = 1,
     clean: bool = False,
     system_fn: ProcessMessagesFn = baseline_v2_system,
     records_dir: Path | None = None,
@@ -246,6 +246,8 @@ def run_pipeline(
         raise ValueError("at least one version must be specified")
     if batch_size < 1:
         raise ValueError(f"batch_size must be >= 1, got {batch_size}")
+    if num_beams < 1:
+        raise ValueError(f"num_beams must be >= 1, got {num_beams}")
 
     clips_by_version: dict[str, list[JsonDict]] = {}
     for version in versions:
@@ -257,13 +259,21 @@ def run_pipeline(
             )
         clips_by_version[version] = clips
 
-    resolved_model = transcribe.resolve_default_model() if model is None else model
     resolved_device = transcribe.resolve_device(device)
+    resolved_model = (
+        transcribe.resolve_default_model(device=resolved_device) if model is None else model
+    )
     display_model = _display_model(resolved_model, repo_root=root)
     target_records_dir = transcripts_dir if records_dir is None else records_dir
     clock: Callable[[], datetime] = _utc_now if now is None else now
 
-    asr = make_asr(resolved_model, resolved_device, batch_size, initial_prompt)
+    asr = (
+        make_asr(resolved_model, resolved_device, batch_size, initial_prompt)
+        if num_beams == 1
+        else make_asr(
+            resolved_model, resolved_device, batch_size, initial_prompt, num_beams=num_beams
+        )
+    )
 
     staged: list[tuple[PipelineResult, JsonDict]] = []
     for version in versions:
@@ -318,6 +328,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=transcribe.DEFAULT_BATCH_SIZE)
     parser.add_argument("--initial-prompt", default=None)
     parser.add_argument(
+        "--num-beams",
+        type=int,
+        default=1,
+        help="Beam search width (1 = greedy decoding).",
+    )
+    parser.add_argument(
         "--clean",
         action="store_true",
         help="Normalize transcripts with clean_transcripts while preserving raw ASR in asr_text.",
@@ -353,6 +369,7 @@ def main(
             device=args.device,
             batch_size=args.batch_size,
             initial_prompt=args.initial_prompt,
+            num_beams=args.num_beams,
             clean=bool(args.clean),
             system_fn=resolved_system,
             records_dir=args.records_out_dir,

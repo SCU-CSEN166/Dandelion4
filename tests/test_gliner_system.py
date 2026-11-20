@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -14,6 +15,26 @@ if str(REPO_ROOT) not in sys.path:
 
 from src.core import contracts  # noqa: E402
 from src.nlp import gliner_system  # noqa: E402
+
+
+def test_gliner_cpu_threads_configured_for_standalone_use(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from src.core import runtime
+
+    threads: list[int] = []
+    monkeypatch.setattr(runtime, "available_cpu_count", lambda: 6)
+    monkeypatch.setitem(sys.modules, "torch", SimpleNamespace(set_num_threads=threads.append))
+    fake_model = object()
+    fake_gliner = SimpleNamespace(
+        GLiNER=SimpleNamespace(from_pretrained=lambda *args, **kwargs: fake_model)
+    )
+    monkeypatch.setitem(sys.modules, "gliner", fake_gliner)
+
+    system = gliner_system.GLiNERSystem("example/model")
+    assert system._load_model() is fake_model
+    assert system._load_model() is fake_model
+    assert threads == [6]
 
 
 class FakeGLiNERSystem(gliner_system.GLiNERSystem):
@@ -39,12 +60,12 @@ def test_resolve_gliner_model_prefers_local_checkpoint(
     local_dir.mkdir()
     monkeypatch.setattr(gliner_system, "LOCAL_MODEL_DIR", local_dir)
 
-    assert gliner_system.resolve_gliner_model() == (gliner_system.MODEL_ID, False)
+    assert gliner_system.resolve_gliner_model() == (str(local_dir), True)
 
     (local_dir / "gliner_config.json").write_text("{}", encoding="utf-8")
     (local_dir / "pytorch_model.bin").write_bytes(b"weights")
     assert gliner_system.resolve_gliner_model() == (str(local_dir), True)
-    assert gliner_system.resolve_gliner_model("custom/repo") == ("custom/repo", False)
+    assert gliner_system.resolve_gliner_model("custom/repo") == ("custom/repo", True)
 
 
 def test_trim_copied_value_respects_v2_rules() -> None:

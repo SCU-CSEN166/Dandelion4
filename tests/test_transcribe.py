@@ -283,6 +283,31 @@ def test_whisper_asr_metadata_without_loading() -> None:
     assert prompted.metadata()["initial_prompt"] == "Nakuru, Narok"
 
 
+def test_cpu_inference_defaults_to_all_available_threads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.core import runtime
+
+    monkeypatch.setattr(runtime, "available_cpu_count", lambda: 24)
+    threads: list[int] = []
+    fake_torch = SimpleNamespace(
+        float16="float16", float32="float32", set_num_threads=threads.append
+    )
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    fake_transformers = SimpleNamespace(pipeline=lambda *args, **kwargs: object())
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+
+    transcribe.WhisperASR(str(tmp_path), "cpu").load()
+    assert threads == [24]
+    transcribe.WhisperASR(str(tmp_path), "cuda:0").load()
+    assert threads == [24]
+
+    assert transcribe.FasterWhisperASR("model", "cpu").cpu_threads == 24
+    assert transcribe.FasterWhisperASR("model", "cpu", cpu_threads=4).cpu_threads == 4
+    assert transcribe.FasterWhisperASR("model", "cpu", cpu_threads=0).cpu_threads == 0
+    assert transcribe.FasterWhisperASR("model", "cuda:0").cpu_threads == 0
+
+
 def test_whisper_asr_call_without_and_with_initial_prompt() -> None:
     seen_kwargs: list[dict[str, Any]] = []
     seen_prompt_calls: list[tuple[str, str]] = []
@@ -323,6 +348,71 @@ def test_whisper_asr_call_without_and_with_initial_prompt() -> None:
 def test_whisper_asr_rejects_bad_batch_size() -> None:
     with pytest.raises(ValueError, match="batch_size"):
         WhisperASR("m", "cpu", 0)
+    with pytest.raises(ValueError, match="num_beams"):
+        WhisperASR("m", "cpu", 1, num_beams=0)
+
+
+def test_whisper_load_rejects_missing_local_model(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="local Whisper model directory not found"):
+        WhisperASR(str(tmp_path / "missing"), "cpu").load()
+
+
+def test_whisper_asr_num_beams_metadata_and_args() -> None:
+    asr = WhisperASR("openai/whisper-small", "cpu", 2, num_beams=3)
+    assert asr.metadata()["decoding"] == {"num_beams": 3, "do_sample": False}
+
+    seen_kwargs: list[dict[str, Any]] = []
+
+    class FakePipe:
+        def __call__(self, inputs: list[dict[str, Any]], **kwargs: Any) -> list[dict[str, str]]:
+            seen_kwargs.append(kwargs)
+            return [{"text": "beam out"} for _ in inputs]
+
+    asr._pipe = FakePipe()
+    assert asr([tone(16_000, seconds=0.1)]) == ["beam out"]
+    assert seen_kwargs[-1]["generate_kwargs"]["num_beams"] == 3
+
+    args = transcribe.parse_args(["--num-beams", "3"])
+    assert args.num_beams == 3
+    assert main(["--num-beams", "0"]) == 2
+
+
+def test_faster_whisper_asr_and_ct2_dispatch(tmp_path: Path) -> None:
+    ct2_dir = tmp_path / "whisper-ct2"
+    ct2_dir.mkdir()
+    assert not transcribe.is_ct2_model_dir(str(ct2_dir))
+    (ct2_dir / "model.bin").write_bytes(b"ct2")
+    assert transcribe.is_ct2_model_dir(str(ct2_dir))
+
+    dispatched = transcribe.make_whisper(str(ct2_dir), "cpu", 2, num_beams=3)
+    assert isinstance(dispatched, transcribe.FasterWhisperASR)
+    assert dispatched.dtype_name == "int8"
+    assert dispatched.loaded is False
+    meta = dispatched.metadata()
+    assert meta["dtype"] == "int8"
+    assert meta["decoding"] == {"num_beams": 3, "do_sample": False}
+
+    cuda_ct2 = transcribe.FasterWhisperASR(str(ct2_dir), "cuda:0", 1)
+    assert cuda_ct2.dtype_name == "float16"
+
+    with pytest.raises(ValueError, match="batch_size"):
+        transcribe.FasterWhisperASR(str(ct2_dir), "cpu", 0)
+    with pytest.raises(ValueError, match="num_beams"):
+        transcribe.FasterWhisperASR(str(ct2_dir), "cpu", 1, num_beams=0)
+
+    seen_calls: list[dict[str, Any]] = []
+
+    class FakeCT2Model:
+        def transcribe(self, wave: Any, **kwargs: Any) -> tuple[list[Any], dict[str, Any]]:
+            seen_calls.append({"len": len(wave), **kwargs})
+            return [SimpleNamespace(text=" We visited "), SimpleNamespace(text="Narok. ")], {}
+
+    dispatched._model = FakeCT2Model()
+    assert dispatched.loaded is True
+    assert dispatched([]) == []
+    assert dispatched([tone(16_000, seconds=0.1)]) == ["We visited Narok."]
+    assert seen_calls[-1]["beam_size"] == 3
+    assert seen_calls[-1]["condition_on_previous_text"] is False
 
 
 def test_package_version_missing() -> None:
@@ -481,6 +571,8 @@ def test_parse_args_defaults() -> None:
 def test_parse_args_initial_prompt() -> None:
     args = transcribe.parse_args(["--initial-prompt", "Nakuru, Narok, Baringo"])
     assert args.initial_prompt == "Nakuru, Narok, Baringo"
+    assert isinstance(transcribe.KENYAN_CHW_INITIAL_PROMPT, str)
+    assert len(transcribe.KENYAN_CHW_INITIAL_PROMPT) > 20
 
 
 def test_parse_args_rejects_unknown_version() -> None:
@@ -532,13 +624,17 @@ def test_main_passes_initial_prompt(tmp_path: Path) -> None:
     assert seen == [(transcribe.resolve_default_model(), "auto", 8, "Nakuru, Narok, Kajiado")]
 
 
-def test_resolve_default_model_prefers_local_v3_and_falls_back(tmp_path: Path) -> None:
+def test_resolve_default_model_prefers_local_v3_and_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    baseline = tmp_path / "baseline"
+    monkeypatch.setattr(transcribe, "BASE_MODEL_DIR", baseline)
     missing = tmp_path / "missing-model"
-    assert transcribe.resolve_default_model(missing) == transcribe.BASE_MODEL
+    assert transcribe.resolve_default_model(missing) == str(baseline)
 
-    local_dir = tmp_path / "whisper-large-v3-turbo-v3"
+    local_dir = tmp_path / "whisper-large-v3-turbo-tuned"
     local_dir.mkdir()
-    assert transcribe.resolve_default_model(local_dir) == transcribe.BASE_MODEL
+    assert transcribe.resolve_default_model(local_dir) == str(baseline)
 
     (local_dir / "config.json").write_text("{}", encoding="utf-8")
     assert transcribe.resolve_default_model(local_dir) == str(local_dir)
@@ -548,7 +644,40 @@ def test_parse_args_uses_fallback_when_local_model_absent(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(transcribe, "FINETUNED_MODEL_DIR", tmp_path / "absent")
-    assert transcribe.parse_args([]).model == transcribe.BASE_MODEL
+    monkeypatch.setattr(transcribe, "FINETUNED_INT8_MODEL_DIR", tmp_path / "absent-int8")
+    monkeypatch.setattr(transcribe, "BASE_MODEL_DIR", tmp_path / "baseline")
+    assert transcribe.parse_args([]).model == str(tmp_path / "baseline")
+
+
+def test_default_model_follows_device_and_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    hf = tmp_path / "tuned"
+    ct2 = tmp_path / "tuned-int8"
+    base = tmp_path / "baseline"
+    hf.mkdir()
+    ct2.mkdir()
+    (hf / "config.json").write_text("{}", encoding="utf-8")
+    (ct2 / "model.bin").write_bytes(b"weights")
+    monkeypatch.setattr(transcribe, "FINETUNED_MODEL_DIR", hf)
+    monkeypatch.setattr(transcribe, "FINETUNED_INT8_MODEL_DIR", ct2)
+    monkeypatch.setattr(transcribe, "BASE_MODEL_DIR", base)
+    assert transcribe.resolve_default_model(device="cpu") == str(ct2)
+    assert transcribe.resolve_default_model(device="cuda:0") == str(hf)
+    assert transcribe.parse_args(["--device", "cpu"]).model == str(ct2)
+    assert transcribe.parse_args(["--device", "cuda:0"]).model == str(hf)
+    with monkeypatch.context() as context:
+        context.setattr(transcribe, "resolve_device", lambda _: "cpu")
+        assert transcribe.resolve_default_model(device="auto") == str(ct2)
+        context.setattr(transcribe, "resolve_device", lambda _: "cuda:0")
+        assert transcribe.resolve_default_model(device="auto") == str(hf)
+    (ct2 / "model.bin").unlink()
+    assert transcribe.resolve_default_model(device="cpu") == str(hf)
+    (hf / "config.json").unlink()
+    assert transcribe.resolve_default_model(device="cuda:0") == str(base)
+    # When only the INT8 model is present, CUDA also falls back to it before baseline.
+    (ct2 / "model.bin").write_bytes(b"weights")
+    assert transcribe.resolve_default_model(device="cuda:0") == str(ct2)
 
 
 def test_write_transcripts_enforces_interface_contract(tmp_path: Path) -> None:

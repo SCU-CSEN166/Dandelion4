@@ -627,6 +627,17 @@ def evaluate_transcript_wer(
     }
 
 
+def resolve_initial_prompt(
+    initial_prompt: str | None, *, kenyan_prompt: bool = False
+) -> str | None:
+    """Resolve an explicit ASR initial prompt or optional built-in Kenyan CHW prompt."""
+    if initial_prompt is not None:
+        return initial_prompt
+    if kenyan_prompt:
+        return transcribe.KENYAN_CHW_INITIAL_PROMPT
+    return None
+
+
 def run_hidden_test_pipeline(
     *,
     input_audio: Path | None = None,
@@ -638,10 +649,14 @@ def run_hidden_test_pipeline(
     model_id: str | None = None,
     device: str = "auto",
     batch_size: int = transcribe.DEFAULT_BATCH_SIZE,
+    num_beams: int = 1,
+    initial_prompt: str | None = None,
     nlp_system: Any = None,
 ) -> list[dict[str, str]]:
     """Run audio->ASR->GLiNER->dedup->CSV end-to-end (or from existing transcripts JSON)."""
-    resolved_model = model_id or transcribe.resolve_default_model()
+    if num_beams < 1:
+        raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+    resolved_model = model_id or transcribe.resolve_default_model(device=device)
     messages: list[dict[str, Any]]
     meta: dict[str, Any] | None = None
 
@@ -658,7 +673,12 @@ def run_hidden_test_pipeline(
             raise ValueError("provide either input_audio or transcripts_path")
         with tempfile.TemporaryDirectory() as tmp:
             entries = collect_audio_files(input_audio, Path(tmp))
-            asr = make_asr(resolved_model, device, batch_size)
+            asr_kw: dict[str, Any] = {}
+            if initial_prompt is not None:
+                asr_kw["initial_prompt"] = initial_prompt
+            if num_beams != 1:
+                asr_kw["num_beams"] = num_beams
+            asr = make_asr(resolved_model, device, batch_size, **asr_kw)
             messages, audio_s, wall_s = transcribe_audio_entries(entries, asr, clean=clean)
             meta = transcribe.build_metadata(
                 "hidden_test",
@@ -715,11 +735,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--model", default=None)
     parser.add_argument("--device", default="auto")
     parser.add_argument("--batch-size", type=int, default=transcribe.DEFAULT_BATCH_SIZE)
+    parser.add_argument("--num-beams", type=int, default=1)
+    parser.add_argument("--initial-prompt", default=None)
+    parser.add_argument(
+        "--kenyan-prompt",
+        action="store_true",
+        help="Use the built-in generic Kenyan CHW / Swahili ASR initial prompt.",
+    )
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
+    prompt = resolve_initial_prompt(args.initial_prompt, kenyan_prompt=args.kenyan_prompt)
     rows = run_hidden_test_pipeline(
         input_audio=None if args.transcripts is not None else args.input,
         transcripts_path=args.transcripts,
@@ -729,6 +757,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         model_id=args.model,
         device=args.device,
         batch_size=args.batch_size,
+        num_beams=args.num_beams,
+        initial_prompt=prompt,
     )
     print(f"Wrote {len(rows)} predicted rows -> {args.out}")
     if args.expected is not None:

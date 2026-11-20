@@ -193,6 +193,7 @@ def test_run_pipeline_uses_local_v3_model_and_clean_contract(
     local_v3.mkdir(parents=True)
     (local_v3 / "config.json").write_text("{}", encoding="utf-8")
     monkeypatch.setattr(transcribe, "FINETUNED_MODEL_DIR", local_v3)
+    monkeypatch.setattr(transcribe, "FINETUNED_INT8_MODEL_DIR", tmp_path / "missing-int8")
 
     factory_calls: list[tuple[str, str, int, str | None]] = []
 

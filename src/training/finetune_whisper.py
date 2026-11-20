@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Iterable, Iterator, Sequence
 from dataclasses import dataclass
@@ -23,10 +24,21 @@ import numpy.typing as npt
 import soundfile
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_BASE_MODEL = "openai/whisper-small"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.training import make_audio  # noqa: E402
+from src.training.whisper_base import (  # noqa: E402
+    BASE_WHISPER_LARGE_V3_MODEL_ID,
+    resolve_training_base_model,
+)
+
+DEFAULT_BASE_MODEL = BASE_WHISPER_LARGE_V3_MODEL_ID
 DEFAULT_DATASET = "robello2/mini_afrispeech"
 DEFAULT_DATASET_CONFIG = "default"
-DEFAULT_OUT_DIR = REPO_ROOT / "models" / "whisper-african-lora"
+DEFAULT_OUT_DIR = REPO_ROOT / ".models" / "whisper-african-lora"
+DEFAULT_TRAIN_CACHE_DIR = REPO_ROOT / ".models" / "_train_cache"
+DEFAULT_HF_DATA_CACHE_DIR = REPO_ROOT / ".models" / "_hf_data_cache"
 ASR_SAMPLE_RATE = 16_000
 
 # Accent substrings in AfriSpeech-200 that correspond to Kenyan speakers.
@@ -54,6 +66,57 @@ class TrainingSample:
 
     audio: npt.NDArray[np.float32]
     text: str
+    audio_id: str | None = None
+    accent: str = ""
+
+
+_DEDUP_PUNCT_RE = re.compile(r"[^\w\s]+")
+
+
+def normalize_dedup_text(text: str) -> str:
+    """Lowercase, strip punctuation, and collapse whitespace for leakage deduplication."""
+    return " ".join(_DEDUP_PUNCT_RE.sub(" ", text.lower()).split())
+
+
+def deduplicate_samples(
+    samples: Sequence[TrainingSample],
+    *,
+    exclude_texts: Iterable[str] = (),
+    exclude_audio_ids: Iterable[str] = (),
+) -> tuple[list[TrainingSample], dict[str, int]]:
+    """Remove samples matching held-out exclusions or duplicate text/audio_id entries."""
+    blocked_texts = {
+        norm for norm in (normalize_dedup_text(t) for t in exclude_texts) if norm
+    }
+    blocked_ids = {str(aid).strip() for aid in exclude_audio_ids if str(aid).strip()}
+    seen_texts: set[str] = set()
+    seen_ids: set[str] = set()
+    kept: list[TrainingSample] = []
+    removed_excluded = 0
+    removed_duplicate = 0
+
+    for sample in samples:
+        norm_text = normalize_dedup_text(sample.text)
+        aid = sample.audio_id.strip() if sample.audio_id else None
+        if norm_text in blocked_texts or (aid is not None and aid in blocked_ids):
+            removed_excluded += 1
+            continue
+        if (norm_text and norm_text in seen_texts) or (aid is not None and aid in seen_ids):
+            removed_duplicate += 1
+            continue
+        if norm_text:
+            seen_texts.add(norm_text)
+        if aid is not None:
+            seen_ids.add(aid)
+        kept.append(sample)
+
+    stats = {
+        "input": len(samples),
+        "kept": len(kept),
+        "removed_excluded": removed_excluded,
+        "removed_duplicate": removed_duplicate,
+    }
+    return kept, stats
 
 
 def is_kenyan_accent(accent: str | None) -> bool:
@@ -125,7 +188,10 @@ def iter_afrispeech_samples(
         wave = resample_to_16k(array, sr)
         if max_duration_s is not None and len(wave) > int(max_duration_s * ASR_SAMPLE_RATE):
             continue
-        yield TrainingSample(audio=wave, text=text)
+        raw_id = row.get("audio_id") or row.get("id")
+        audio_id = str(raw_id).strip() if raw_id else None
+        accent = str(row.get("accent") or "").strip().lower()
+        yield TrainingSample(audio=wave, text=text, audio_id=audio_id, accent=accent)
         count += 1
         if limit is not None and count >= limit:
             return
@@ -172,22 +238,228 @@ class WhisperDataCollator:
         return batch
 
 
+def augment_wave(
+    wave: npt.NDArray[np.float32], rng: np.random.Generator
+) -> npt.NDArray[np.float32]:
+    """Apply a random acoustic perturbation (pink noise or 8 kHz phone bandwidth) to a wave."""
+    if wave.size < 4:
+        return wave
+    if float(rng.random()) < 0.5:
+        sig_rms = float(np.sqrt(np.mean(wave**2)))
+        if sig_rms <= 0.0:
+            return wave
+        noise_seed = int(rng.integers(0, 2**31 - 1))
+        noise = make_audio.pink_noise(len(wave), noise_seed)
+        snr_db = float(rng.uniform(12.0, 24.0))
+        scale = sig_rms / (10.0 ** (snr_db / 20.0))
+        mixed = wave + noise * np.float32(scale)
+        return np.clip(mixed, -0.99, 0.99).astype(np.float32)
+    down = librosa.resample(wave, orig_sr=ASR_SAMPLE_RATE, target_sr=make_audio.SR_PHONE)
+    up = librosa.resample(down, orig_sr=make_audio.SR_PHONE, target_sr=ASR_SAMPLE_RATE)
+    if len(up) < len(wave):
+        up = np.pad(up, (0, len(wave) - len(up)))
+    elif len(up) > len(wave):
+        up = up[: len(wave)]
+    clipped: npt.NDArray[np.float32] = np.ascontiguousarray(
+        np.clip(up, -0.99, 0.99), dtype=np.float32
+    )
+    return clipped
+
+
+def _maybe_augment_wave(
+    wave: npt.NDArray[np.float32],
+    idx: int,
+    noise_aug_prob: float,
+    aug_seed: int,
+    call_counts: dict[int, int],
+) -> npt.NDArray[np.float32]:
+    call_num = call_counts.get(idx, 0)
+    call_counts[idx] = call_num + 1
+    if noise_aug_prob > 0.0:
+        rng = np.random.default_rng((aug_seed, idx, call_num))
+        if float(rng.random()) < noise_aug_prob:
+            return augment_wave(wave, rng)
+    return wave
+
+
 class LazyWhisperDataset:
     """On-the-fly Whisper feature dataset storing compact int16 PCM waveforms in RAM."""
 
-    def __init__(self, samples: Sequence[TrainingSample], processor: Any) -> None:
+    def __init__(
+        self,
+        samples: Sequence[TrainingSample],
+        processor: Any,
+        *,
+        noise_aug_prob: float = 0.0,
+        aug_seed: int = 1234,
+    ) -> None:
+        if not 0.0 <= noise_aug_prob <= 1.0:
+            raise ValueError(f"noise_aug_prob must be in [0, 1], got {noise_aug_prob}")
         self._pcm16 = [
             (np.clip(s.audio, -1.0, 1.0) * 32767.0).astype(np.int16) for s in samples
         ]
         self._texts = [s.text for s in samples]
         self.processor = processor
+        self._noise_aug_prob = float(noise_aug_prob)
+        self._aug_seed = int(aug_seed)
+        self._call_counts: dict[int, int] = {}
 
     def __len__(self) -> int:
         return len(self._texts)
 
     def __getitem__(self, idx: int) -> dict[str, Any]:
         wave = self._pcm16[idx].astype(np.float32) / 32767.0
+        wave = _maybe_augment_wave(
+            wave, idx, self._noise_aug_prob, self._aug_seed, self._call_counts
+        )
         sample = TrainingSample(audio=wave, text=self._texts[idx])
+        return prepare_feature_dict(sample, self.processor)
+
+
+def build_pcm16_cache(
+    cache_dir: Path,
+    sample_iterables: Sequence[Iterable[TrainingSample]],
+    *,
+    exclude_texts: Iterable[str] = (),
+    exclude_audio_ids: Iterable[str] = (),
+) -> tuple[list[dict[str, Any]], dict[str, int]]:
+    """Stream samples to a disk-backed int16 PCM binary + JSONL index with <1 GB RAM."""
+    blocked_texts = {
+        norm for norm in (normalize_dedup_text(t) for t in exclude_texts) if norm
+    }
+    blocked_ids = {str(aid).strip() for aid in exclude_audio_ids if str(aid).strip()}
+    seen_texts: set[str] = set()
+    seen_ids: set[str] = set()
+
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    bin_path = cache_dir / "audio_pcm16.bin"
+    idx_path = cache_dir / "index.jsonl"
+    tmp_bin = cache_dir / "audio_pcm16.bin.tmp"
+    tmp_idx = cache_dir / "index.jsonl.tmp"
+
+    entries: list[dict[str, Any]] = []
+    raw_count = 0
+    removed_excluded = 0
+    removed_duplicate = 0
+    offset = 0
+
+    try:
+        with (
+            tmp_bin.open("wb") as bin_fh,
+            tmp_idx.open("w", encoding="utf-8", newline="\n") as idx_fh,
+        ):
+            for iterable in sample_iterables:
+                for sample in iterable:
+                    raw_count += 1
+                    norm_text = normalize_dedup_text(sample.text)
+                    aid = sample.audio_id.strip() if sample.audio_id else None
+                    if norm_text in blocked_texts or (aid is not None and aid in blocked_ids):
+                        removed_excluded += 1
+                        continue
+                    if (norm_text and norm_text in seen_texts) or (
+                        aid is not None and aid in seen_ids
+                    ):
+                        removed_duplicate += 1
+                        continue
+                    if norm_text:
+                        seen_texts.add(norm_text)
+                    if aid is not None:
+                        seen_ids.add(aid)
+
+                    pcm16 = (np.clip(sample.audio, -1.0, 1.0) * 32767.0).astype(np.int16)
+                    n_samples = int(pcm16.size)
+                    if n_samples == 0:
+                        continue
+                    bin_fh.write(pcm16.tobytes())
+                    entry: dict[str, Any] = {
+                        "offset": offset,
+                        "n_samples": n_samples,
+                        "text": sample.text,
+                        "accent": sample.accent,
+                        "audio_id": aid,
+                    }
+                    idx_fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+                    entries.append(entry)
+                    offset += n_samples
+        if not entries:
+            raise ValueError("no valid samples kept for PCM16 cache")
+        tmp_bin.replace(bin_path)
+        tmp_idx.replace(idx_path)
+    except Exception:
+        tmp_bin.unlink(missing_ok=True)
+        tmp_idx.unlink(missing_ok=True)
+        raise
+
+    stats = {
+        "raw": raw_count,
+        "kept": len(entries),
+        "removed_excluded": removed_excluded,
+        "removed_duplicate": removed_duplicate,
+    }
+    return entries, stats
+
+
+def load_pcm16_cache(cache_dir: Path) -> list[dict[str, Any]]:
+    """Load index metadata for an existing disk-backed PCM16 cache directory."""
+    idx_path = cache_dir / "index.jsonl"
+    bin_path = cache_dir / "audio_pcm16.bin"
+    if not idx_path.is_file() or not bin_path.is_file():
+        raise FileNotFoundError(f"PCM16 cache missing in {cache_dir}")
+    entries: list[dict[str, Any]] = []
+    for raw_line in idx_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if line:
+            entries.append(json.loads(line))
+    if not entries:
+        raise ValueError(f"empty PCM16 cache index in {idx_path}")
+    return entries
+
+
+class MemmapWhisperDataset:
+    """Disk-backed memmap Whisper feature dataset keeping process RAM < 1 GB."""
+
+    def __init__(
+        self,
+        cache_dir: Path,
+        processor: Any,
+        *,
+        entries: Sequence[dict[str, Any]] | None = None,
+        indices: Sequence[int] | None = None,
+        noise_aug_prob: float = 0.0,
+        aug_seed: int = 1234,
+    ) -> None:
+        if not 0.0 <= noise_aug_prob <= 1.0:
+            raise ValueError(f"noise_aug_prob must be in [0, 1], got {noise_aug_prob}")
+        self._bin_path = cache_dir / "audio_pcm16.bin"
+        if not self._bin_path.is_file():
+            raise FileNotFoundError(f"missing {self._bin_path}")
+        self._entries = list(entries) if entries is not None else load_pcm16_cache(cache_dir)
+        self._indices = (
+            list(indices) if indices is not None else list(range(len(self._entries)))
+        )
+        if not self._indices:
+            raise ValueError("MemmapWhisperDataset indices must not be empty")
+        self.processor = processor
+        self._noise_aug_prob = float(noise_aug_prob)
+        self._aug_seed = int(aug_seed)
+        self._call_counts: dict[int, int] = {}
+        self._mmap: Any = None
+
+    def __len__(self) -> int:
+        return len(self._indices)
+
+    def __getitem__(self, idx: int) -> dict[str, Any]:
+        if self._mmap is None:
+            self._mmap = np.memmap(self._bin_path, dtype=np.int16, mode="r")
+        entry = self._entries[self._indices[idx]]
+        offset = int(entry["offset"])
+        n_samples = int(entry["n_samples"])
+        pcm = np.array(self._mmap[offset : offset + n_samples], copy=True)
+        wave = pcm.astype(np.float32) / 32767.0
+        wave = _maybe_augment_wave(
+            wave, idx, self._noise_aug_prob, self._aug_seed, self._call_counts
+        )
+        sample = TrainingSample(audio=wave, text=str(entry["text"]))
         return prepare_feature_dict(sample, self.processor)
 
 
@@ -200,6 +472,55 @@ def prepare_feature_dict(sample: TrainingSample, processor: Any) -> dict[str, An
     return {"input_features": input_features, "labels": labels}
 
 
+def _stream_parquet_shards(
+    dataset_name: str,
+    shards: Sequence[str],
+    *,
+    seed: int | None = None,
+    columns: Sequence[str] | None = None,
+) -> Iterable[dict[str, Any]]:  # pragma: no cover - network
+    import importlib
+
+    from huggingface_hub import hf_hub_download
+
+    pa: Any = importlib.import_module("pyarrow")
+    pq = importlib.import_module("pyarrow.parquet")
+
+    shard_list = list(shards)
+    rng = np.random.default_rng(seed) if seed is not None else None
+    if rng is not None:
+        order = rng.permutation(len(shard_list)).tolist()
+        shard_list = [shard_list[i] for i in order]
+
+    DEFAULT_HF_DATA_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    for shard in shard_list:
+        local_path = hf_hub_download(
+            dataset_name,
+            repo_type="dataset",
+            filename=shard,
+            cache_dir=str(DEFAULT_HF_DATA_CACHE_DIR),
+        )
+        table = pq.read_table(local_path, columns=list(columns) if columns is not None else None)
+        rows = table.to_pylist()
+        del table
+        pa.default_memory_pool().release_unused()
+        if rng is not None:
+            row_order = rng.permutation(len(rows)).tolist()
+            rows = [rows[i] for i in row_order]
+        yield from rows
+
+
+def stream_hf_parquet_files(
+    dataset_name: str,
+    filenames: Sequence[str],
+    *,
+    seed: int | None = None,
+    columns: Sequence[str] | None = None,
+) -> Iterable[dict[str, Any]]:  # pragma: no cover - network
+    """Stream rows from explicit Parquet shard filenames in a Hugging Face dataset."""
+    yield from _stream_parquet_shards(dataset_name, filenames, seed=seed, columns=columns)
+
+
 def stream_hf_afrispeech(
     dataset_name: str, config: str, split: str, *, seed: int | None = None
 ) -> Iterable[dict[str, Any]]:  # pragma: no cover - network
@@ -208,12 +529,8 @@ def stream_hf_afrispeech(
     When ``seed`` is provided, shard order is deterministically shuffled so limited runs
     mix diverse accents across the dataset.
     """
-    import importlib
+    from huggingface_hub import HfApi
 
-    from huggingface_hub import HfApi, hf_hub_download
-
-    pa: Any = importlib.import_module("pyarrow")
-    pq = importlib.import_module("pyarrow.parquet")
     all_files = HfApi().list_repo_files(dataset_name, repo_type="dataset")
     split_prefix = f"data/{split}-"
     shards = sorted(f for f in all_files if f.startswith(split_prefix) and f.endswith(".parquet"))
@@ -221,22 +538,7 @@ def stream_hf_afrispeech(
         shards = sorted(f for f in all_files if split in f and f.endswith(".parquet"))
     if not shards:
         raise ValueError(f"no parquet shards found for split {split!r} in {dataset_name}")
-
-    if seed is not None:
-        rng = np.random.default_rng(seed)
-        order = rng.permutation(len(shards)).tolist()
-        shards = [shards[i] for i in order]
-
-    for shard in shards:
-        local_path = hf_hub_download(dataset_name, repo_type="dataset", filename=shard)
-        table = pq.read_table(local_path)
-        rows = table.to_pylist()
-        del table
-        pa.default_memory_pool().release_unused()
-        if seed is not None:
-            row_order = rng.permutation(len(rows)).tolist()
-            rows = [rows[i] for i in row_order]
-        yield from rows
+    yield from _stream_parquet_shards(dataset_name, shards, seed=seed)
 
 
 DEFAULT_LORA_TARGETS: tuple[str, ...] = ("q_proj", "v_proj")
@@ -250,6 +552,7 @@ def train_lora(
     out_dir: Path,
     epochs: int = 3,
     batch_size: int = 2,
+    eval_batch_size: int | None = None,
     grad_accum: int = 4,
     learning_rate: float = 5e-4,
     lora_r: int = 16,
@@ -259,6 +562,12 @@ def train_lora(
     warmup_ratio: float = 0.05,
     weight_decay: float = 0.01,
     save_best: bool = False,
+    eval_steps: int | None = None,
+    spec_augment: bool = False,
+    noise_aug_prob: float = 0.0,
+    aug_seed: int = 1234,
+    cache_dir: Path | None = None,
+    train_indices: Sequence[int] | None = None,
     load_in_8bit: bool = False,
     gradient_checkpointing: bool = True,
 ) -> Path:  # pragma: no cover - heavy GPU training
@@ -275,9 +584,14 @@ def train_lora(
         WhisperProcessor,
     )
 
-    if not train_samples:
+    if not train_samples and cache_dir is None:
         raise ValueError("train_samples must not be empty")
+    if eval_steps is not None and eval_steps < 1:
+        raise ValueError(f"eval_steps must be >= 1, got {eval_steps}")
+    if eval_batch_size is not None and eval_batch_size < 1:
+        raise ValueError(f"eval_batch_size must be >= 1, got {eval_batch_size}")
 
+    base_model = resolve_training_base_model(base_model)
     processor = WhisperProcessor.from_pretrained(base_model, language="English", task="transcribe")
     use_bf16 = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
     use_fp16 = torch.cuda.is_available() and not use_bf16
@@ -303,6 +617,63 @@ def train_lora(
         gen_cfg.task = "transcribe"
         gen_cfg.forced_decoder_ids = None
     model.config.use_cache = False
+    if spec_augment:
+        model.config.apply_spec_augment = True
+        model.config.mask_time_prob = 0.05
+        model.config.mask_time_length = 10
+        model.config.mask_feature_prob = 0.04
+        model.config.mask_feature_length = 10
+
+    max_target_pos = int(getattr(model.config, "max_target_positions", 448) or 448)
+    train_ds: Any
+    if cache_dir is not None:
+        entries = load_pcm16_cache(cache_dir)
+        base_idx = list(range(len(entries))) if train_indices is None else list(train_indices)
+        filtered_idx = [
+            i
+            for i in base_idx
+            if len(processor.tokenizer(str(entries[i]["text"])).input_ids) <= max_target_pos
+        ]
+        dropped_train = len(base_idx) - len(filtered_idx)
+        if dropped_train:
+            print(
+                f"Filtered {dropped_train} train sample(s) exceeding {max_target_pos} label tokens"
+            )
+        if not filtered_idx:
+            raise ValueError("all cached train samples exceeded max_target_positions")
+        train_ds = MemmapWhisperDataset(
+            cache_dir,
+            processor,
+            entries=entries,
+            indices=filtered_idx,
+            noise_aug_prob=noise_aug_prob,
+            aug_seed=aug_seed,
+        )
+        n_train_items = len(filtered_idx)
+    else:
+        filtered_train = [
+            s
+            for s in train_samples
+            if len(processor.tokenizer(s.text).input_ids) <= max_target_pos
+        ]
+        dropped_train = len(train_samples) - len(filtered_train)
+        if dropped_train:
+            print(
+                f"Filtered {dropped_train} train sample(s) exceeding {max_target_pos} label tokens"
+            )
+        if not filtered_train:
+            raise ValueError("all train_samples exceeded max_target_positions")
+        train_ds = LazyWhisperDataset(
+            filtered_train, processor, noise_aug_prob=noise_aug_prob, aug_seed=aug_seed
+        )
+        n_train_items = len(filtered_train)
+
+    filtered_eval = [
+        s for s in eval_samples if len(processor.tokenizer(s.text).input_ids) <= max_target_pos
+    ]
+    dropped_eval = len(eval_samples) - len(filtered_eval)
+    if dropped_eval:
+        print(f"Filtered {dropped_eval} eval sample(s) exceeding {max_target_pos} label tokens")
 
     lora_config = LoraConfig(
         r=lora_r,
@@ -313,17 +684,24 @@ def train_lora(
     )
     peft_model: Any = get_peft_model(model, lora_config)
 
-    train_ds: Any = LazyWhisperDataset(train_samples, processor)
-    eval_ds: Any = LazyWhisperDataset(eval_samples, processor) if eval_samples else None
+    eval_ds: Any = LazyWhisperDataset(filtered_eval, processor) if filtered_eval else None
 
     use_save_best = save_best and eval_ds is not None
+    use_step_eval = eval_ds is not None and eval_steps is not None
+    eval_strategy = "steps" if use_step_eval else ("epoch" if eval_ds is not None else "no")
+    save_strategy = ("steps" if use_step_eval else "epoch") if use_save_best else "no"
     eff_batch = batch_size * grad_accum
-    steps_per_epoch = max(1, (len(train_samples) + eff_batch - 1) // eff_batch)
+    steps_per_epoch = max(1, (n_train_items + eff_batch - 1) // eff_batch)
     warmup_steps = max(1, int(steps_per_epoch * epochs * warmup_ratio)) if warmup_ratio > 0 else 0
+    step_kwargs: dict[str, Any] = {}
+    if use_step_eval and eval_steps is not None:
+        step_kwargs["eval_steps"] = eval_steps
+        if use_save_best:
+            step_kwargs["save_steps"] = eval_steps
     training_args = Seq2SeqTrainingArguments(
         output_dir=str(out_dir / "_checkpoints"),
         per_device_train_batch_size=batch_size,
-        per_device_eval_batch_size=batch_size,
+        per_device_eval_batch_size=eval_batch_size if eval_batch_size is not None else batch_size,
         gradient_accumulation_steps=grad_accum,
         learning_rate=learning_rate,
         lr_scheduler_type=lr_scheduler,
@@ -334,8 +712,8 @@ def train_lora(
         bf16=use_bf16,
         gradient_checkpointing=gradient_checkpointing,
         gradient_checkpointing_kwargs={"use_reentrant": False} if gradient_checkpointing else None,
-        eval_strategy="epoch" if eval_ds is not None else "no",
-        save_strategy="epoch" if use_save_best else "no",
+        eval_strategy=eval_strategy,
+        save_strategy=save_strategy,
         save_total_limit=2 if use_save_best else None,
         load_best_model_at_end=use_save_best,
         metric_for_best_model="eval_loss" if use_save_best else None,
@@ -344,6 +722,7 @@ def train_lora(
         remove_unused_columns=False,
         label_names=["labels"],
         report_to=[],
+        **step_kwargs,
     )
 
     collator = WhisperDataCollator(
@@ -372,10 +751,18 @@ def train_lora(
             base_model, dtype=torch.float16, low_cpu_mem_usage=True
         )
         merged_model: Any = PeftModel.from_pretrained(cpu_base, adapter_dir).merge_and_unload()
+        merged_model.config.apply_spec_augment = False
+        merged_model.config.use_cache = True
         merged_model.save_pretrained(out_dir)
     else:
         merged: Any = peft_model.merge_and_unload()
+        merged.config.apply_spec_augment = False
+        merged.config.use_cache = True
         merged.save_pretrained(out_dir)
+        del trainer, peft_model, merged, model
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
     processor.save_pretrained(out_dir)
     return out_dir
 
@@ -451,15 +838,41 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--base-model", default=DEFAULT_BASE_MODEL)
     parser.add_argument("--dataset", default=DEFAULT_DATASET)
     parser.add_argument("--dataset-config", default=DEFAULT_DATASET_CONFIG)
-    parser.add_argument("--train-limit", type=int, default=500)
+    parser.add_argument(
+        "--train-limit", type=int, default=500, help="max train clips (0 = all valid clips)"
+    )
     parser.add_argument("--eval-limit", type=int, default=100)
     parser.add_argument(
         "--kenyan-only", action="store_true", help="filter rows to Kenyan accents only"
     )
+    parser.add_argument(
+        "--extra-dataset",
+        default=None,
+        help="Optional extra HF Parquet dataset (e.g. Professor/afrispeech-200-16khz).",
+    )
+    parser.add_argument(
+        "--extra-accents",
+        nargs="+",
+        default=None,
+        help="Accent names matching data/train-<accent>.parquet in --extra-dataset.",
+    )
+    parser.add_argument(
+        "--exclude-test-datasets",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Exclude samples matching held-out test/validation splits from training.",
+    )
     parser.add_argument("--local-manifest", type=Path, default=None)
+    parser.add_argument(
+        "--cache-dir",
+        type=Path,
+        default=None,
+        help="Disk-backed int16 PCM cache directory (builds if missing, reuses if present).",
+    )
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--batch-size", type=int, default=2)
+    parser.add_argument("--eval-batch-size", type=int, default=None)
     parser.add_argument("--grad-accum", type=int, default=4)
     parser.add_argument("--lr", type=float, default=5e-4)
     parser.add_argument("--lora-r", type=int, default=16)
@@ -476,6 +889,18 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help="drop clips longer than this many seconds (<=0 keeps all)",
     )
     parser.add_argument("--save-best", action="store_true")
+    parser.add_argument(
+        "--eval-steps", type=int, default=None, help="evaluate/save every N steps instead of epoch"
+    )
+    parser.add_argument(
+        "--spec-augment", action="store_true", help="enable Whisper SpecAugment during training"
+    )
+    parser.add_argument(
+        "--noise-aug-prob",
+        type=float,
+        default=0.0,
+        help="probability of on-the-fly pink-noise or 8kHz telephony training augmentation",
+    )
     parser.add_argument("--skip-baseline-eval", action="store_true")
     parser.add_argument(
         "--clean-transcripts", action="store_true",
@@ -491,7 +916,94 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--cv-report", type=Path, default=None, help="optional JSON path for eval/CV metrics"
     )
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    if args.train_limit < 0:
+        parser.error("--train-limit must be >= 0")
+    if args.eval_steps is not None and args.eval_steps < 1:
+        parser.error("--eval-steps must be >= 1")
+    if args.eval_batch_size is not None and args.eval_batch_size < 1:
+        parser.error("--eval-batch-size must be >= 1")
+    if not 0.0 <= args.noise_aug_prob <= 1.0:
+        parser.error("--noise-aug-prob must be in [0.0, 1.0]")
+    return args
+
+
+def _collect_holdout_exclusions(
+    dataset: str,
+    extra_dataset: str | None,
+    extra_accents: Sequence[str] | None,
+) -> tuple[list[str], list[str]]:  # pragma: no cover - network/cache
+    """Collect held-out transcripts and audio_ids to exclude from training."""
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    exclude_texts: list[str] = []
+    exclude_ids: list[str] = []
+
+    base_files = api.list_repo_files(dataset, repo_type="dataset")
+    base_test_shards = sorted(
+        f for f in base_files if f.startswith("data/test-") and f.endswith(".parquet")
+    )
+    for row in stream_hf_parquet_files(
+        dataset, base_test_shards, columns=["transcript", "audio_id"]
+    ):
+        if row.get("transcript"):
+            exclude_texts.append(str(row["transcript"]))
+        if row.get("audio_id"):
+            exclude_ids.append(str(row["audio_id"]))
+
+    if extra_dataset:
+        extra_files = set(api.list_repo_files(extra_dataset, repo_type="dataset"))
+        holdout_accents = (
+            *(extra_accents or ()),
+            "swahili",
+            "yoruba",
+            "igbo",
+            "hausa",
+            "afrikaans",
+        )
+        extra_holdout = sorted(
+            f
+            for f in extra_files
+            if (f.startswith("data/test-") or f.startswith("data/validation-"))
+            and f.endswith(".parquet")
+            and (
+                not extra_accents
+                or any(
+                    f"data/test-{a}.parquet" == f or f"data/validation-{a}.parquet" == f
+                    for a in holdout_accents
+                )
+            )
+        )
+        for row in stream_hf_parquet_files(
+            extra_dataset, extra_holdout, columns=["transcript", "audio_id"]
+        ):
+            if row.get("transcript"):
+                exclude_texts.append(str(row["transcript"]))
+            if row.get("audio_id"):
+                exclude_ids.append(str(row["audio_id"]))
+    return exclude_texts, exclude_ids
+
+
+def _resolve_extra_train_shards(
+    extra_dataset: str, extra_accents: Sequence[str] | None
+) -> list[str]:  # pragma: no cover - network/cache
+    from huggingface_hub import HfApi
+
+    extra_repo_files = set(HfApi().list_repo_files(extra_dataset, repo_type="dataset"))
+    if extra_accents:
+        shards = [
+            f"data/train-{accent}.parquet"
+            for accent in extra_accents
+            if f"data/train-{accent}.parquet" in extra_repo_files
+        ]
+    else:
+        shards = sorted(
+            f for f in extra_repo_files if f.startswith("data/train-") and f.endswith(".parquet")
+        )
+    if not shards:
+        raise ValueError(f"no matching train shards found in {extra_dataset}")
+    return shards
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wrapper
@@ -499,25 +1011,17 @@ def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wr
     kenyan_only = bool(args.kenyan_only)
     grad_ckpt = not args.no_gradient_checkpointing
     max_dur = float(args.max_duration) if args.max_duration > 0 else None
-    train_samples = list(
-        iter_afrispeech_samples(
-            stream_hf_afrispeech(args.dataset, args.dataset_config, "train", seed=args.seed),
-            limit=args.train_limit,
-            kenyan_only=kenyan_only,
-            max_duration_s=max_dur,
-            clean_transcripts=bool(args.clean_transcripts),
-        )
-    )
-    if args.local_manifest is not None:
-        train_samples.extend(load_manifest_samples(args.local_manifest))
-    if not train_samples:
-        print("error: no training samples collected", file=sys.stderr)
-        return 1
+    train_limit = None if args.train_limit == 0 else int(args.train_limit)
+
+    if args.cache_dir is not None and args.k_folds >= 2:
+        print("error: --cache-dir cannot be combined with --k-folds >= 2", file=sys.stderr)
+        return 2
 
     train_kw: dict[str, Any] = {
         "base_model": args.base_model,
         "epochs": args.epochs,
         "batch_size": args.batch_size,
+        "eval_batch_size": args.eval_batch_size,
         "grad_accum": args.grad_accum,
         "learning_rate": args.lr,
         "lora_r": args.lora_r,
@@ -527,9 +1031,139 @@ def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wr
         "warmup_ratio": args.warmup_ratio,
         "weight_decay": args.weight_decay,
         "save_best": bool(args.save_best),
+        "eval_steps": args.eval_steps,
+        "spec_augment": bool(args.spec_augment),
+        "noise_aug_prob": float(args.noise_aug_prob),
+        "aug_seed": int(args.seed),
         "load_in_8bit": args.load_in_8bit,
         "gradient_checkpointing": grad_ckpt,
     }
+
+    cache_dir: Path | None = (
+        args.cache_dir
+        if args.cache_dir is not None
+        else (DEFAULT_TRAIN_CACHE_DIR if args.k_folds < 2 else None)
+    )
+    train_samples: list[TrainingSample] = []
+    train_indices: list[int] | None = None
+    n_train_count = 0
+
+    if cache_dir is not None:
+        idx_file = cache_dir / "index.jsonl"
+        bin_file = cache_dir / "audio_pcm16.bin"
+        if idx_file.is_file() and bin_file.is_file():
+            entries = load_pcm16_cache(cache_dir)
+            print(f"Reusing PCM16 cache at {cache_dir}: {len(entries)} clips", flush=True)
+        else:
+            exclude_texts, exclude_ids = (
+                _collect_holdout_exclusions(args.dataset, args.extra_dataset, args.extra_accents)
+                if args.exclude_test_datasets
+                else ([], [])
+            )
+            iterables: list[Iterable[TrainingSample]] = [
+                iter_afrispeech_samples(
+                    stream_hf_afrispeech(
+                        args.dataset, args.dataset_config, "train", seed=args.seed
+                    ),
+                    limit=train_limit,
+                    kenyan_only=kenyan_only,
+                    max_duration_s=max_dur,
+                    clean_transcripts=bool(args.clean_transcripts),
+                )
+            ]
+            if args.local_manifest is not None:
+                iterables.append(load_manifest_samples(args.local_manifest))
+            if args.extra_dataset:
+                try:
+                    extra_shards = _resolve_extra_train_shards(
+                        args.extra_dataset, args.extra_accents
+                    )
+                except ValueError as exc:
+                    print(f"error: {exc}", file=sys.stderr)
+                    return 1
+                iterables.append(
+                    iter_afrispeech_samples(
+                        stream_hf_parquet_files(args.extra_dataset, extra_shards, seed=args.seed),
+                        kenyan_only=kenyan_only,
+                        max_duration_s=max_dur,
+                        clean_transcripts=bool(args.clean_transcripts),
+                    )
+                )
+            entries, dedup_stats = build_pcm16_cache(
+                cache_dir,
+                iterables,
+                exclude_texts=exclude_texts,
+                exclude_audio_ids=exclude_ids,
+            )
+            print(
+                f"Built PCM16 cache at {cache_dir}: raw={dedup_stats['raw']} "
+                f"kept={dedup_stats['kept']} excluded={dedup_stats['removed_excluded']} "
+                f"duplicates={dedup_stats['removed_duplicate']}",
+                flush=True,
+            )
+        n_train_count = len(entries)
+        rng = np.random.default_rng(args.seed)
+        train_indices = rng.permutation(n_train_count).tolist()
+    else:
+        train_samples = list(
+            iter_afrispeech_samples(
+                stream_hf_afrispeech(args.dataset, args.dataset_config, "train", seed=args.seed),
+                limit=train_limit,
+                kenyan_only=kenyan_only,
+                max_duration_s=max_dur,
+                clean_transcripts=bool(args.clean_transcripts),
+            )
+        )
+        if args.local_manifest is not None:
+            train_samples.extend(load_manifest_samples(args.local_manifest))
+        if args.extra_dataset:
+            try:
+                extra_shards = _resolve_extra_train_shards(
+                    args.extra_dataset, args.extra_accents
+                )
+            except ValueError as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                return 1
+            extra_samples = list(
+                iter_afrispeech_samples(
+                    stream_hf_parquet_files(args.extra_dataset, extra_shards, seed=args.seed),
+                    kenyan_only=kenyan_only,
+                    max_duration_s=max_dur,
+                    clean_transcripts=bool(args.clean_transcripts),
+                )
+            )
+            print(
+                f"Collected {len(train_samples)} base + {len(extra_samples)} extra samples "
+                f"from {len(extra_shards)} shard(s) in {args.extra_dataset}"
+            )
+            train_samples.extend(extra_samples)
+
+        if args.extra_dataset or args.exclude_test_datasets:
+            exclude_texts, exclude_ids = (
+                _collect_holdout_exclusions(args.dataset, args.extra_dataset, args.extra_accents)
+                if args.exclude_test_datasets
+                else ([], [])
+            )
+            train_samples, dedup_stats = deduplicate_samples(
+                train_samples,
+                exclude_texts=exclude_texts,
+                exclude_audio_ids=exclude_ids,
+            )
+            print(
+                f"Deduplication: input={dedup_stats['input']} kept={dedup_stats['kept']} "
+                f"excluded={dedup_stats['removed_excluded']} "
+                f"duplicates={dedup_stats['removed_duplicate']}"
+            )
+
+        if len(train_samples) > 1:
+            rng = np.random.default_rng(args.seed)
+            perm = rng.permutation(len(train_samples)).tolist()
+            train_samples = [train_samples[i] for i in perm]
+
+        if not train_samples:
+            print("error: no training samples collected", file=sys.stderr)
+            return 1
+        n_train_count = len(train_samples)
 
     if args.k_folds >= 2:
         folds = make_k_folds(train_samples, args.k_folds, seed=args.seed)
@@ -590,7 +1224,14 @@ def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wr
         if eval_samples and not args.skip_baseline_eval
         else None
     )
-    saved_dir = train_lora(train_samples, eval_samples, out_dir=args.out_dir, **train_kw)
+    saved_dir = train_lora(
+        train_samples,
+        eval_samples,
+        out_dir=args.out_dir,
+        cache_dir=cache_dir,
+        train_indices=train_indices,
+        **train_kw,
+    )
     eval_tuned_wer = evaluate_model_wer(saved_dir, eval_samples) if eval_samples else None
     if eval_tuned_wer is not None:
         base_str = f"baseline={eval_base_wer:.2f}% -> " if eval_base_wer is not None else ""
@@ -610,7 +1251,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wr
                     {
                         "base_model": args.base_model,
                         "dataset": args.dataset,
-                        "n_train": len(train_samples),
+                        "n_train": n_train_count,
                         "n_eval": len(eval_samples),
                         "baseline_wer_pct": round(eval_base_wer, 2)
                         if eval_base_wer is not None
@@ -622,7 +1263,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wr
                 + "\n",
                 encoding="utf-8",
             )
-    print(f"Saved merged LoRA Whisper model to {saved_dir} ({len(train_samples)} train samples)")
+    print(f"Saved merged LoRA Whisper model to {saved_dir} ({n_train_count} train samples)")
     return 0
 
 

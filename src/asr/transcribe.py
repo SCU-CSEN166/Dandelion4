@@ -27,21 +27,35 @@ import numpy.typing as npt
 import soundfile
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from src.core import runtime  # noqa: E402
+
 DEFAULT_MANIFEST = REPO_ROOT / "examples" / "audio_manifest.json"
 DEFAULT_OUT_DIR = REPO_ROOT / "examples"
 BASE_MODEL = "openai/whisper-large-v3-turbo"
-FINETUNED_MODEL_DIR = REPO_ROOT / "models" / "whisper-large-v3-turbo-v3"
+BASE_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-turbo"
+FINETUNED_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-tuned"
+FINETUNED_INT8_MODEL_DIR = REPO_ROOT / "models" / "whisper-large-v3-tuned-int8"
 
 
-def resolve_default_model(model_dir: Path | None = None) -> str:
-    """Return the local fine-tuned checkpoint path when present, else BASE_MODEL."""
+def resolve_default_model(model_dir: Path | None = None, *, device: str = "auto") -> str:
+    """Choose tuned INT8 on CPU and tuned HF on CUDA, with local fallbacks."""
+    if (
+        model_dir is None
+        and resolve_device(device) == "cpu"
+        and (FINETUNED_INT8_MODEL_DIR / "model.bin").is_file()
+    ):
+        return str(FINETUNED_INT8_MODEL_DIR)
     target = FINETUNED_MODEL_DIR if model_dir is None else model_dir
     if (target / "config.json").is_file():
         return str(target)
-    return BASE_MODEL
+    if model_dir is None and (FINETUNED_INT8_MODEL_DIR / "model.bin").is_file():
+        return str(FINETUNED_INT8_MODEL_DIR)
+    return str(BASE_MODEL_DIR)
 
 
-DEFAULT_MODEL = resolve_default_model()
 DEFAULT_BATCH_SIZE = 8
 
 VERSIONS: tuple[str, ...] = ("clean", "noisy", "phone")
@@ -49,6 +63,11 @@ ASR_SAMPLE_RATE = 16_000
 LANGUAGE = "en"
 TASK = "transcribe"
 DECODING: dict[str, Any] = {"num_beams": 1, "do_sample": False}
+KENYAN_CHW_INITIAL_PROMPT = (
+    "Habari team, Asante. Kenyan community health volunteer (CHV) report in English "
+    "with Swahili terms: matatu, mandazi, unga, sukuma wiki, M-Pesa, shillings, mama, "
+    "Health Centre, dispensary, counsellor, Nakuru, Baringo, Narok, Kajiado, Mogotio, Nairobi."
+)
 
 # Keys WhisperASR.metadata() supplies, in the order they appear in the .meta.json file.
 ASR_METADATA_KEYS: tuple[str, ...] = (
@@ -302,13 +321,17 @@ class WhisperASR:
         device: str,
         batch_size: int = DEFAULT_BATCH_SIZE,
         initial_prompt: str | None = None,
+        num_beams: int = 1,
     ) -> None:
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
+        if num_beams < 1:
+            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
         self.model_id = model_id
         self.device = device
         self.batch_size = batch_size
         self.initial_prompt = initial_prompt
+        self.num_beams = num_beams
         self._pipe: Any = None
         self._chunked_pipe: Any = None
 
@@ -325,9 +348,13 @@ class WhisperASR:
     def load(self) -> None:
         """Build the pipeline if it has not been built yet."""
         if self._pipe is None:  # pragma: no cover - needs the model weights
+            if not Path(self.model_id).is_dir():
+                raise FileNotFoundError(f"local Whisper model directory not found: {self.model_id}")
             import torch
             from transformers import pipeline
 
+            if self.device == "cpu":
+                runtime.configure_torch_cpu_threads()
             dtype = torch.float16 if self.dtype_name == "float16" else torch.float32
             self._pipe = pipeline(
                 "automatic-speech-recognition",
@@ -359,11 +386,19 @@ class WhisperASR:
             return []
         self.load()
         assert self._pipe is not None
-        generate_kwargs: dict[str, Any] = {"language": LANGUAGE, "task": TASK, **DECODING}
+        generate_kwargs: dict[str, Any] = {
+            "language": LANGUAGE,
+            "task": TASK,
+            **DECODING,
+            "num_beams": self.num_beams,
+        }
         if self.initial_prompt:
-            generate_kwargs["prompt_ids"] = self._pipe.tokenizer.get_prompt_ids(
+            prompt_ids = self._pipe.tokenizer.get_prompt_ids(
                 self.initial_prompt, return_tensors="pt"
             )
+            if hasattr(self._pipe, "model") and hasattr(self._pipe.model, "device"):
+                prompt_ids = prompt_ids.to(self._pipe.model.device)
+            generate_kwargs["prompt_ids"] = prompt_ids
         max_short = WHISPER_CHUNK_SECONDS * ASR_SAMPLE_RATE
         short_indices = [i for i, wave in enumerate(waves) if len(wave) <= max_short]
         long_indices = [i for i, wave in enumerate(waves) if len(wave) > max_short]
@@ -396,17 +431,136 @@ class WhisperASR:
 
     def metadata(self) -> dict[str, Any]:
         """Model and runtime fields for the .meta.json file (design §2.6)."""
-        return {
-            "model": self.model_id,
-            "language": LANGUAGE,
-            "task": TASK,
-            "decoding": dict(DECODING),
-            "initial_prompt": self.initial_prompt,
-            "device": self.device,
-            "dtype": self.dtype_name,
-            "torch_version": _package_version("torch"),
-            "transformers_version": _package_version("transformers"),
-        }
+        return _build_asr_metadata(
+            self.model_id,
+            self.device,
+            self.dtype_name,
+            self.initial_prompt,
+            self.num_beams,
+        )
+
+
+def _build_asr_metadata(
+    model_id: str,
+    device: str,
+    dtype_name: str,
+    initial_prompt: str | None,
+    num_beams: int,
+) -> dict[str, Any]:
+    return {
+        "model": model_id,
+        "language": LANGUAGE,
+        "task": TASK,
+        "decoding": {**DECODING, "num_beams": num_beams},
+        "initial_prompt": initial_prompt,
+        "device": device,
+        "dtype": dtype_name,
+        "torch_version": _package_version("torch"),
+        "transformers_version": _package_version("transformers"),
+    }
+
+
+def is_ct2_model_dir(model_id: str) -> bool:
+    """Return True if *model_id* points to a local CTranslate2 model directory."""
+    return (Path(model_id) / "model.bin").is_file()
+
+
+class FasterWhisperASR:
+    """CTranslate2 / faster-whisper ASR backend optimized for CPU INT8 edge inference."""
+
+    def __init__(
+        self,
+        model_id: str,
+        device: str,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        initial_prompt: str | None = None,
+        num_beams: int = 1,
+        compute_type: str | None = None,
+        cpu_threads: int | None = None,
+    ) -> None:
+        if batch_size < 1:
+            raise ValueError(f"batch_size must be >= 1, got {batch_size}")
+        if num_beams < 1:
+            raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+        self.model_id = model_id
+        self.device = device
+        self.batch_size = batch_size
+        self.initial_prompt = initial_prompt
+        self.num_beams = num_beams
+        self.cpu_threads = (
+            runtime.available_cpu_count()
+            if cpu_threads is None and device == "cpu"
+            else cpu_threads
+        )
+        if self.cpu_threads is None:
+            self.cpu_threads = 0
+        self.compute_type = (
+            compute_type
+            if compute_type is not None
+            else ("float16" if device.startswith("cuda") else "int8")
+        )
+        self._model: Any = None
+
+    @property
+    def dtype_name(self) -> str:
+        """Compute type used by CTranslate2 (e.g. 'int8' on CPU, 'float16' on CUDA)."""
+        return self.compute_type
+
+    @property
+    def loaded(self) -> bool:
+        """Whether the CTranslate2 WhisperModel has been built."""
+        return self._model is not None
+
+    def load(self) -> None:  # pragma: no cover - needs CTranslate2 model weights
+        """Load the CTranslate2 WhisperModel on demand."""
+        if self._model is None:
+            from faster_whisper import WhisperModel
+
+            if self.device.startswith("cuda"):
+                fw_device = "cuda"
+                _, _, idx_str = self.device.partition(":")
+                device_index = int(idx_str) if idx_str.isdigit() else 0
+            else:
+                fw_device = "cpu"
+                device_index = 0
+            self._model = WhisperModel(
+                self.model_id,
+                device=fw_device,
+                device_index=device_index,
+                compute_type=self.compute_type,
+                cpu_threads=self.cpu_threads,
+                local_files_only=True,
+            )
+
+    def __call__(self, waves: list[FloatArray]) -> list[str]:
+        """Transcribe 16 kHz float32 mono waves via CTranslate2, returning one text per wave."""
+        if not waves:
+            return []
+        self.load()
+        assert self._model is not None
+        texts: list[str] = []
+        for wave in waves:
+            segments, _info = self._model.transcribe(
+                wave,
+                language=LANGUAGE,
+                task=TASK,
+                beam_size=self.num_beams,
+                condition_on_previous_text=False,
+                initial_prompt=self.initial_prompt,
+            )
+            joined = " ".join(str(seg.text).strip() for seg in segments if str(seg.text).strip())
+            texts.append(joined)
+        return texts
+
+    def metadata(self) -> dict[str, Any]:
+        """Model and runtime fields for the .meta.json file (design §2.6)."""
+        return _build_asr_metadata(
+            self.model_id,
+            self.device,
+            self.dtype_name,
+            self.initial_prompt,
+            self.num_beams,
+        )
 
 
 # -------------------------------------------------------------------- orchestration
@@ -471,11 +625,26 @@ def make_whisper(
     device: str,
     batch_size: int,
     initial_prompt: str | None = None,
+    num_beams: int = 1,
 ) -> ASRBackend:
-    """Resolve the device, print it, and return an (unloaded) WhisperASR."""
+    """Resolve the device, print it, and return an unloaded Whisper or CTranslate2 ASR backend."""
     resolved = resolve_device(device)
     print(f"device: {resolved}")
-    return WhisperASR(model_id, resolved, batch_size, initial_prompt=initial_prompt)
+    if is_ct2_model_dir(model_id):
+        return FasterWhisperASR(
+            model_id,
+            resolved,
+            batch_size,
+            initial_prompt=initial_prompt,
+            num_beams=num_beams,
+        )
+    return WhisperASR(
+        model_id,
+        resolved,
+        batch_size,
+        initial_prompt=initial_prompt,
+        num_beams=num_beams,
+    )
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
@@ -490,13 +659,19 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--device", default="auto", help='"auto", "cpu", "cuda:0", ...')
     parser.add_argument("--batch-size", type=int, default=DEFAULT_BATCH_SIZE)
     parser.add_argument(
+        "--num-beams",
+        type=int,
+        default=1,
+        help="Beam search width (1 = greedy decoding).",
+    )
+    parser.add_argument(
         "--initial-prompt",
         default=None,
         help="Optional Whisper initial prompt (e.g. domain terms or place names).",
     )
     args = parser.parse_args(argv)
     if args.model is None:
-        args.model = resolve_default_model()
+        args.model = resolve_default_model(device=args.device)
     return args
 
 
@@ -515,9 +690,16 @@ def main(
     if args.batch_size < 1:
         print(f"error: --batch-size must be >= 1, got {args.batch_size}", file=sys.stderr)
         return 2
+    if args.num_beams < 1:
+        print(f"error: --num-beams must be >= 1, got {args.num_beams}", file=sys.stderr)
+        return 2
     versions = list(VERSIONS) if args.version == "all" else [args.version]
 
     def _build_asr() -> ASRBackend:
+        if args.num_beams != 1:
+            return make_asr(
+                args.model, args.device, args.batch_size, args.initial_prompt, args.num_beams
+            )
         if args.initial_prompt is not None:
             return make_asr(args.model, args.device, args.batch_size, args.initial_prompt)
         return make_asr(args.model, args.device, args.batch_size)

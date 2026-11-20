@@ -164,6 +164,10 @@ def run_demo(
     expected_csv: Path | None = None,
     clean: bool = True,
     device: str = "auto",
+    model_id: str | None = None,
+    batch_size: int = transcribe.DEFAULT_BATCH_SIZE,
+    num_beams: int = 1,
+    initial_prompt: str | None = None,
     show_raw: bool = False,
     pipeline_fn: Callable[..., list[dict[str, str]]] = (
         hidden_test_pipeline.run_hidden_test_pipeline
@@ -178,11 +182,21 @@ def run_demo(
     else:
         print(f"Input source   : {input_audio}")
     print(f"Device request : {device}")
-    print(f"ASR model      : {transcribe.resolve_default_model()}")
+    print(f"ASR model      : {model_id or transcribe.resolve_default_model(device=device)}")
     gliner_src, local_only = gliner_system.resolve_gliner_model()
     print(f"GLiNER model   : {gliner_src} (local_only={local_only})")
     print(f"CSV destination: {out_csv}")
     print("Executing pipeline stages (ASR -> cleaning -> GLiNER -> dedup -> CSV)...")
+
+    extra_kw: dict[str, Any] = {}
+    if model_id is not None:
+        extra_kw["model_id"] = model_id
+    if batch_size != transcribe.DEFAULT_BATCH_SIZE:
+        extra_kw["batch_size"] = batch_size
+    if num_beams != 1:
+        extra_kw["num_beams"] = num_beams
+    if initial_prompt is not None:
+        extra_kw["initial_prompt"] = initial_prompt
 
     t0 = time.perf_counter()
     rows = pipeline_fn(
@@ -192,6 +206,7 @@ def run_demo(
         artifacts_dir=artifacts_dir,
         clean=clean,
         device=device,
+        **extra_kw,
     )
     elapsed = time.perf_counter() - t0
 
@@ -254,6 +269,14 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--expected", type=Path, default=None)
     parser.add_argument("--no-eval", action="store_true")
     parser.add_argument("--no-clean", action="store_true")
+    parser.add_argument("--model", default=None)
+    parser.add_argument("--num-beams", type=int, default=1)
+    parser.add_argument("--initial-prompt", default=None)
+    parser.add_argument(
+        "--kenyan-prompt",
+        action="store_true",
+        help="Use the built-in generic Kenyan CHW / Swahili ASR initial prompt.",
+    )
     parser.add_argument("--device", default="auto", help='"auto", "cpu", "cuda:0", ...')
     parser.add_argument(
         "--show-raw",
@@ -279,6 +302,9 @@ def _resolve_expected_csv(args: argparse.Namespace) -> Path | None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
+    prompt = hidden_test_pipeline.resolve_initial_prompt(
+        args.initial_prompt, kenyan_prompt=args.kenyan_prompt
+    )
     return run_demo(
         input_audio=None if args.transcripts is not None else args.input,
         transcripts_path=args.transcripts,
@@ -287,6 +313,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         expected_csv=_resolve_expected_csv(args),
         clean=not args.no_clean,
         device=args.device,
+        model_id=args.model,
+        num_beams=args.num_beams,
+        initial_prompt=prompt,
         show_raw=args.show_raw,
     )
 
