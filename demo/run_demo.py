@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import sys
 import textwrap
 import time
@@ -23,7 +24,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from src.asr import transcribe  # noqa: E402
-from src.core import contracts  # noqa: E402
+from src.core import contracts, setup_models  # noqa: E402
 from src.nlp import gliner_system  # noqa: E402
 from src.pipeline import hidden_test_pipeline  # noqa: E402
 
@@ -302,6 +303,12 @@ def _resolve_expected_csv(args: argparse.Namespace) -> Path | None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
+    if (
+        args.model is None
+        and os.environ.get("HF_HUB_OFFLINE") != "1"
+        and not setup_models.are_models_ready()
+    ):
+        setup_models.ensure_runtime_models()
     prompt = hidden_test_pipeline.resolve_initial_prompt(
         args.initial_prompt, kenyan_prompt=args.kenyan_prompt
     )
