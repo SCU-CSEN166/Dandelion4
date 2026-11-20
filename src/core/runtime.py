@@ -5,9 +5,10 @@ import os
 
 def available_cpu_count() -> int:
     """Return available logical CPUs, respecting process affinity where supported."""
-    if hasattr(os, "sched_getaffinity"):
+    sched_getaffinity = getattr(os, "sched_getaffinity", None)
+    if sched_getaffinity is not None:
         try:
-            return max(1, len(os.sched_getaffinity(0)))
+            return max(1, len(sched_getaffinity(0)))
         except OSError:
             pass
     process_cpu_count = getattr(os, "process_cpu_count", None)
