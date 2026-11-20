@@ -244,8 +244,13 @@ The original text baseline classified 90% of the 30 source messages correctly. T
 ### Successes, failures, and interpretation
 | Example / category | Expected behavior | Actual behavior | Success or failure? | Likely reason |
 |---|---|---|---|---|
-| [Case] | [Expected] | [Observed] | [Status] | [Hypothesis] |
-| text parsing | improved F1 score | worse F1 score | Failure | message truncation, bad labelling |<br><br>
+| Category/Example | [Expected] | [Observed] | [Status] | [Hypothesis] |
+| text parsing | improved F1 score | worse F1 score | Failure | message truncation, bad labelling |
+| GLiNER model setup | Downloaded and run a pretrained model for item extraction| Loaded urchade/gliner_medium-v2.1 and tested custome NER labels in the notebook | Success| Created a working check point for text extraction |
+| PII redaction | Replace sensitive informations with [redacted] | recorded 100% recall on examples | Partial Success | Redaction depends on accurate item detection and false positives still remain a concern| 
+| Organize extracted fields into a JSON | Notebook demonstrated partial JSON conversion but not a complete structured output | Partial success | Field mapping and handling duplicate items still needs work| 
+|Whisper Speech transcription | Turn audio reports into text under different recording conditions| WER of 6.07% clean, 6.54% noisy, 6.54% phone quality| Success on synthetic audio | Pretrained speec model can handle simulated conditions but not cover all real world accents |
+| Location transcription| Preserve important Kenyan place names | Location token correctness was 62.5% on noisy audio | Failure | Unfamiliar names and audio distortion caused substitutions even when the rest of the sentence was readable|<br><br>
 
 - **What improved?** [Evidence]
 1. text parsing: data is more related to setting, more NER categories (labels), JSON conversion<br><br>
