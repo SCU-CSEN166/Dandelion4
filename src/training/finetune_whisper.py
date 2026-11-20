@@ -36,9 +36,9 @@ from src.training.whisper_base import (  # noqa: E402
 DEFAULT_BASE_MODEL = BASE_WHISPER_LARGE_V3_MODEL_ID
 DEFAULT_DATASET = "robello2/mini_afrispeech"
 DEFAULT_DATASET_CONFIG = "default"
-DEFAULT_OUT_DIR = REPO_ROOT / ".models" / "whisper-african-lora"
-DEFAULT_TRAIN_CACHE_DIR = REPO_ROOT / ".models" / "_train_cache"
-DEFAULT_HF_DATA_CACHE_DIR = REPO_ROOT / ".models" / "_hf_data_cache"
+DEFAULT_OUT_DIR = REPO_ROOT / ".dev_models" / "whisper-african-lora"
+DEFAULT_TRAIN_CACHE_DIR = REPO_ROOT / ".dev_models" / "_train_cache"
+DEFAULT_HF_DATA_CACHE_DIR = REPO_ROOT / ".dev_models" / "_hf_data_cache"
 ASR_SAMPLE_RATE = 16_000
 
 # Accent substrings in AfriSpeech-200 that correspond to Kenyan speakers.

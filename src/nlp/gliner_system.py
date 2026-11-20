@@ -35,8 +35,8 @@ from src.asr import clean_transcripts  # noqa: E402
 from src.core import contracts, runtime  # noqa: E402
 
 MODEL_ID = "urchade/gliner_medium-v2.1"
-LOCAL_MODEL_DIR = REPO_ROOT / "models" / "gliner_medium-v2.1"
-LOCAL_DEBERTA_DIR = REPO_ROOT / "models" / "deberta-v3-base"
+LOCAL_MODEL_DIR = REPO_ROOT / ".models" / "gliner_medium-v2.1"
+LOCAL_DEBERTA_DIR = REPO_ROOT / ".models" / "deberta-v3-base"
 LABELS: tuple[str, ...] = ("person", "location", "facility", "event", "date", "phone number")
 THRESHOLD = 0.38
 

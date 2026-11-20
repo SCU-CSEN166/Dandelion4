@@ -16,7 +16,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-MODELS_DIR = REPO_ROOT / "models"
+MODELS_DIR = REPO_ROOT / ".models"
 GITHUB_REPO = "SCU-CSEN166/Dandelion4"
 DEFAULT_RELEASE_TAG = "models-v5-int8"
 WHISPER_ASSET_NAME = "whisper-large-v3-tuned-int8.tar.gz"
@@ -157,6 +157,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wrapper
+    """Run the runtime model setup or release-packaging CLI."""
     args = parse_args(argv)
     if args.package:
         archives = package_models(args.models_dir, args.out_dir)

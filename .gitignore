@@ -12,8 +12,8 @@ __pycache__/
 examples/audio/.tts_cache/
 evaluation/runs/
 evaluation/datasets/
-models/
 .models/
+.dev_models/
 examples/fleurs_audio/
 
 # Test and tooling caches

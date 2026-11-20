@@ -35,9 +35,9 @@ from src.core import runtime  # noqa: E402
 DEFAULT_MANIFEST = REPO_ROOT / "examples" / "audio_manifest.json"
 DEFAULT_OUT_DIR = REPO_ROOT / "examples"
 BASE_MODEL = "openai/whisper-large-v3-turbo"
-BASE_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-turbo"
-FINETUNED_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-tuned"
-FINETUNED_INT8_MODEL_DIR = REPO_ROOT / "models" / "whisper-large-v3-tuned-int8"
+BASE_MODEL_DIR = REPO_ROOT / ".dev_models" / "whisper-large-v3-turbo"
+FINETUNED_MODEL_DIR = REPO_ROOT / ".dev_models" / "whisper-large-v3-tuned"
+FINETUNED_INT8_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-tuned-int8"
 
 
 def resolve_default_model(model_dir: Path | None = None, *, device: str = "auto") -> str:

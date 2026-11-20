@@ -12,7 +12,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 BASE_WHISPER_LARGE_V3_MODEL_ID = "openai/whisper-large-v3"
-BASE_WHISPER_LARGE_V3_DIR = REPO_ROOT / ".models" / "whisper-large-v3"
+BASE_WHISPER_LARGE_V3_DIR = REPO_ROOT / ".dev_models" / "whisper-large-v3"
 
 _WEIGHT_FILES = (
     "model.safetensors",
@@ -76,6 +76,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wrapper
+    """CLI entry point to check for or download the base Whisper large-v3 model."""
     args = parse_args(argv)
     ensure_base_whisper_large_v3(args.out_dir, model_id=args.model_id)
     return 0
