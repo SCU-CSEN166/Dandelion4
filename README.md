@@ -224,6 +224,20 @@ Since it cannot process videos and images it may be inaccurate for real life con
 |---|---:|---:|---|
 | Baseline | 100% | 68% | miss 6, mislabel 2, total 25 |
 | Current | 100% | 64.4% | miss 36, mislabel 6, total 118 |
+## PII scrubbing recall:
+The reported 100% means the model found all sensitive items in the examples included in that evaluation. It does not establish that every future name, phone number, or ID will be be redacted.
+## Attribute Extraction F1:
+The larger test returned 64.4% lower than the initial 68%. The example sets have different sizes and difficulty, so this is not a valid before/after improvement measurement. Missing attributes remain a major limitation.
+## Targets:
+The team's stated goals are more than 95% PII recall and more than 95% extraction F1
+# Whisper pretrained transcription
+The teams earlier evaluated experiment seen in valuation/wer_results.json tested 30 synthetic messages in each audio condition, for 90 total clips.
+|---|---|---|---|---|
+| Audio Condition | Clips | WER | Correct location tokens | Activity Classification |
+| Clean | 30 | 6.07% | 75% | 83.33% |
+| Noisy | 30 | 6.54% | 62.5% | 90% |
+|Phone Quality| 30 | 6.54% | 70.83% |83.33%| <br>
+The original text baseline classified 90% of the 30 source messages correctly. The comparison with the transcribed versions shows that even a small transcription error can affect later activity classifications. While the team initially started with WER below 10% on synthetic speech, all three audio conditions met that initial goal, but place name errors continued to be an issue. The separate 40 message rule based text baseline achieved 35/40 accuracy. 
 
 ### Successes, failures, and interpretation
 | Example / category | Expected behavior | Actual behavior | Success or failure? | Likely reason |
