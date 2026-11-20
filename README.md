@@ -232,11 +232,13 @@ The larger test returned 64.4% lower than the initial 68%. The example sets have
 The team's stated goals are more than 95% PII recall and more than 95% extraction F1
 # Whisper pretrained transcription
 The teams earlier evaluated experiment seen in valuation/wer_results.json tested 30 synthetic messages in each audio condition, for 90 total clips.
-|---|---|---|---|---|
-| Audio Condition | Clips | WER | Correct location tokens | Activity Classification |
-| Clean | 30 | 6.07% | 75% | 83.33% |
-| Noisy | 30 | 6.54% | 62.5% | 90% |
-|Phone Quality| 30 | 6.54% | 70.83% |83.33%| <br>
+
+| Audio Condition | Clips | WER | Correct Location Tokens | Activity Classification |
+|---|---:|---:|---:|---:|
+| Clean | 30 | 6.07% | 75.00% | 83.33% |
+| Noisy | 30 | 6.54% | 62.50% | 90.00% |
+| Phone Quality | 30 | 6.54% | 70.83% | 83.33% |
+
 The original text baseline classified 90% of the 30 source messages correctly. The comparison with the transcribed versions shows that even a small transcription error can affect later activity classifications. While the team initially started with WER below 10% on synthetic speech, all three audio conditions met that initial goal, but place name errors continued to be an issue. The separate 40 message rule based text baseline achieved 35/40 accuracy. 
 
 ### Successes, failures, and interpretation
