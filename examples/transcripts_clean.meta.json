@@ -1,18 +1,20 @@
 {
   "version": "clean",
-  "model": "openai/whisper-large-v3-turbo",
+  "model": "models/whisper-large-v3-turbo-v3",
   "language": "en",
   "task": "transcribe",
   "decoding": {
     "num_beams": 1,
     "do_sample": false
   },
+  "initial_prompt": null,
   "device": "cuda:0",
   "dtype": "float16",
   "torch_version": "2.6.0+cu124",
   "transformers_version": "5.22.1",
   "n_clips": 30,
-  "audio_seconds_total": 162.0,
-  "wall_seconds": 9.33,
-  "created_utc": "2026-11-06T10:14:32Z"
+  "audio_seconds_total": 162.04,
+  "wall_seconds": 44.72,
+  "created_utc": "2026-11-13T22:26:13Z",
+  "cleaned": true
 }

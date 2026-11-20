@@ -1,4 +1,4 @@
-"""Tests for M2 (src/transcribe.py). No GPU, network or model download except @slow."""
+"""Tests for M2 (src/asr/transcribe.py). No GPU, network or model download except @slow."""
 
 import json
 import sys
@@ -12,9 +12,9 @@ import numpy.typing as npt
 import pytest
 import soundfile
 
-import transcribe
-from baseline_runner import run_baseline
-from transcribe import (
+from evaluation.baseline_runner import run_baseline
+from src.asr import transcribe
+from src.asr.transcribe import (
     ASR_METADATA_KEYS,
     WhisperASR,
     build_metadata,
@@ -94,6 +94,7 @@ class FakeASR:
             "language": "en",
             "task": "transcribe",
             "decoding": {"num_beams": 1, "do_sample": False},
+            "initial_prompt": None,
             "device": "cpu",
             "dtype": "float32",
             "torch_version": "0",
@@ -171,8 +172,13 @@ def test_load_for_asr_rejects_3d() -> None:
 
 def test_to_transcript_records_keys_and_strip() -> None:
     records = to_transcript_records(manifest_clips(2), ["  hello there \n", ""])
-    assert [list(r) for r in records] == [["id", "sender_id", "message"]] * 2
-    assert records[0] == {"id": "msg_001", "sender_id": "worker_01", "message": "hello there"}
+    assert [list(r) for r in records] == [["id", "sender_id", "source", "message"]] * 2
+    assert records[0] == {
+        "id": "msg_001",
+        "sender_id": "worker_01",
+        "source": "audio",
+        "message": "hello there",
+    }
     assert records[1]["message"] == ""
 
 
@@ -265,6 +271,7 @@ def test_whisper_asr_metadata_without_loading() -> None:
     assert meta["language"] == "en"
     assert meta["task"] == "transcribe"
     assert meta["decoding"] == {"num_beams": 1, "do_sample": False}
+    assert meta["initial_prompt"] is None
     assert meta["device"] == "cuda:0"
     assert meta["dtype"] == "float16"
     assert meta["transformers_version"] == "5.22.1"
@@ -272,10 +279,140 @@ def test_whisper_asr_metadata_without_loading() -> None:
     assert not asr.loaded
     assert WhisperASR("m", "cpu").dtype_name == "float32"
 
+    prompted = WhisperASR("openai/whisper-small", "cpu", initial_prompt="Nakuru, Narok")
+    assert prompted.metadata()["initial_prompt"] == "Nakuru, Narok"
+
+
+def test_cpu_inference_defaults_to_all_available_threads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from src.core import runtime
+
+    monkeypatch.setattr(runtime, "available_cpu_count", lambda: 24)
+    threads: list[int] = []
+    fake_torch = SimpleNamespace(
+        float16="float16", float32="float32", set_num_threads=threads.append
+    )
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    fake_transformers = SimpleNamespace(pipeline=lambda *args, **kwargs: object())
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+
+    transcribe.WhisperASR(str(tmp_path), "cpu").load()
+    assert threads == [24]
+    transcribe.WhisperASR(str(tmp_path), "cuda:0").load()
+    assert threads == [24]
+
+    assert transcribe.FasterWhisperASR("model", "cpu").cpu_threads == 24
+    assert transcribe.FasterWhisperASR("model", "cpu", cpu_threads=4).cpu_threads == 4
+    assert transcribe.FasterWhisperASR("model", "cpu", cpu_threads=0).cpu_threads == 0
+    assert transcribe.FasterWhisperASR("model", "cuda:0").cpu_threads == 0
+
+
+def test_whisper_asr_call_without_and_with_initial_prompt() -> None:
+    seen_kwargs: list[dict[str, Any]] = []
+    seen_prompt_calls: list[tuple[str, str]] = []
+    sentinel_prompt_ids = object()
+
+    class FakeTokenizer:
+        def get_prompt_ids(self, text: str, return_tensors: str = "np") -> object:
+            seen_prompt_calls.append((text, return_tensors))
+            return sentinel_prompt_ids
+
+    class FakePipe:
+        tokenizer = FakeTokenizer()
+
+        def __call__(self, inputs: list[dict[str, Any]], **kwargs: Any) -> list[dict[str, str]]:
+            seen_kwargs.append(kwargs)
+            return [{"text": f"out {i}"} for i in range(len(inputs))]
+
+    wave = tone(16_000, seconds=0.1)
+
+    asr_default = WhisperASR("openai/whisper-small", "cpu", batch_size=2)
+    asr_default._pipe = FakePipe()
+    assert asr_default([wave]) == ["out 0"]
+    assert seen_prompt_calls == []
+    assert "prompt_ids" not in seen_kwargs[-1]["generate_kwargs"]
+
+    asr_prompted = WhisperASR(
+        "openai/whisper-small",
+        "cpu",
+        batch_size=2,
+        initial_prompt="Nakuru, Narok, Kajiado",
+    )
+    asr_prompted._pipe = FakePipe()
+    assert asr_prompted([wave]) == ["out 0"]
+    assert seen_prompt_calls == [("Nakuru, Narok, Kajiado", "pt")]
+    assert seen_kwargs[-1]["generate_kwargs"]["prompt_ids"] is sentinel_prompt_ids
+
 
 def test_whisper_asr_rejects_bad_batch_size() -> None:
     with pytest.raises(ValueError, match="batch_size"):
         WhisperASR("m", "cpu", 0)
+    with pytest.raises(ValueError, match="num_beams"):
+        WhisperASR("m", "cpu", 1, num_beams=0)
+
+
+def test_whisper_load_rejects_missing_local_model(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError, match="local Whisper model directory not found"):
+        WhisperASR(str(tmp_path / "missing"), "cpu").load()
+
+
+def test_whisper_asr_num_beams_metadata_and_args() -> None:
+    asr = WhisperASR("openai/whisper-small", "cpu", 2, num_beams=3)
+    assert asr.metadata()["decoding"] == {"num_beams": 3, "do_sample": False}
+
+    seen_kwargs: list[dict[str, Any]] = []
+
+    class FakePipe:
+        def __call__(self, inputs: list[dict[str, Any]], **kwargs: Any) -> list[dict[str, str]]:
+            seen_kwargs.append(kwargs)
+            return [{"text": "beam out"} for _ in inputs]
+
+    asr._pipe = FakePipe()
+    assert asr([tone(16_000, seconds=0.1)]) == ["beam out"]
+    assert seen_kwargs[-1]["generate_kwargs"]["num_beams"] == 3
+
+    args = transcribe.parse_args(["--num-beams", "3"])
+    assert args.num_beams == 3
+    assert main(["--num-beams", "0"]) == 2
+
+
+def test_faster_whisper_asr_and_ct2_dispatch(tmp_path: Path) -> None:
+    ct2_dir = tmp_path / "whisper-ct2"
+    ct2_dir.mkdir()
+    assert not transcribe.is_ct2_model_dir(str(ct2_dir))
+    (ct2_dir / "model.bin").write_bytes(b"ct2")
+    assert transcribe.is_ct2_model_dir(str(ct2_dir))
+
+    dispatched = transcribe.make_whisper(str(ct2_dir), "cpu", 2, num_beams=3)
+    assert isinstance(dispatched, transcribe.FasterWhisperASR)
+    assert dispatched.dtype_name == "int8"
+    assert dispatched.loaded is False
+    meta = dispatched.metadata()
+    assert meta["dtype"] == "int8"
+    assert meta["decoding"] == {"num_beams": 3, "do_sample": False}
+
+    cuda_ct2 = transcribe.FasterWhisperASR(str(ct2_dir), "cuda:0", 1)
+    assert cuda_ct2.dtype_name == "float16"
+
+    with pytest.raises(ValueError, match="batch_size"):
+        transcribe.FasterWhisperASR(str(ct2_dir), "cpu", 0)
+    with pytest.raises(ValueError, match="num_beams"):
+        transcribe.FasterWhisperASR(str(ct2_dir), "cpu", 1, num_beams=0)
+
+    seen_calls: list[dict[str, Any]] = []
+
+    class FakeCT2Model:
+        def transcribe(self, wave: Any, **kwargs: Any) -> tuple[list[Any], dict[str, Any]]:
+            seen_calls.append({"len": len(wave), **kwargs})
+            return [SimpleNamespace(text=" We visited "), SimpleNamespace(text="Narok. ")], {}
+
+    dispatched._model = FakeCT2Model()
+    assert dispatched.loaded is True
+    assert dispatched([]) == []
+    assert dispatched([tone(16_000, seconds=0.1)]) == ["We visited Narok."]
+    assert seen_calls[-1]["beam_size"] == 3
+    assert seen_calls[-1]["condition_on_previous_text"] is False
 
 
 def test_package_version_missing() -> None:
@@ -303,8 +440,13 @@ def test_make_whisper_prints_device_and_does_not_load(
     assert isinstance(asr, WhisperASR)
     assert asr.device == "cuda:0"
     assert asr.batch_size == 2
+    assert asr.initial_prompt is None
     assert not asr.loaded
     assert "device: cuda:0" in capsys.readouterr().out
+
+    prompted = transcribe.make_whisper("openai/whisper-small", "cpu", 1, initial_prompt="Kisumu")
+    assert isinstance(prompted, WhisperASR)
+    assert prompted.initial_prompt == "Kisumu"
 
 
 def test_load_manifest_rejects_non_manifest(tmp_path: Path) -> None:
@@ -350,8 +492,8 @@ def test_transcribe_versions_all_writes_files(tmp_path: Path) -> None:
         records = json.loads(raw.decode("utf-8"))
         assert raw.decode("utf-8") == json.dumps(records, indent=2, ensure_ascii=False) + "\n"
         assert records == [
-            {"id": "msg_001", "sender_id": "worker_02", "message": "text 0"},
-            {"id": "msg_002", "sender_id": "worker_05", "message": ""},
+            {"id": "msg_001", "sender_id": "worker_02", "source": "audio", "message": "text 0"},
+            {"id": "msg_002", "sender_id": "worker_05", "source": "audio", "message": ""},
         ]
         meta = json.loads((out_dir / f"transcripts_{version}.meta.json").read_text("utf-8"))
         assert list(meta) == [
@@ -382,7 +524,8 @@ def test_write_transcripts_utf8_sorted(tmp_path: Path) -> None:
     assert "café" in text
     data = json.loads(text)
     assert [r["id"] for r in data] == ["msg_001", "msg_002"]
-    assert list(data[1]) == ["id", "sender_id", "message"]
+    assert list(data[1]) == ["id", "sender_id", "source", "message"]
+    assert data[1]["source"] == "audio"
 
 
 def test_missing_wav_stops_before_asr(tmp_path: Path) -> None:
@@ -418,10 +561,18 @@ def test_parse_args_defaults() -> None:
     args = transcribe.parse_args([])
     assert args.manifest == transcribe.REPO_ROOT / "examples" / "audio_manifest.json"
     assert args.version == "all"
-    assert args.model == "openai/whisper-large-v3-turbo"
+    assert args.model == transcribe.resolve_default_model()
     assert args.out_dir == transcribe.REPO_ROOT / "examples"
     assert args.device == "auto"
     assert args.batch_size == 8
+    assert args.initial_prompt is None
+
+
+def test_parse_args_initial_prompt() -> None:
+    args = transcribe.parse_args(["--initial-prompt", "Nakuru, Narok, Baringo"])
+    assert args.initial_prompt == "Nakuru, Narok, Baringo"
+    assert isinstance(transcribe.KENYAN_CHW_INITIAL_PROMPT, str)
+    assert len(transcribe.KENYAN_CHW_INITIAL_PROMPT) > 20
 
 
 def test_parse_args_rejects_unknown_version() -> None:
@@ -446,6 +597,121 @@ def test_main_single_version_with_fake_asr(tmp_path: Path) -> None:
         "transcripts_phone.json",
         "transcripts_phone.meta.json",
     ]
+
+
+def test_main_passes_initial_prompt(tmp_path: Path) -> None:
+    manifest_path = make_dataset(tmp_path)
+    seen: list[tuple[str, str, int, str | None]] = []
+
+    def make_asr(
+        model: str, device: str, batch_size: int, initial_prompt: str | None = None
+    ) -> FakeASR:
+        seen.append((model, device, batch_size, initial_prompt))
+        return FakeASR()
+
+    out_dir = tmp_path / "out"
+    argv = [
+        "--manifest",
+        str(manifest_path),
+        "--version",
+        "clean",
+        "--out-dir",
+        str(out_dir),
+        "--initial-prompt",
+        "Nakuru, Narok, Kajiado",
+    ]
+    assert main(argv, make_asr=make_asr, root=tmp_path) == 0
+    assert seen == [(transcribe.resolve_default_model(), "auto", 8, "Nakuru, Narok, Kajiado")]
+
+
+def test_resolve_default_model_prefers_local_v3_and_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    baseline = tmp_path / "baseline"
+    monkeypatch.setattr(transcribe, "BASE_MODEL_DIR", baseline)
+    missing = tmp_path / "missing-model"
+    assert transcribe.resolve_default_model(missing) == str(baseline)
+
+    local_dir = tmp_path / "whisper-large-v3-turbo-tuned"
+    local_dir.mkdir()
+    assert transcribe.resolve_default_model(local_dir) == str(baseline)
+
+    (local_dir / "config.json").write_text("{}", encoding="utf-8")
+    assert transcribe.resolve_default_model(local_dir) == str(local_dir)
+
+
+def test_parse_args_uses_fallback_when_local_model_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(transcribe, "FINETUNED_MODEL_DIR", tmp_path / "absent")
+    monkeypatch.setattr(transcribe, "FINETUNED_INT8_MODEL_DIR", tmp_path / "absent-int8")
+    monkeypatch.setattr(transcribe, "BASE_MODEL_DIR", tmp_path / "baseline")
+    assert transcribe.parse_args([]).model == str(tmp_path / "baseline")
+
+
+def test_default_model_follows_device_and_falls_back(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    hf = tmp_path / "tuned"
+    ct2 = tmp_path / "tuned-int8"
+    base = tmp_path / "baseline"
+    hf.mkdir()
+    ct2.mkdir()
+    (hf / "config.json").write_text("{}", encoding="utf-8")
+    (ct2 / "model.bin").write_bytes(b"weights")
+    monkeypatch.setattr(transcribe, "FINETUNED_MODEL_DIR", hf)
+    monkeypatch.setattr(transcribe, "FINETUNED_INT8_MODEL_DIR", ct2)
+    monkeypatch.setattr(transcribe, "BASE_MODEL_DIR", base)
+    assert transcribe.resolve_default_model(device="cpu") == str(ct2)
+    assert transcribe.resolve_default_model(device="cuda:0") == str(hf)
+    assert transcribe.parse_args(["--device", "cpu"]).model == str(ct2)
+    assert transcribe.parse_args(["--device", "cuda:0"]).model == str(hf)
+    with monkeypatch.context() as context:
+        context.setattr(transcribe, "resolve_device", lambda _: "cpu")
+        assert transcribe.resolve_default_model(device="auto") == str(ct2)
+        context.setattr(transcribe, "resolve_device", lambda _: "cuda:0")
+        assert transcribe.resolve_default_model(device="auto") == str(hf)
+    (ct2 / "model.bin").unlink()
+    assert transcribe.resolve_default_model(device="cpu") == str(hf)
+    (hf / "config.json").unlink()
+    assert transcribe.resolve_default_model(device="cuda:0") == str(base)
+    # When only the INT8 model is present, CUDA also falls back to it before baseline.
+    (ct2 / "model.bin").write_bytes(b"weights")
+    assert transcribe.resolve_default_model(device="cuda:0") == str(ct2)
+
+
+def test_write_transcripts_enforces_interface_contract(tmp_path: Path) -> None:
+    bad_path = tmp_path / "bad.json"
+    with pytest.raises(ValueError, match="Invalid transcript records"):
+        write_transcripts(
+            bad_path,
+            [{"id": "not-an-id", "sender_id": "w1", "source": "audio", "message": "hi"}],
+        )
+    assert not bad_path.exists()
+
+    wrong_source = tmp_path / "wrong_source.json"
+    with pytest.raises(ValueError, match="audio source"):
+        write_transcripts(
+            wrong_source,
+            [{"id": "msg_001", "sender_id": "w1", "source": "text", "message": "hi"}],
+        )
+    assert not wrong_source.exists()
+
+    good_path = tmp_path / "good.json"
+    write_transcripts(
+        good_path,
+        [
+            {
+                "id": "msg_001",
+                "sender_id": "w1",
+                "source": "audio",
+                "message": "We visited 5 households in Narok.",
+                "asr_text": "We visited five households in Narok.",
+            }
+        ],
+    )
+    saved = json.loads(good_path.read_text(encoding="utf-8"))
+    assert saved[0]["asr_text"] == "We visited five households in Narok."
 
 
 def test_main_missing_wav_returns_error(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:

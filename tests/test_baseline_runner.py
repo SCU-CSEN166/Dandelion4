@@ -9,8 +9,8 @@ from typing import Any
 
 import pytest
 
-import baseline_runner
-from baseline_runner import BaselineError, main, run_baseline
+from evaluation import baseline_runner
+from evaluation.baseline_runner import BaselineError, main, run_baseline
 
 
 def _sha256(path: Path) -> str:
@@ -55,7 +55,7 @@ EXPECTED_TWO = [
 
 
 def test_default_script_is_repo_baseline(repo_root: Path) -> None:
-    assert repo_root / "src" / "baseline.py" == baseline_runner.DEFAULT_BASELINE_SCRIPT
+    assert repo_root / "src" / "legacy" / "baseline.py" == baseline_runner.DEFAULT_BASELINE_SCRIPT
     assert baseline_runner.DEFAULT_BASELINE_SCRIPT.is_file()
 
 
@@ -110,7 +110,7 @@ def test_subprocess_call_contract(
     assert run_baseline(input_json) == []
     assert seen["cmd"] == [
         sys.executable,
-        str((repo_root / "src" / "baseline.py").resolve()),
+        str((repo_root / "src" / "legacy" / "baseline.py").resolve()),
         str(input_json.resolve()),
     ]
     assert seen["check"] is True

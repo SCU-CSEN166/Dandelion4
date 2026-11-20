@@ -1,0 +1,322 @@
+[
+  {
+    "id": "msg_01",
+    "sender_id": "worker_01",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Rongai",
+    "reported_count": 42,
+    "date_text": "todays",
+    "event_name": "family planning outreach",
+    "event_desc": null,
+    "text_redacted": "Herbary team this is [NAME] the CHV from Rongai. I want to report on todays family planning outreach at Kampi Yamoto dispensary. We started at 9 in the morning with a short talk on the different methods than the [NAME] gave services. In total 42 women came and most of them were young mothers. 6 women were referred to Rongai Health Center for implants because we ran out of stock. 1 mama asked to be called for follow-up her number is [PHONE]. I will send the register tomorrow. Thank you",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 21,
+        "end": 34
+      },
+      {
+        "type": "NAME",
+        "start": 219,
+        "end": 243
+      },
+      {
+        "type": "PHONE",
+        "start": 461,
+        "end": 472
+      }
+    ],
+    "confidence": 0.737,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_02",
+    "sender_id": "worker_02",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Kampiamoto",
+    "reported_count": 42,
+    "date_text": "today",
+    "event_name": "family planning",
+    "event_desc": null,
+    "text_redacted": "Good evening everyone its [NAME]. I was also at the Kampiamoto outreach today with [NAME]. Just to confirm the numbers we served 42 women on family planning and 6 were referred for implants. The turnout was very good even though the rain started around noon. The women asked if we can come back next month so maybe we can plan that.If anyone needs the photos call me on [PHONE] and I will share them on WhatsApp. Asanti",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 26,
+        "end": 38
+      },
+      {
+        "type": "NAME",
+        "start": 89,
+        "end": 94
+      },
+      {
+        "type": "PHONE",
+        "start": 375,
+        "end": 387
+      }
+    ],
+    "confidence": 0.7654,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_03",
+    "sender_id": "worker_03",
+    "source": "audio",
+    "relevant": false,
+    "activity_type": null,
+    "location": "Solai",
+    "reported_count": null,
+    "date_text": "Saturday",
+    "event_name": null,
+    "event_desc": null,
+    "text_redacted": "Hello ladies its [NAME]. Sorry I missed the meeting this morning the matatu from Solai broke down on the way and we waited for almost 2 hours. It was really bad. Anyway I hope everyone is fine. Please remind me who is bringing the tea and mandotsi for Saturday. I can bring sugar. Also if someone has a charger for a technophone I left mine at home. You can reach me on [PHONE]. Ok, see you soon, bye bye.",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 17,
+        "end": 33
+      },
+      {
+        "type": "PHONE",
+        "start": 380,
+        "end": 392
+      }
+    ],
+    "confidence": 0.8683,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_04",
+    "sender_id": "worker_04",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Nogosho",
+    "reported_count": 25,
+    "date_text": "Today",
+    "event_name": "monthly table banking day",
+    "event_desc": null,
+    "text_redacted": "Hi [NAME] here reporting from the Too Many Women's group meeting in Nogosho. Today was our monthly table banking day. 25 members attended out of 30. Together they saved 18,000 shillings and we gave out 4 small loans to members who are starting businesses mostly selling vegetables and second-hand clothes. The treasurer [NAME] recorded everything in the book.Our next meeting is on the 15th. If you need the records [NAME] s number is [PHONE].",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 3,
+        "end": 21
+      },
+      {
+        "type": "NAME",
+        "start": 332,
+        "end": 348
+      },
+      {
+        "type": "NAME",
+        "start": 438,
+        "end": 442
+      },
+      {
+        "type": "PHONE",
+        "start": 455,
+        "end": 466
+      }
+    ],
+    "confidence": 0.7427,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_05",
+    "sender_id": "worker_05",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Sarambiai Primary School",
+    "reported_count": 60,
+    "date_text": "Yesterday",
+    "event_name": "menstrual hygiene session",
+    "event_desc": null,
+    "text_redacted": "Morning everyone this is [NAME]. Yesterday we went to Sarambiai Primary School for the menstrual hygiene session with the girls in class 6-8. 60 girls attended. We talked about periods how to use and dispose of pads safely and why they should not miss school. At the end every girl received a pack of reusable sanitary pads. The head teacher [NAME] has asked us to come back and also talk to the mothers. Her phone number is [PHONE] if someone wants to follow up.",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 25,
+        "end": 37
+      },
+      {
+        "type": "NAME",
+        "start": 348,
+        "end": 364
+      },
+      {
+        "type": "PHONE",
+        "start": 441,
+        "end": 452
+      }
+    ],
+    "confidence": 0.9212,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_06",
+    "sender_id": "worker_06",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "chiefs camp",
+    "reported_count": 35,
+    "date_text": "this afternoon",
+    "event_name": "community dialogue on gender-based violence",
+    "event_desc": null,
+    "text_redacted": "Hello team [NAME] I want to share about the community dialogue on gender-based violence we held this afternoon at the chiefs camp in Solai. 35 women attended plus a few village elders. The police gender desk officer [NAME] explained how to report cases and where survivors can get help. Some women shared their stories it was very emotional. 3 women asked for private follow-up and we connected them with the counselor. For anything about this session you can call me on [PHONE].",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 11,
+        "end": 25
+      },
+      {
+        "type": "NAME",
+        "start": 224,
+        "end": 241
+      },
+      {
+        "type": "PHONE",
+        "start": 490,
+        "end": 502
+      }
+    ],
+    "confidence": 0.6791,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_07",
+    "sender_id": "worker_07",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": "Rongai Health Center",
+    "reported_count": 28,
+    "date_text": "Today",
+    "event_name": "cervical cancer screening camp",
+    "event_desc": null,
+    "text_redacted": "Hi everyone [NAME] here. Today we did the cervical cancer screening camp at Rongai Health Center. We screened 28 women. Most results were normal but 3 women had positive results so we referred them to Nakuru Level 5 Hospital for further treatment. 1 of them is [NAME] and she has agreed to go on Monday. Please whoever is going to Nakuru that day help her with transport. Her number is [PHONE] I will upload the full report later.",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 12,
+        "end": 32
+      },
+      {
+        "type": "NAME",
+        "start": 275,
+        "end": 292
+      },
+      {
+        "type": "PHONE",
+        "start": 411,
+        "end": 422
+      }
+    ],
+    "confidence": 0.84,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_08",
+    "sender_id": "worker_08",
+    "source": "audio",
+    "relevant": false,
+    "activity_type": null,
+    "location": "Kabarak",
+    "reported_count": null,
+    "date_text": null,
+    "event_name": null,
+    "event_desc": null,
+    "text_redacted": "E, congratulations to [NAME] on the new baby. We are so happy for you. Ladies, lets plan to visit her this weekend at her home in Kabarak, after church. I suggest we each contribute 200 shillings for a small gift, maybe a baby blanket and some hunger. Send your contribution to [NAME] on Mpesa, her number is [PHONE]. And please dont forget to bring your own chairs last time we were standing. Ok have a blessed evening.",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 22,
+        "end": 39
+      },
+      {
+        "type": "NAME",
+        "start": 289,
+        "end": 293
+      },
+      {
+        "type": "PHONE",
+        "start": 318,
+        "end": 329
+      }
+    ],
+    "confidence": 0.801,
+    "verification_status": "not_applicable"
+  },
+  {
+    "id": "msg_09",
+    "sender_id": "worker_09",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "community_meeting",
+    "location": "Camp Yamoto",
+    "reported_count": 18,
+    "date_text": "Today",
+    "event_name": "kitchen garden training",
+    "event_desc": null,
+    "text_redacted": "Hello team this is [NAME] from Camp Yamoto. Today we held the kitchen garden training for women farmers. 18 women attended. The agriculture officer [NAME] showed them how to make a sack garden and how to make compost from kitchen waste. Each woman received seedlings of Sukuma wiki and spinach to plant at home. Next month we will visit their homes to see how the gardens are doing. If you want to join the follow-up visits call me on [PHONE].",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 19,
+        "end": 46
+      },
+      {
+        "type": "NAME",
+        "start": 169,
+        "end": 185
+      },
+      {
+        "type": "PHONE",
+        "start": 466,
+        "end": 477
+      }
+    ],
+    "confidence": 0.8806,
+    "verification_status": "pending"
+  },
+  {
+    "id": "msg_10",
+    "sender_id": "worker_10",
+    "source": "audio",
+    "relevant": true,
+    "activity_type": "health_screening",
+    "location": "Rongai",
+    "reported_count": 28,
+    "date_text": "today",
+    "event_name": null,
+    "event_desc": null,
+    "text_redacted": "Good evening this is [NAME]. I was helping [NAME] at the screening camp in Rongai today. Just adding to her report we had 28 women screened for cervical cancer and 3 were referred to Nakuru level 5. The women were very happy because many of them had never been screened before. Next time we should bring more chairs and water because the queue was long. My number is [PHONE] if you need anything from me.",
+    "redactions": [
+      {
+        "type": "NAME",
+        "start": 21,
+        "end": 34
+      },
+      {
+        "type": "NAME",
+        "start": 50,
+        "end": 62
+      },
+      {
+        "type": "PHONE",
+        "start": 380,
+        "end": 392
+      }
+    ],
+    "confidence": 0.8161,
+    "verification_status": "pending"
+  }
+]

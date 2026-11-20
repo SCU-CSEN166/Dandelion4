@@ -1,0 +1,15 @@
+{
+  "classification_accuracy_pct": 100.0,
+  "event_precision_pct": 100.0,
+  "event_recall_pct": 100.0,
+  "event_f1_pct": 100.0,
+  "ner_redaction_recall_pct": 97.83,
+  "ner_over_redaction_count": 1.0,
+  "attribute_exact_match_pct": 37.5,
+  "activity_exact_match_pct": 37.5,
+  "participants_exact_match_pct": 100.0,
+  "duplication_f1_pct": 100.0,
+  "duplication_accuracy_pct": 100.0,
+  "asr_raw_wer_pct": 9.22,
+  "asr_clean_wer_pct": 10.6
+}

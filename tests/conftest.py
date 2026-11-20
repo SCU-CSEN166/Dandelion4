@@ -8,9 +8,8 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
-for _directory in (REPO_ROOT / "src", REPO_ROOT / "evaluation"):
-    if str(_directory) not in sys.path:
-        sys.path.insert(0, str(_directory))
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 
 
 @pytest.fixture(scope="session")
