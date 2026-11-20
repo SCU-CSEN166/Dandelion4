@@ -302,7 +302,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
 | Terence Zhou | processed baseline hidden test csv file | Partly | [f0d2c3d](https://github.com/SCU-CSEN166/Dandelion4/commit/f0d2c3da71ebd72b2d0e4f1b78b7a5a8c47a42ea) | tune model against teammate's generated code |
-| Eric Wang | hooked up audio-to-records pipeline and tested on the 10 hidden clips | Worked | [9063d44](https://github.com/SCU-CSEN166/Dandelion4/commit/9063d44) | try larger whisper model quantized to int8 and prepare for peer review |
+| Eric Wang | hooked up audio-to-records pipeline and tested on the 10 hidden clips | Worked | [9063d44](https://github.com/SCU-CSEN166/Dandelion4/commit/9063d44) | try larger whisper model quantized to int8 |
 
 ---
 
