@@ -333,7 +333,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 ### Individual contributions during that week
 | Member | Final implementation / evaluation / documentation contribution | Result (worked / partly / failed) | Evidence | Reflection / remaining work |
 |---|---|---|---|---|
-| [Name] | [Specific work] | [Status] | [Link] | [Reflection] |
+| Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2) | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
 
 
 
