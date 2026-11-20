@@ -1,8 +1,8 @@
 {
   "meta": {
-    "created_utc": "2026-11-06T10:15:23Z",
+    "created_utc": "2026-11-13T22:26:22Z",
     "manifest": "examples/audio_manifest.json",
-    "asr_model": "openai/whisper-large-v3-turbo",
+    "asr_model": "models/whisper-large-v3-turbo-v3",
     "normalization": "lowercase; delete apostrophes; other non-alphanumerics -> space",
     "n_messages": 30
   },
@@ -12,45 +12,45 @@
       "n": 30
     },
     "clean": {
-      "wer_pct": 6.07,
-      "wer_mean_per_clip_pct": 5.77,
+      "wer_pct": 4.67,
+      "wer_mean_per_clip_pct": 4.51,
       "number_token_acc_pct": 100.0,
       "number_token_n": 24,
-      "location_token_acc_pct": 75.0,
+      "location_token_acc_pct": 79.17,
       "location_token_n": 24,
-      "count_field_acc_pct": 76.19,
+      "count_field_acc_pct": 100.0,
       "count_field_n": 21,
-      "location_field_acc_pct": 75.0,
+      "location_field_acc_pct": 95.83,
       "location_field_n": 24,
-      "baseline_acc_pct": 83.33,
-      "baseline_acc_drop_pts": 6.67,
+      "baseline_acc_pct": 86.67,
+      "baseline_acc_drop_pts": 3.33,
       "false_positive_count": 0,
       "by_voice": {
-        "en-KE-AsiliaNeural": 4.59,
-        "en-KE-ChilembaNeural": 7.62
+        "en-KE-AsiliaNeural": 3.67,
+        "en-KE-ChilembaNeural": 5.71
       },
       "targets": {
         "wer_lt_10": true,
-        "drop_le_5": false
+        "drop_le_5": true
       }
     },
     "noisy": {
-      "wer_pct": 6.54,
-      "wer_mean_per_clip_pct": 5.7,
+      "wer_pct": 4.67,
+      "wer_mean_per_clip_pct": 4.32,
       "number_token_acc_pct": 100.0,
       "number_token_n": 24,
-      "location_token_acc_pct": 62.5,
+      "location_token_acc_pct": 79.17,
       "location_token_n": 24,
-      "count_field_acc_pct": 76.19,
+      "count_field_acc_pct": 100.0,
       "count_field_n": 21,
-      "location_field_acc_pct": 62.5,
+      "location_field_acc_pct": 95.83,
       "location_field_n": 24,
       "baseline_acc_pct": 90.0,
       "baseline_acc_drop_pts": 0.0,
       "false_positive_count": 0,
       "by_voice": {
-        "en-KE-AsiliaNeural": 4.59,
-        "en-KE-ChilembaNeural": 8.57
+        "en-KE-AsiliaNeural": 3.67,
+        "en-KE-ChilembaNeural": 5.71
       },
       "targets": {
         "wer_lt_10": true,
@@ -58,26 +58,26 @@
       }
     },
     "phone": {
-      "wer_pct": 6.54,
-      "wer_mean_per_clip_pct": 6.18,
+      "wer_pct": 4.21,
+      "wer_mean_per_clip_pct": 3.77,
       "number_token_acc_pct": 100.0,
       "number_token_n": 24,
-      "location_token_acc_pct": 70.83,
+      "location_token_acc_pct": 83.33,
       "location_token_n": 24,
-      "count_field_acc_pct": 76.19,
+      "count_field_acc_pct": 100.0,
       "count_field_n": 21,
-      "location_field_acc_pct": 70.83,
+      "location_field_acc_pct": 100.0,
       "location_field_n": 24,
-      "baseline_acc_pct": 83.33,
-      "baseline_acc_drop_pts": 6.67,
+      "baseline_acc_pct": 90.0,
+      "baseline_acc_drop_pts": 0.0,
       "false_positive_count": 0,
       "by_voice": {
-        "en-KE-AsiliaNeural": 4.59,
-        "en-KE-ChilembaNeural": 8.57
+        "en-KE-AsiliaNeural": 3.67,
+        "en-KE-ChilembaNeural": 4.76
       },
       "targets": {
         "wer_lt_10": true,
-        "drop_le_5": false
+        "drop_le_5": true
       }
     }
   },
@@ -253,11 +253,11 @@
       "version": "phone",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We screened 48 women in Nakuru.",
-      "hypothesis": "We screen 48 women in Nakuru.",
+      "hypothesis": "We screened 48 women in Nakuru.",
       "reference_norm": "we screened 48 women in nakuru",
-      "hypothesis_norm": "we screen 48 women in nakuru",
-      "wer_pct": 16.67,
-      "substitutions": 1,
+      "hypothesis_norm": "we screened 48 women in nakuru",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 6,
@@ -265,8 +265,8 @@
       "number_token_ok": true,
       "location_token_ok": true,
       "pred": {
-        "relevant": false,
-        "activity_type": null,
+        "relevant": true,
+        "activity_type": "health_screening",
         "location": "Nakuru",
         "reported_count": 48
       },
@@ -278,7 +278,7 @@
       },
       "count_field_ok": true,
       "location_field_ok": true,
-      "classification_ok": false
+      "classification_ok": true
     },
     {
       "clip_id": "msg_003_clean",
@@ -301,7 +301,7 @@
         "relevant": true,
         "activity_type": "health_referral",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 6
       },
       "gold": {
         "relevant": true,
@@ -309,7 +309,7 @@
         "location": "Nakuru",
         "reported_count": 6
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -334,7 +334,7 @@
         "relevant": true,
         "activity_type": "health_referral",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 6
       },
       "gold": {
         "relevant": true,
@@ -342,7 +342,7 @@
         "location": "Nakuru",
         "reported_count": 6
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -367,7 +367,7 @@
         "relevant": true,
         "activity_type": "health_referral",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 6
       },
       "gold": {
         "relevant": true,
@@ -375,7 +375,7 @@
         "location": "Nakuru",
         "reported_count": 6
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -385,9 +385,9 @@
       "version": "clean",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We screened 40 women in Baringo.",
-      "hypothesis": "We screen 40 women in Baringo.",
+      "hypothesis": "We screened 40 women in Boringo.",
       "reference_norm": "we screened 40 women in baringo",
-      "hypothesis_norm": "we screen 40 women in baringo",
+      "hypothesis_norm": "we screened 40 women in boringo",
       "wer_pct": 16.67,
       "substitutions": 1,
       "deletions": 0,
@@ -395,11 +395,11 @@
       "ref_words": 6,
       "hyp_words": 6,
       "number_token_ok": true,
-      "location_token_ok": true,
+      "location_token_ok": false,
       "pred": {
-        "relevant": false,
-        "activity_type": null,
-        "location": "Baringo",
+        "relevant": true,
+        "activity_type": "health_screening",
+        "location": null,
         "reported_count": 40
       },
       "gold": {
@@ -409,13 +409,46 @@
         "reported_count": 40
       },
       "count_field_ok": true,
-      "location_field_ok": true,
-      "classification_ok": false
+      "location_field_ok": false,
+      "classification_ok": true
     },
     {
       "clip_id": "msg_004_noisy",
       "message_id": "msg_004",
       "version": "noisy",
+      "voice": "en-KE-ChilembaNeural",
+      "reference": "We screened 40 women in Baringo.",
+      "hypothesis": "We screened 40 women in Boringo.",
+      "reference_norm": "we screened 40 women in baringo",
+      "hypothesis_norm": "we screened 40 women in boringo",
+      "wer_pct": 16.67,
+      "substitutions": 1,
+      "deletions": 0,
+      "insertions": 0,
+      "ref_words": 6,
+      "hyp_words": 6,
+      "number_token_ok": true,
+      "location_token_ok": false,
+      "pred": {
+        "relevant": true,
+        "activity_type": "health_screening",
+        "location": null,
+        "reported_count": 40
+      },
+      "gold": {
+        "relevant": true,
+        "activity_type": "health_screening",
+        "location": "Baringo",
+        "reported_count": 40
+      },
+      "count_field_ok": true,
+      "location_field_ok": false,
+      "classification_ok": true
+    },
+    {
+      "clip_id": "msg_004_phone",
+      "message_id": "msg_004",
+      "version": "phone",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We screened 40 women in Baringo.",
       "hypothesis": "We screened 40 women in Baringo.",
@@ -446,39 +479,6 @@
       "classification_ok": true
     },
     {
-      "clip_id": "msg_004_phone",
-      "message_id": "msg_004",
-      "version": "phone",
-      "voice": "en-KE-ChilembaNeural",
-      "reference": "We screened 40 women in Baringo.",
-      "hypothesis": "We screen 40 women in Beringo.",
-      "reference_norm": "we screened 40 women in baringo",
-      "hypothesis_norm": "we screen 40 women in beringo",
-      "wer_pct": 33.33,
-      "substitutions": 2,
-      "deletions": 0,
-      "insertions": 0,
-      "ref_words": 6,
-      "hyp_words": 6,
-      "number_token_ok": true,
-      "location_token_ok": false,
-      "pred": {
-        "relevant": false,
-        "activity_type": null,
-        "location": null,
-        "reported_count": 40
-      },
-      "gold": {
-        "relevant": true,
-        "activity_type": "health_screening",
-        "location": "Baringo",
-        "reported_count": 40
-      },
-      "count_field_ok": true,
-      "location_field_ok": false,
-      "classification_ok": false
-    },
-    {
       "clip_id": "msg_005_clean",
       "message_id": "msg_005",
       "version": "clean",
@@ -498,7 +498,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Narok",
         "reported_count": 33
       },
       "gold": {
@@ -508,7 +508,7 @@
         "reported_count": 33
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -531,7 +531,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Narok",
         "reported_count": 33
       },
       "gold": {
@@ -541,7 +541,7 @@
         "reported_count": 33
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -564,7 +564,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Narok",
         "reported_count": 33
       },
       "gold": {
@@ -574,7 +574,7 @@
         "reported_count": 33
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1078,21 +1078,21 @@
       "version": "clean",
       "voice": "en-KE-AsiliaNeural",
       "reference": "Our team reached 22 families in Kajiado.",
-      "hypothesis": "Our team reached 22 families in Cajiado.",
+      "hypothesis": "Our team reached 22 families in Kajiado.",
       "reference_norm": "our team reached 22 families in kajiado",
-      "hypothesis_norm": "our team reached 22 families in cajiado",
-      "wer_pct": 14.29,
-      "substitutions": 1,
+      "hypothesis_norm": "our team reached 22 families in kajiado",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 7,
       "hyp_words": 7,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": false,
         "activity_type": null,
-        "location": null,
+        "location": "Kajiado",
         "reported_count": 22
       },
       "gold": {
@@ -1102,7 +1102,7 @@
         "reported_count": 22
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": false
     },
     {
@@ -1210,21 +1210,21 @@
       "version": "noisy",
       "voice": "en-KE-ChilembaNeural",
       "reference": "Health screening reached 27 people in Baringo.",
-      "hypothesis": "Health screening reached 27 people in Beringo.",
+      "hypothesis": "Health screening reached 27 people in Baringo.",
       "reference_norm": "health screening reached 27 people in baringo",
-      "hypothesis_norm": "health screening reached 27 people in beringo",
-      "wer_pct": 14.29,
-      "substitutions": 1,
+      "hypothesis_norm": "health screening reached 27 people in baringo",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 7,
       "hyp_words": 7,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "health_screening",
-        "location": null,
+        "location": "Baringo",
         "reported_count": 27
       },
       "gold": {
@@ -1234,7 +1234,7 @@
         "reported_count": 27
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1389,8 +1389,8 @@
       "pred": {
         "relevant": true,
         "activity_type": "household_outreach",
-        "location": null,
-        "reported_count": null
+        "location": "Narok",
+        "reported_count": 7
       },
       "gold": {
         "relevant": true,
@@ -1398,8 +1398,8 @@
         "location": "Narok",
         "reported_count": 7
       },
-      "count_field_ok": false,
-      "location_field_ok": false,
+      "count_field_ok": true,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1408,9 +1408,9 @@
       "version": "noisy",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We visited 7 households in Narok today.",
-      "hypothesis": "We visited seven households in Naraq today.",
+      "hypothesis": "We visited seven households in Narak today.",
       "reference_norm": "we visited 7 households in narok today",
-      "hypothesis_norm": "we visited seven households in naraq today",
+      "hypothesis_norm": "we visited seven households in narak today",
       "wer_pct": 28.57,
       "substitutions": 2,
       "deletions": 0,
@@ -1422,8 +1422,8 @@
       "pred": {
         "relevant": true,
         "activity_type": "household_outreach",
-        "location": null,
-        "reported_count": null
+        "location": "Narok",
+        "reported_count": 7
       },
       "gold": {
         "relevant": true,
@@ -1431,8 +1431,8 @@
         "location": "Narok",
         "reported_count": 7
       },
-      "count_field_ok": false,
-      "location_field_ok": false,
+      "count_field_ok": true,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1441,9 +1441,9 @@
       "version": "phone",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We visited 7 households in Narok today.",
-      "hypothesis": "We visited seven households in Naraq today.",
+      "hypothesis": "We visited seven households in Narak today.",
       "reference_norm": "we visited 7 households in narok today",
-      "hypothesis_norm": "we visited seven households in naraq today",
+      "hypothesis_norm": "we visited seven households in narak today",
       "wer_pct": 28.57,
       "substitutions": 2,
       "deletions": 0,
@@ -1455,8 +1455,8 @@
       "pred": {
         "relevant": true,
         "activity_type": "household_outreach",
-        "location": null,
-        "reported_count": null
+        "location": "Narok",
+        "reported_count": 7
       },
       "gold": {
         "relevant": true,
@@ -1464,8 +1464,8 @@
         "location": "Narok",
         "reported_count": 7
       },
-      "count_field_ok": false,
-      "location_field_ok": false,
+      "count_field_ok": true,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1540,21 +1540,21 @@
       "version": "phone",
       "voice": "en-KE-AsiliaNeural",
       "reference": "We held a community meeting with 18 people in Narok.",
-      "hypothesis": "We held a community meeting with 18 people in NARAC.",
+      "hypothesis": "We held a community meeting with 18 people in Narok.",
       "reference_norm": "we held a community meeting with 18 people in narok",
-      "hypothesis_norm": "we held a community meeting with 18 people in narac",
-      "wer_pct": 10.0,
-      "substitutions": 1,
+      "hypothesis_norm": "we held a community meeting with 18 people in narok",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 10,
       "hyp_words": 10,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "community_meeting",
-        "location": null,
+        "location": "Narok",
         "reported_count": 18
       },
       "gold": {
@@ -1564,7 +1564,7 @@
         "reported_count": 18
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1573,21 +1573,21 @@
       "version": "clean",
       "voice": "en-KE-ChilembaNeural",
       "reference": "Our team made 46 health referrals in Kajiado.",
-      "hypothesis": "Our team made 46 health referrals in Cagiado.",
+      "hypothesis": "Our team made 46 health referrals in Kajiado.",
       "reference_norm": "our team made 46 health referrals in kajiado",
-      "hypothesis_norm": "our team made 46 health referrals in cagiado",
-      "wer_pct": 12.5,
-      "substitutions": 1,
+      "hypothesis_norm": "our team made 46 health referrals in kajiado",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 8,
       "hyp_words": 8,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Kajiado",
         "reported_count": null
       },
       "gold": {
@@ -1597,7 +1597,7 @@
         "reported_count": null
       },
       "count_field_ok": null,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1606,21 +1606,21 @@
       "version": "noisy",
       "voice": "en-KE-ChilembaNeural",
       "reference": "Our team made 46 health referrals in Kajiado.",
-      "hypothesis": "Our team made 46 health referrals in Cagiado.",
+      "hypothesis": "Our team made 46 health referrals in Kajiado.",
       "reference_norm": "our team made 46 health referrals in kajiado",
-      "hypothesis_norm": "our team made 46 health referrals in cagiado",
-      "wer_pct": 12.5,
-      "substitutions": 1,
+      "hypothesis_norm": "our team made 46 health referrals in kajiado",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 8,
       "hyp_words": 8,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Kajiado",
         "reported_count": null
       },
       "gold": {
@@ -1630,7 +1630,7 @@
         "reported_count": null
       },
       "count_field_ok": null,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1639,21 +1639,21 @@
       "version": "phone",
       "voice": "en-KE-ChilembaNeural",
       "reference": "Our team made 46 health referrals in Kajiado.",
-      "hypothesis": "Our team made 46 health referrals in Cagiado.",
+      "hypothesis": "Our team made 46 health referrals in Kajiado.",
       "reference_norm": "our team made 46 health referrals in kajiado",
-      "hypothesis_norm": "our team made 46 health referrals in cagiado",
-      "wer_pct": 12.5,
-      "substitutions": 1,
+      "hypothesis_norm": "our team made 46 health referrals in kajiado",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 8,
       "hyp_words": 8,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Kajiado",
         "reported_count": null
       },
       "gold": {
@@ -1663,7 +1663,7 @@
         "reported_count": null
       },
       "count_field_ok": null,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1705,21 +1705,21 @@
       "version": "noisy",
       "voice": "en-KE-AsiliaNeural",
       "reference": "We held a community meeting with 20 people in Narok.",
-      "hypothesis": "We held a community meeting with 20 people in Neroch.",
+      "hypothesis": "We held a community meeting with 20 people in Narok.",
       "reference_norm": "we held a community meeting with 20 people in narok",
-      "hypothesis_norm": "we held a community meeting with 20 people in neroch",
-      "wer_pct": 10.0,
-      "substitutions": 1,
+      "hypothesis_norm": "we held a community meeting with 20 people in narok",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 10,
       "hyp_words": 10,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "community_meeting",
-        "location": null,
+        "location": "Narok",
         "reported_count": 20
       },
       "gold": {
@@ -1729,7 +1729,7 @@
         "reported_count": 20
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1738,7 +1738,7 @@
       "version": "phone",
       "voice": "en-KE-AsiliaNeural",
       "reference": "We held a community meeting with 20 people in Narok.",
-      "hypothesis": "We held a community meeting with 20 people in NAROK.",
+      "hypothesis": "We held a community meeting with 20 people in Narok.",
       "reference_norm": "we held a community meeting with 20 people in narok",
       "hypothesis_norm": "we held a community meeting with 20 people in narok",
       "wer_pct": 0.0,
@@ -1771,6 +1771,39 @@
       "version": "clean",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We referred 8 women to the clinic in Nakuru.",
+      "hypothesis": "We referred 8 women to the clinic in Nakuru.",
+      "reference_norm": "we referred 8 women to the clinic in nakuru",
+      "hypothesis_norm": "we referred 8 women to the clinic in nakuru",
+      "wer_pct": 0.0,
+      "substitutions": 0,
+      "deletions": 0,
+      "insertions": 0,
+      "ref_words": 9,
+      "hyp_words": 9,
+      "number_token_ok": true,
+      "location_token_ok": true,
+      "pred": {
+        "relevant": true,
+        "activity_type": "health_referral",
+        "location": "Nakuru",
+        "reported_count": 8
+      },
+      "gold": {
+        "relevant": true,
+        "activity_type": "health_referral",
+        "location": "Nakuru",
+        "reported_count": 8
+      },
+      "count_field_ok": true,
+      "location_field_ok": true,
+      "classification_ok": true
+    },
+    {
+      "clip_id": "msg_021_noisy",
+      "message_id": "msg_021",
+      "version": "noisy",
+      "voice": "en-KE-ChilembaNeural",
+      "reference": "We referred 8 women to the clinic in Nakuru.",
       "hypothesis": "We referred eight women to the clinic in Nakuru.",
       "reference_norm": "we referred 8 women to the clinic in nakuru",
       "hypothesis_norm": "we referred eight women to the clinic in nakuru",
@@ -1786,7 +1819,7 @@
         "relevant": true,
         "activity_type": "health_referral",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 8
       },
       "gold": {
         "relevant": true,
@@ -1794,41 +1827,8 @@
         "location": "Nakuru",
         "reported_count": 8
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
-      "classification_ok": true
-    },
-    {
-      "clip_id": "msg_021_noisy",
-      "message_id": "msg_021",
-      "version": "noisy",
-      "voice": "en-KE-ChilembaNeural",
-      "reference": "We referred 8 women to the clinic in Nakuru.",
-      "hypothesis": "We referred eight women to the clinic in Nakulu.",
-      "reference_norm": "we referred 8 women to the clinic in nakuru",
-      "hypothesis_norm": "we referred eight women to the clinic in nakulu",
-      "wer_pct": 22.22,
-      "substitutions": 2,
-      "deletions": 0,
-      "insertions": 0,
-      "ref_words": 9,
-      "hyp_words": 9,
-      "number_token_ok": true,
-      "location_token_ok": false,
-      "pred": {
-        "relevant": true,
-        "activity_type": "health_referral",
-        "location": null,
-        "reported_count": null
-      },
-      "gold": {
-        "relevant": true,
-        "activity_type": "health_referral",
-        "location": "Nakuru",
-        "reported_count": 8
-      },
-      "count_field_ok": false,
-      "location_field_ok": false,
       "classification_ok": true
     },
     {
@@ -1852,7 +1852,7 @@
         "relevant": true,
         "activity_type": "health_referral",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 8
       },
       "gold": {
         "relevant": true,
@@ -1860,7 +1860,7 @@
         "location": "Nakuru",
         "reported_count": 8
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -1870,9 +1870,9 @@
       "version": "clean",
       "voice": "en-KE-AsiliaNeural",
       "reference": "Our team made 38 health referrals in Narok.",
-      "hypothesis": "Our team made 38 health referrals in NARAC.",
+      "hypothesis": "Our team made 38 health referrals in Narak.",
       "reference_norm": "our team made 38 health referrals in narok",
-      "hypothesis_norm": "our team made 38 health referrals in narac",
+      "hypothesis_norm": "our team made 38 health referrals in narak",
       "wer_pct": 12.5,
       "substitutions": 1,
       "deletions": 0,
@@ -1884,7 +1884,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Narok",
         "reported_count": null
       },
       "gold": {
@@ -1894,7 +1894,7 @@
         "reported_count": null
       },
       "count_field_ok": null,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1917,7 +1917,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Narok",
         "reported_count": null
       },
       "gold": {
@@ -1927,7 +1927,7 @@
         "reported_count": null
       },
       "count_field_ok": null,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1936,9 +1936,9 @@
       "version": "phone",
       "voice": "en-KE-AsiliaNeural",
       "reference": "Our team made 38 health referrals in Narok.",
-      "hypothesis": "Our team made 38 health referrals in NARAC.",
+      "hypothesis": "Our team made 38 health referrals in Narak.",
       "reference_norm": "our team made 38 health referrals in narok",
-      "hypothesis_norm": "our team made 38 health referrals in narac",
+      "hypothesis_norm": "our team made 38 health referrals in narak",
       "wer_pct": 12.5,
       "substitutions": 1,
       "deletions": 0,
@@ -1950,7 +1950,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "health_referral",
-        "location": null,
+        "location": "Narok",
         "reported_count": null
       },
       "gold": {
@@ -1960,7 +1960,7 @@
         "reported_count": null
       },
       "count_field_ok": null,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -1983,7 +1983,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "household_outreach",
-        "location": null,
+        "location": "Narok",
         "reported_count": 48
       },
       "gold": {
@@ -1993,7 +1993,7 @@
         "reported_count": 48
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -2016,7 +2016,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "household_outreach",
-        "location": null,
+        "location": "Narok",
         "reported_count": 48
       },
       "gold": {
@@ -2026,7 +2026,7 @@
         "reported_count": 48
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -2035,9 +2035,9 @@
       "version": "phone",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We visited 48 households in Narok today.",
-      "hypothesis": "We visited 48 households in Naraq today.",
+      "hypothesis": "We visited 48 households in Narak today.",
       "reference_norm": "we visited 48 households in narok today",
-      "hypothesis_norm": "we visited 48 households in naraq today",
+      "hypothesis_norm": "we visited 48 households in narak today",
       "wer_pct": 14.29,
       "substitutions": 1,
       "deletions": 0,
@@ -2049,7 +2049,7 @@
       "pred": {
         "relevant": true,
         "activity_type": "household_outreach",
-        "location": null,
+        "location": "Narok",
         "reported_count": 48
       },
       "gold": {
@@ -2059,7 +2059,7 @@
         "reported_count": 48
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -2200,21 +2200,21 @@
       "version": "noisy",
       "voice": "en-KE-ChilembaNeural",
       "reference": "We held a community meeting with 39 people in Nakuru.",
-      "hypothesis": "We held a community meeting with 39 people in Nakulu.",
+      "hypothesis": "We held a community meeting with 39 people in Nakuru.",
       "reference_norm": "we held a community meeting with 39 people in nakuru",
-      "hypothesis_norm": "we held a community meeting with 39 people in nakulu",
-      "wer_pct": 10.0,
-      "substitutions": 1,
+      "hypothesis_norm": "we held a community meeting with 39 people in nakuru",
+      "wer_pct": 0.0,
+      "substitutions": 0,
       "deletions": 0,
       "insertions": 0,
       "ref_words": 10,
       "hyp_words": 10,
       "number_token_ok": true,
-      "location_token_ok": false,
+      "location_token_ok": true,
       "pred": {
         "relevant": true,
         "activity_type": "community_meeting",
-        "location": null,
+        "location": "Nakuru",
         "reported_count": 39
       },
       "gold": {
@@ -2224,7 +2224,7 @@
         "reported_count": 39
       },
       "count_field_ok": true,
-      "location_field_ok": false,
+      "location_field_ok": true,
       "classification_ok": true
     },
     {
@@ -2281,7 +2281,7 @@
         "relevant": true,
         "activity_type": "community_meeting",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 6
       },
       "gold": {
         "relevant": true,
@@ -2289,7 +2289,7 @@
         "location": "Nakuru",
         "reported_count": 6
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -2314,7 +2314,7 @@
         "relevant": true,
         "activity_type": "community_meeting",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 6
       },
       "gold": {
         "relevant": true,
@@ -2322,7 +2322,7 @@
         "location": "Nakuru",
         "reported_count": 6
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -2347,7 +2347,7 @@
         "relevant": true,
         "activity_type": "community_meeting",
         "location": "Nakuru",
-        "reported_count": null
+        "reported_count": 6
       },
       "gold": {
         "relevant": true,
@@ -2355,7 +2355,7 @@
         "location": "Nakuru",
         "reported_count": 6
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -2380,7 +2380,7 @@
         "relevant": true,
         "activity_type": "community_meeting",
         "location": "Baringo",
-        "reported_count": null
+        "reported_count": 8
       },
       "gold": {
         "relevant": true,
@@ -2388,7 +2388,7 @@
         "location": "Baringo",
         "reported_count": 8
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -2413,7 +2413,7 @@
         "relevant": true,
         "activity_type": "community_meeting",
         "location": "Baringo",
-        "reported_count": null
+        "reported_count": 8
       },
       "gold": {
         "relevant": true,
@@ -2421,7 +2421,7 @@
         "location": "Baringo",
         "reported_count": 8
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -2446,7 +2446,7 @@
         "relevant": true,
         "activity_type": "community_meeting",
         "location": "Baringo",
-        "reported_count": null
+        "reported_count": 8
       },
       "gold": {
         "relevant": true,
@@ -2454,7 +2454,7 @@
         "location": "Baringo",
         "reported_count": 8
       },
-      "count_field_ok": false,
+      "count_field_ok": true,
       "location_field_ok": true,
       "classification_ok": true
     },
@@ -2497,7 +2497,7 @@
       "version": "noisy",
       "voice": "en-KE-AsiliaNeural",
       "reference": "Good morning everyone!",
-      "hypothesis": "Good morning everyone!",
+      "hypothesis": "Good morning everyone.",
       "reference_norm": "good morning everyone",
       "hypothesis_norm": "good morning everyone",
       "wer_pct": 0.0,
@@ -2530,7 +2530,7 @@
       "version": "phone",
       "voice": "en-KE-AsiliaNeural",
       "reference": "Good morning everyone!",
-      "hypothesis": "Good morning everyone.",
+      "hypothesis": "Good morning everyone",
       "reference_norm": "good morning everyone",
       "hypothesis_norm": "good morning everyone",
       "wer_pct": 0.0,

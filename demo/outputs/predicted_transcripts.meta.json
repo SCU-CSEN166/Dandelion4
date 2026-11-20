@@ -1,0 +1,19 @@
+{
+  "version": "hidden_test",
+  "model": "C:\\Things\\Dandelion4\\models\\whisper-large-v3-turbo-v3",
+  "language": "en",
+  "task": "transcribe",
+  "decoding": {
+    "num_beams": 1,
+    "do_sample": false
+  },
+  "initial_prompt": null,
+  "device": "cuda:0",
+  "dtype": "float16",
+  "torch_version": "2.6.0+cu124",
+  "transformers_version": "5.22.1",
+  "n_clips": 10,
+  "audio_seconds_total": 373.2,
+  "wall_seconds": 6.64,
+  "created_utc": "2026-11-13T23:57:18Z"
+}
