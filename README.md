@@ -383,42 +383,68 @@ Since it cannot process videos and images it may be inaccurate for real life con
 ## Setup and Reproducibility (keep updated)
 
 ### Requirements
-- Python 3.12 and the packages listed in requirements.txt
-- Runs on CPU (no GPU required); uses CUDA GPU automatically if available
-- Pre-trained models (whisper-large-v3-tuned-int8, gliner_medium-v2.1, deberta-v3-base, plus whisper-large-v3-tuned on CUDA) auto-download into .models/ from the models-v5-int8 GitHub Release on first run
+- Python 3.12 and the pinned packages in requirements.txt
+- Works on CPU out of the box on Windows, macOS, and Linux (no GPU required); automatically uses CUDA GPU when available
+- Disk space: ~2.3 GB for CPU runtime models (whisper-large-v3-tuned-int8, gliner_medium-v2.1, deberta-v3-base), or ~5.2 GB if a CUDA GPU is present (also downloads the full FP16 whisper-large-v3-tuned model)
+- Internet access once on first run to download runtime models from the models-v5-int8 GitHub Release into .models/; after that, inference runs completely offline (can be verified with HF_HUB_OFFLINE=1)
 
 ### Installation
 ```bash
 git clone https://github.com/SCU-CSEN166/Dandelion4.git
 cd Dandelion4
+
+# Linux / macOS
 python3 -m venv .venv
-source .venv/bin/activate   # on Windows PowerShell: .\.venv\Scripts\Activate.ps1
+source .venv/bin/activate
 pip install -r requirements.txt
+
+# Windows PowerShell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Optional: pre-download runtime models into .models/ ahead of time
+python -m src.core.setup_models
 ```
 
 ### Run the system
 ```bash
-# run on default demo/inputs folder (writes redacted outputs.csv and records.json to demo/outputs/custom_run)
+# Run on the default demo/inputs folder (writes redacted outputs.csv, records.json, and resumable records.jsonl to demo/outputs/custom_run)
 python -m src.main
 
-# run on any audio file, text file, zip, or folder
+# Run on any single audio file, text/json/csv file, .zip archive, or folder
 python -m src.main --in-dir path/to/data --out-dir outputs/run1
 
-# force cpu or see all options
-python -m src.main --device cpu
+# Common options: force CPU, change chunk size, overwrite previous checkpoint, or skip transcript cleanup
+python -m src.main --device cpu --chunk-size 64 --overwrite
 python -m src.main --help
 
-# run the hidden-test demo with expected-csv metrics
+# Run the hidden-test demo and compare against demo/expected/hidden_test_outputs.csv
 python demo/run_demo.py
 ```
 
-### Run evaluation
+Outputs are always redacted (no unredacted transcripts are written to disk):
+- outputs.csv: reviewable spreadsheet with anonymized_text, relevance, activity_type, participants, and duplicate_of
+- records.json: full structured Interface Spec v2 records (with text_redacted)
+- records.jsonl: incremental checkpoint flushed per chunk so interrupted large runs can resume automatically
+
+### Run evaluation and tests
 ```bash
-# run synthetic and hidden evaluation suites
+# Run synthetic and hidden evaluation suites (CPU or CUDA automatically)
 python -m evaluation.run_evaluation --suites synthetic hidden
 
-# run offline unit tests
+# Run public speech suites (auto-downloads datasets into evaluation/datasets/ and examples/fleurs_audio/ when online)
+python -m evaluation.run_evaluation --suites test_300_seed1234 test_330_balanced kenyan_ea_test fleurs_all
+
+# Run the fast offline unit test suite (291 tests; excludes 2 @pytest.mark.slow tests that hit live Edge TTS / Hugging Face)
 pytest -m "not slow" -q
+
+# Optionally run the 2 slow network-dependent tests
+pytest -m slow -q
+
+# Run linter and type checker
+ruff check --extend-exclude "*.ipynb" src evaluation tests demo
+mypy
 ```
 
 ### Repository structure
@@ -427,10 +453,12 @@ Dandelion4/
 ├── README.md
 ├── interface-spec.md
 ├── requirements.txt
-├── demo/           # demo runner, sample inputs, expected outputs
-├── evaluation/     # wer scoring, public benchmark fetcher, unified eval cli
+├── pyproject.toml
+├── pytest.ini
+├── demo/           # demo runner, sample inputs (demo/inputs/), expected outputs (demo/expected/)
+├── evaluation/     # WER scoring, public benchmark fetcher, unified evaluation CLI
 ├── examples/       # synthetic audio, manifests, transcripts
-├── notebooks/      # week 6-7 colab/local notebooks
-├── src/            # main cli, asr, nlp, pipeline, runtime, training
-└── tests/          # offline automated tests
+├── notebooks/      # Week 6-7 Colab/local notebooks
+├── src/            # main CLI (src/main.py), asr/, nlp/, pipeline/, core/, training/, legacy/
+└── tests/          # automated unit tests
 ```
