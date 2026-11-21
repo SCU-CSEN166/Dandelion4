@@ -356,7 +356,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 ### Final improvements and outcomes
 | Feedback / issue | Change made | Worked? (Yes / Partly / No) | Evidence | Remaining limitation |
 |---|---|---|---|---|
-| [Issue] | [Change] | [Status] | [Link or metric] | [Limitation] |
+| setup and run instructions / large-batch speed | added unified cli (python -m src.main) with github release auto-download, chunked streaming, cpu multi-worker int8, gpu fp16, and cleaner output without warnings | Yes | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2), 291 tests passing, 647 fleurs clips ran in 2m40s on gpu | still misses some balanced afrispeech wer targets so human review is needed |
 
 ### Individual contributions during that week
 | Member | Final implementation / evaluation / documentation contribution | Result (worked / partly / failed) | Evidence | Reflection / remaining work |

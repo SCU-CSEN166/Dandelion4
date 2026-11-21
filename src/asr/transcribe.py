@@ -14,6 +14,7 @@ only inside ``WhisperASR`` and ``resolve_device``.
 import argparse
 import importlib.metadata
 import json
+import logging
 import os
 import sys
 import time
@@ -355,6 +356,7 @@ class WhisperASR:
             import torch
             from transformers import pipeline
 
+            logging.getLogger("transformers").setLevel(logging.ERROR)
             if self.device == "cpu":
                 runtime.configure_torch_cpu_threads()
             dtype = torch.float16 if self.dtype_name == "float16" else torch.float32
@@ -364,6 +366,10 @@ class WhisperASR:
                 dtype=dtype,
                 device=self.device,
             )
+            if hasattr(self._pipe, "tokenizer") and hasattr(
+                self._pipe.tokenizer, "clean_up_tokenization_spaces"
+            ):
+                self._pipe.tokenizer.clean_up_tokenization_spaces = False
 
     def _get_chunked_pipe(self) -> Any:  # pragma: no cover - long-audio Whisper helper
         """Build a chunked pipeline reusing the loaded model for clips >30 s."""

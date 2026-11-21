@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import logging
 import re
 import sys
 import unicodedata
@@ -764,6 +765,8 @@ class GLiNERSystem:
             import importlib
 
             import torch
+
+            logging.getLogger("transformers").setLevel(logging.ERROR)
 
             cuda_mod = getattr(torch, "cuda", None)
             target_device = (
