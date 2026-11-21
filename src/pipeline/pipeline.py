@@ -48,6 +48,17 @@ def _is_ignored_path(path: Path) -> bool:
     return any(part.startswith(".") or part == "__MACOSX" for part in path.parts)
 
 
+def _extract_zip_candidates(zip_path: Path, extract_dir: Path) -> list[Path]:
+    extracted: list[Path] = []
+    with zipfile.ZipFile(zip_path) as zf:
+        for member in sorted(zf.namelist()):
+            rel = Path(member)
+            if member.endswith("/") or _is_ignored_path(rel):
+                continue
+            extracted.append(Path(zf.extract(member, extract_dir)))
+    return extracted
+
+
 def discover_inputs(input_path: Path, extract_dir: Path) -> tuple[list[Path], list[Path]]:
     """Discover supported audio and text files from a file, .zip, or directory."""
     if not input_path.exists():
@@ -55,15 +66,16 @@ def discover_inputs(input_path: Path, extract_dir: Path) -> tuple[list[Path], li
 
     candidates: list[Path] = []
     if input_path.is_file() and input_path.suffix.lower() == ".zip":
-        with zipfile.ZipFile(input_path) as zf:
-            for member in sorted(zf.namelist()):
-                rel = Path(member)
-                if member.endswith("/") or _is_ignored_path(rel):
-                    continue
-                candidates.append(Path(zf.extract(member, extract_dir)))
+        candidates.extend(_extract_zip_candidates(input_path, extract_dir))
     elif input_path.is_dir():
-        for item in sorted(input_path.rglob("*")):
-            if item.is_file() and not _is_ignored_path(item.relative_to(input_path)):
+        for idx, item in enumerate(sorted(input_path.rglob("*"))):
+            if not item.is_file() or _is_ignored_path(item.relative_to(input_path)):
+                continue
+            if item.suffix.lower() == ".zip":
+                candidates.extend(
+                    _extract_zip_candidates(item, extract_dir / f"{item.stem}_{idx}")
+                )
+            else:
                 candidates.append(item)
     elif input_path.is_file():
         candidates.append(input_path)
@@ -309,7 +321,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             "  python -m src.main\n"
             "  python -m src.main --in-dir path/to/field_reports_folder --out-dir outputs/week10\n"
             "  python -m src.main path/to/voice_note.mp4\n"
-            "  python -m src.main demo/inputs/dandelion_audio.zip --device cpu\n"
+            "  python -m src.main demo/inputs --device cpu\n"
         ),
     )
     parser.add_argument(

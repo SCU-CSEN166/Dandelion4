@@ -36,7 +36,7 @@ from src.asr import clean_transcripts, transcribe  # noqa: E402
 from src.core import contracts  # noqa: E402
 from src.nlp import gliner_system  # noqa: E402
 
-DEFAULT_INPUT = REPO_ROOT / "demo" / "inputs" / "dandelion_audio.zip"
+DEFAULT_INPUT = REPO_ROOT / "demo" / "inputs"
 DEFAULT_OUT_CSV = REPO_ROOT / "demo" / "outputs" / "predicted_outputs.csv"
 DEFAULT_EXPECTED_CSV = REPO_ROOT / "demo" / "expected" / "hidden_test_outputs.csv"
 

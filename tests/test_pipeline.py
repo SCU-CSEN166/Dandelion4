@@ -86,6 +86,21 @@ def test_run_on_mixed_folder(tmp_path: Path) -> None:
     assert rows[2]["source_type"] == "text"
 
 
+def test_discover_inputs_extracts_zip_inside_directory(tmp_path: Path) -> None:
+    import zipfile
+
+    in_dir = tmp_path / "inputs"
+    in_dir.mkdir()
+    wav_path = tmp_path / "clip1.wav"
+    soundfile.write(wav_path, np.zeros(16_000, dtype=np.float32), 16_000)
+    with zipfile.ZipFile(in_dir / "bundle.zip", "w") as zf:
+        zf.write(wav_path, arcname="clip1.wav")
+
+    audio_files, text_files = pipeline.discover_inputs(in_dir, tmp_path / "extract")
+    assert [p.name for p in audio_files] == ["clip1.wav"]
+    assert text_files == []
+
+
 def test_discover_inputs_rejects_empty_folder(tmp_path: Path) -> None:
     empty = tmp_path / "empty"
     empty.mkdir()

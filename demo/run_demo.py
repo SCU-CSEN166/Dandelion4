@@ -29,7 +29,7 @@ from src.nlp import gliner_system  # noqa: E402
 from src.pipeline import hidden_test_pipeline  # noqa: E402
 
 DEMO_DIR = REPO_ROOT / "demo"
-DEFAULT_INPUT = DEMO_DIR / "inputs" / "dandelion_audio.zip"
+DEFAULT_INPUT = DEMO_DIR / "inputs"
 DEFAULT_EXPECTED_CSV = DEMO_DIR / "expected" / "hidden_test_outputs.csv"
 DEFAULT_OUT_CSV = DEMO_DIR / "outputs" / "predicted_outputs.csv"
 DEFAULT_ARTIFACTS_DIR = DEMO_DIR / "outputs"
