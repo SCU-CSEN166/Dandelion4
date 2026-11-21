@@ -326,6 +326,7 @@ class WhisperASR:
         initial_prompt: str | None = None,
         num_beams: int = 1,
     ) -> None:
+        """Store Whisper model configuration without loading weights until first use."""
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         if num_beams < 1:
@@ -455,6 +456,7 @@ def _build_asr_metadata(
     initial_prompt: str | None,
     num_beams: int,
 ) -> dict[str, Any]:
+    """Build the standard ASR metadata dictionary shared by Whisper and FasterWhisper."""
     return {
         "model": model_id,
         "language": LANGUAGE,
@@ -487,6 +489,7 @@ class FasterWhisperASR:
         cpu_threads: int | None = None,
         num_workers: int | None = None,
     ) -> None:
+        """Configure CTranslate2 parallelism and compute type without loading weights yet."""
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         if num_beams < 1:
@@ -563,6 +566,7 @@ class FasterWhisperASR:
             )
 
     def _transcribe_one(self, wave: FloatArray) -> str:
+        """Transcribe a single 16 kHz float32 mono wave and join its text segments."""
         assert self._model is not None
         segments, _info = self._model.transcribe(
             wave,
@@ -628,6 +632,7 @@ def transcribe_versions(
         seconds = 0.0
 
         def counting_read(path: Path) -> tuple[npt.NDArray[Any], int]:
+            """Read a WAV file and accumulate its duration in seconds."""
             nonlocal seconds
             wave, sr = read_wav(path)
             seconds += wave.shape[0] / sr
@@ -728,6 +733,7 @@ def main(
     versions = list(VERSIONS) if args.version == "all" else [args.version]
 
     def _build_asr() -> ASRBackend:
+        """Instantiate the ASR backend with only the configured optional arguments."""
         if args.num_beams != 1:
             return make_asr(
                 args.model, args.device, args.batch_size, args.initial_prompt, args.num_beams

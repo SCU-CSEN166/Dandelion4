@@ -29,7 +29,7 @@ from datetime import UTC, datetime
 from importlib import import_module
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 from numpy.typing import NDArray
 
@@ -45,6 +45,7 @@ ProcessMessagesFn = Callable[[list[JsonDict]], list[JsonDict]]
 MakeASRFn = Callable[..., transcribe.ASRBackend]
 ReadWavFn = Callable[[Path], tuple[Any, int]]
 
+# Kenyan phone numbers starting with +254 or 0, followed by 1 or 7 and 8 digits.
 _PHONE_PATTERN = re.compile(r"(?<!\w)(?:\+?254|0)[\s-]?[17](?:[\s-]?\d){8}(?!\w)")
 
 
@@ -133,6 +134,7 @@ def adapt_v1_baseline_records(
 
 
 def _utc_now() -> datetime:
+    """Return the current UTC date and time."""
     return datetime.now(UTC)
 
 
@@ -161,8 +163,7 @@ def load_system(spec: str) -> ProcessMessagesFn:
     target = getattr(module, attr, None)
     if not callable(target):
         raise ValueError(f"system target {module_name}:{attr} is not callable")
-    resolved: ProcessMessagesFn = target
-    return resolved
+    return cast(ProcessMessagesFn, target)
 
 
 def transcribe_to_messages(
@@ -219,6 +220,105 @@ def run_system_contract(
     return records
 
 
+def _preflight_clips(
+    manifest: dict[str, Any], versions: Sequence[str], root: Path
+) -> dict[str, list[JsonDict]]:
+    """Validate manifest clips and verify all WAVs exist before loading ASR."""
+    clips_by_version: dict[str, list[JsonDict]] = {}
+    for version in versions:
+        clips = transcribe.clips_for_version(manifest, version)
+        missing = transcribe.missing_wavs(clips, root=root)
+        if missing:
+            raise FileNotFoundError(
+                f"missing {len(missing)} audio files for {version}, starting with {missing[0]}"
+            )
+        clips_by_version[version] = clips
+    return clips_by_version
+
+
+def _create_asr_backend(
+    make_asr: MakeASRFn,
+    model: str | None,
+    device: str,
+    batch_size: int,
+    initial_prompt: str | None,
+    num_beams: int,
+    root: Path,
+) -> tuple[transcribe.ASRBackend, str]:
+    """Resolve device/model defaults and instantiate the ASR backend."""
+    resolved_device = transcribe.resolve_device(device)
+    resolved_model = (
+        transcribe.resolve_default_model(device=resolved_device) if model is None else model
+    )
+    display_model = _display_model(resolved_model, repo_root=root)
+    # Omit num_beams for greedy decoding (1) so 4-arg test/custom factories remain compatible.
+    if num_beams == 1:
+        asr = make_asr(resolved_model, resolved_device, batch_size, initial_prompt)
+    else:
+        asr = make_asr(
+            resolved_model, resolved_device, batch_size, initial_prompt, num_beams=num_beams
+        )
+    return asr, display_model
+
+
+def _run_version(
+    manifest: dict[str, Any],
+    version: str,
+    clips: Sequence[JsonDict],
+    asr: transcribe.ASRBackend,
+    display_model: str,
+    *,
+    clean: bool,
+    system_fn: ProcessMessagesFn,
+    transcripts_dir: Path,
+    target_records_dir: Path,
+    read_wav: Callable[[Path], tuple[NDArray[Any], int]],
+    root: Path,
+    clock: Callable[[], datetime],
+) -> tuple[PipelineResult, JsonDict]:
+    """Transcribe, clean, run Stage C system, and stage validated outputs for one version."""
+    t0 = perf_counter()
+    messages = transcribe_to_messages(
+        manifest, version, asr, clean=clean, read_wav=read_wav, root=root
+    )
+    wall_seconds = perf_counter() - t0
+    records = run_system_contract(messages, system_fn)
+    asr_meta = dict(asr.metadata())
+    asr_meta["model"] = display_model
+    audio_seconds = sum(float(c.get("duration_s", 0.0)) for c in clips)
+    meta = transcribe.build_metadata(
+        version,
+        asr_meta,
+        len(clips),
+        audio_seconds,
+        wall_seconds,
+        clock(),
+    )
+    meta["cleaned"] = clean
+    result = PipelineResult(
+        version=version,
+        messages=messages,
+        records=records,
+        transcripts_path=transcripts_dir / f"transcripts_{version}.json",
+        meta_path=transcripts_dir / f"transcripts_{version}.meta.json",
+        records_path=target_records_dir / f"records_{version}.json",
+    )
+    return result, meta
+
+
+def _write_staged_results(
+    staged: Sequence[tuple[PipelineResult, JsonDict]],
+) -> list[PipelineResult]:
+    """Write validated transcript, metadata, and record files for all staged versions."""
+    results: list[PipelineResult] = []
+    for result, meta in staged:
+        _write_json_lf(result.transcripts_path, result.messages)
+        _write_json_lf(result.meta_path, meta)
+        _write_json_lf(result.records_path, result.records)
+        results.append(result)
+    return results
+
+
 def run_pipeline(
     manifest: dict[str, Any],
     versions: Sequence[str],
@@ -249,69 +349,31 @@ def run_pipeline(
     if num_beams < 1:
         raise ValueError(f"num_beams must be >= 1, got {num_beams}")
 
-    clips_by_version: dict[str, list[JsonDict]] = {}
-    for version in versions:
-        clips = transcribe.clips_for_version(manifest, version)
-        missing = transcribe.missing_wavs(clips, root=root)
-        if missing:
-            raise FileNotFoundError(
-                f"missing {len(missing)} audio files for {version}, starting with {missing[0]}"
-            )
-        clips_by_version[version] = clips
-
-    resolved_device = transcribe.resolve_device(device)
-    resolved_model = (
-        transcribe.resolve_default_model(device=resolved_device) if model is None else model
+    clips_by_version = _preflight_clips(manifest, versions, root)
+    asr, display_model = _create_asr_backend(
+        make_asr, model, device, batch_size, initial_prompt, num_beams, root
     )
-    display_model = _display_model(resolved_model, repo_root=root)
     target_records_dir = transcripts_dir if records_dir is None else records_dir
     clock: Callable[[], datetime] = _utc_now if now is None else now
 
-    asr = (
-        make_asr(resolved_model, resolved_device, batch_size, initial_prompt)
-        if num_beams == 1
-        else make_asr(
-            resolved_model, resolved_device, batch_size, initial_prompt, num_beams=num_beams
-        )
-    )
-
-    staged: list[tuple[PipelineResult, JsonDict]] = []
-    for version in versions:
-        t0 = perf_counter()
-        messages = transcribe_to_messages(
-            manifest, version, asr, clean=clean, read_wav=read_wav, root=root
-        )
-        wall_seconds = perf_counter() - t0
-        records = run_system_contract(messages, system_fn)
-        asr_meta = dict(asr.metadata())
-        asr_meta["model"] = display_model
-        audio_seconds = sum(float(c.get("duration_s", 0.0)) for c in clips_by_version[version])
-        meta = transcribe.build_metadata(
+    staged = [
+        _run_version(
+            manifest,
             version,
-            asr_meta,
-            len(clips_by_version[version]),
-            audio_seconds,
-            wall_seconds,
-            clock(),
+            clips_by_version[version],
+            asr,
+            display_model,
+            clean=clean,
+            system_fn=system_fn,
+            transcripts_dir=transcripts_dir,
+            target_records_dir=target_records_dir,
+            read_wav=read_wav,
+            root=root,
+            clock=clock,
         )
-        meta["cleaned"] = clean
-        result = PipelineResult(
-            version=version,
-            messages=messages,
-            records=records,
-            transcripts_path=transcripts_dir / f"transcripts_{version}.json",
-            meta_path=transcripts_dir / f"transcripts_{version}.meta.json",
-            records_path=target_records_dir / f"records_{version}.json",
-        )
-        staged.append((result, meta))
-
-    results: list[PipelineResult] = []
-    for result, meta in staged:
-        _write_json_lf(result.transcripts_path, result.messages)
-        _write_json_lf(result.meta_path, meta)
-        _write_json_lf(result.records_path, result.records)
-        results.append(result)
-    return results
+        for version in versions
+    ]
+    return _write_staged_results(staged)
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

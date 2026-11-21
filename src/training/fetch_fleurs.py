@@ -100,9 +100,11 @@ def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
 
 
 def _sample_from_hf_row(row: dict[str, Any], index: int) -> FleursSample:
+    """Convert one Hugging Face FLEURS dataset row into a ``FleursSample``."""
     import io
 
     audio_info = row["audio"]
+    # Support in-memory arrays, raw encoded audio bytes, or local file paths.
     if "array" in audio_info and "sampling_rate" in audio_info:
         array = np.asarray(audio_info["array"], dtype=np.float32)
         sr = int(audio_info["sampling_rate"])
@@ -127,8 +129,10 @@ def _sample_from_hf_row(row: dict[str, Any], index: int) -> FleursSample:
 
 
 def _stream_via_datasets(config: str, split: str, limit: int) -> Iterable[FleursSample]:
+    """Stream up to ``limit`` FLEURS clips using the Hugging Face ``datasets`` library."""
     datasets_mod = importlib.import_module("datasets")
     ds = datasets_mod.load_dataset(DATASET_ID, config, split=split, streaming=True)
+    # Keep raw audio bytes un-decoded so soundfile can read them without torchcodec.
     if hasattr(ds, "cast_column"):
         ds = ds.cast_column("audio", datasets_mod.Audio(decode=False))
     for idx, row in enumerate(ds):
@@ -138,6 +142,7 @@ def _stream_via_datasets(config: str, split: str, limit: int) -> Iterable[Fleurs
 
 
 def _stream_via_hub(config: str, split: str, limit: int) -> Iterable[FleursSample]:
+    """Download the FLEURS TSV and audio archive via ``huggingface_hub`` and stream clips."""
     hub_mod = importlib.import_module("huggingface_hub")
     tsv_path = Path(
         hub_mod.hf_hub_download(
@@ -204,6 +209,89 @@ def stream_fleurs_samples(config: str, split: str, limit: int) -> Iterable[Fleur
         yield from _stream_via_datasets(config, split, limit)
 
 
+def _collect_fleurs_samples(
+    stream_fn: StreamFleurs, config: str, split: str, limit: int
+) -> list[FleursSample]:
+    """Collect up to ``limit`` samples from ``stream_fn`` and require at least one."""
+    samples: list[FleursSample] = []
+    for sample in stream_fn(config, split, limit):
+        samples.append(sample)
+        if len(samples) >= limit:
+            break
+    if not samples:
+        raise ValueError(f"no samples returned for {DATASET_ID} ({config}/{split})")
+    return samples
+
+
+def _write_fleurs_sample(
+    sample: FleursSample,
+    *,
+    index: int,
+    width: int,
+    config: str,
+    out_dir: Path,
+    root: Path,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Resample one FLEURS sample to 16 kHz mono WAV and build clip + message entries."""
+    message_id = f"fleurs_{index:0{width}d}"
+    sender_id = sample.speaker_id.strip() or f"fleurs_{config}"
+    text = sample.text.strip()
+    if not text:
+        raise ValueError(f"sample {sample.sample_id!r} has empty reference text")
+
+    wave = to_mono_16k(sample.audio, sample.sample_rate)
+    n_samples = int(wave.shape[0])
+    wav_path = out_dir / f"{message_id}_{DEFAULT_VERSION}.wav"
+    write_wav(wav_path, wave, TARGET_SAMPLE_RATE)
+
+    clip = {
+        "clip_id": f"{message_id}_{DEFAULT_VERSION}",
+        "message_id": message_id,
+        "sender_id": sender_id,
+        "version": DEFAULT_VERSION,
+        "voice": f"fleurs_{config}",
+        "path": repo_relative(wav_path, root),
+        "sample_rate": TARGET_SAMPLE_RATE,
+        "n_samples": n_samples,
+        "duration_s": round(n_samples / TARGET_SAMPLE_RATE, 2),
+        "reference_text": text,
+        "snr_db_measured": None,
+        "noise_seed": None,
+    }
+    message = {
+        "id": message_id,
+        "sender_id": sender_id,
+        "source": "audio",
+        "message": text,
+    }
+    return clip, message
+
+
+def _build_fleurs_manifest(
+    *,
+    config: str,
+    split: str,
+    clips: list[dict[str, Any]],
+    messages_path: Path,
+    root: Path,
+    created_utc: str,
+) -> dict[str, Any]:
+    """Build the ``audio_manifest.json``-compatible manifest dictionary."""
+    return {
+        "generator": {
+            "script": "src/training/fetch_fleurs.py",
+            "created_utc": created_utc,
+            "dataset": DATASET_ID,
+            "config": config,
+            "split": split,
+            "limit": len(clips),
+            "sample_rate": TARGET_SAMPLE_RATE,
+            "source_messages": repo_relative(messages_path, root),
+        },
+        "clips": clips,
+    }
+
+
 def fetch_fleurs(
     *,
     config: str = DEFAULT_CONFIG,
@@ -220,69 +308,26 @@ def fetch_fleurs(
     if limit < 1:
         raise ValueError(f"limit must be >= 1, got {limit}")
 
-    samples: list[FleursSample] = []
-    for sample in stream_fn(config, split, limit):
-        samples.append(sample)
-        if len(samples) >= limit:
-            break
-
-    if not samples:
-        raise ValueError(f"no samples returned for {DATASET_ID} ({config}/{split})")
-
+    samples = _collect_fleurs_samples(stream_fn, config, split, limit)
     width = max(4, len(str(len(samples))))
     clips: list[dict[str, Any]] = []
     messages: list[dict[str, Any]] = []
 
     for idx, sample in enumerate(samples, start=1):
-        message_id = f"fleurs_{idx:0{width}d}"
-        sender_id = sample.speaker_id.strip() or f"fleurs_{config}"
-        text = sample.text.strip()
-        if not text:
-            raise ValueError(f"sample {sample.sample_id!r} has empty reference text")
-
-        wave = to_mono_16k(sample.audio, sample.sample_rate)
-        n_samples = int(wave.shape[0])
-        wav_path = out_dir / f"{message_id}_{DEFAULT_VERSION}.wav"
-        write_wav(wav_path, wave, TARGET_SAMPLE_RATE)
-
-        clips.append(
-            {
-                "clip_id": f"{message_id}_{DEFAULT_VERSION}",
-                "message_id": message_id,
-                "sender_id": sender_id,
-                "version": DEFAULT_VERSION,
-                "voice": f"fleurs_{config}",
-                "path": repo_relative(wav_path, root),
-                "sample_rate": TARGET_SAMPLE_RATE,
-                "n_samples": n_samples,
-                "duration_s": round(n_samples / TARGET_SAMPLE_RATE, 2),
-                "reference_text": text,
-                "snr_db_measured": None,
-                "noise_seed": None,
-            }
+        clip, message = _write_fleurs_sample(
+            sample, index=idx, width=width, config=config, out_dir=out_dir, root=root
         )
-        messages.append(
-            {
-                "id": message_id,
-                "sender_id": sender_id,
-                "source": "audio",
-                "message": text,
-            }
-        )
+        clips.append(clip)
+        messages.append(message)
 
-    manifest: dict[str, Any] = {
-        "generator": {
-            "script": "src/training/fetch_fleurs.py",
-            "created_utc": format_utc(now()),
-            "dataset": DATASET_ID,
-            "config": config,
-            "split": split,
-            "limit": len(clips),
-            "sample_rate": TARGET_SAMPLE_RATE,
-            "source_messages": repo_relative(messages_path, root),
-        },
-        "clips": clips,
-    }
+    manifest = _build_fleurs_manifest(
+        config=config,
+        split=split,
+        clips=clips,
+        messages_path=messages_path,
+        root=root,
+        created_utc=format_utc(now()),
+    )
     write_manifest(manifest_path, manifest)
     messages_path.parent.mkdir(parents=True, exist_ok=True)
     contracts.write_json(messages_path, messages)

@@ -47,6 +47,7 @@ def save_local_suite(
         raise ValueError(f"cannot save empty benchmark suite: {name}")
     datasets_dir.mkdir(parents=True, exist_ok=True)
     out_path = datasets_dir / f"{name}.npz"
+    # Pack variable-length clips into one flat array with offsets so .npz loads without pickle.
     audio = np.concatenate([np.asarray(item.audio, dtype=np.float32) for item in items])
     lengths = [len(item.audio) for item in items]
     offsets = np.zeros(len(items) + 1, dtype=np.int64)
@@ -63,12 +64,14 @@ def save_local_suite(
 
 
 def _prepare_test_300_seed1234(datasets_dir: Path) -> Path:  # pragma: no cover - network
+    """Download 300 seeded test clips from mini_afrispeech and save them locally."""
     rows = finetune_whisper.stream_hf_afrispeech(AFRISPEECH_DATASET, "default", "test", seed=1234)
     items = bench._rows_to_items(rows, limit=300)
     return save_local_suite("test_300_seed1234", items, datasets_dir=datasets_dir)
 
 
 def _prepare_test_330_balanced(datasets_dir: Path) -> Path:  # pragma: no cover - network
+    """Download up to 30 clips per test shard from mini_afrispeech for a balanced suite."""
     from huggingface_hub import HfApi
 
     files = HfApi().list_repo_files(AFRISPEECH_DATASET, repo_type="dataset")
@@ -81,6 +84,7 @@ def _prepare_test_330_balanced(datasets_dir: Path) -> Path:  # pragma: no cover 
 
 
 def _prepare_kenyan_ea_test(datasets_dir: Path) -> Path:  # pragma: no cover - network
+    """Download the Kenyan and East-African test shards from AfriSpeech-200."""
     rows = finetune_whisper.stream_hf_parquet_files(
         EXTRA_AFRISPEECH_DATASET, list(bench.KENYAN_EA_TEST_SHARDS)
     )

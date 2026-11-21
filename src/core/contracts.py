@@ -61,6 +61,7 @@ _RESULT = {
 
 
 def _type_ok(value: Any, types: tuple[type, ...]) -> bool:
+    """Check exact type membership without treating booleans as integers."""
     return type(value) in types
 
 
@@ -70,6 +71,7 @@ def _fields(
     optional: dict[str, tuple[type, ...]],
     where: str,
 ) -> list[str]:
+    """Validate required, optional, and unknown field names and types on a dictionary."""
     problems = [f"{where}: missing field {k}" for k in required if k not in obj]
     problems += [
         f"{where}: unknown field {k}" for k in obj if k not in required and k not in optional
@@ -83,6 +85,7 @@ def _fields(
 
 
 def _spans(spans: list[Any], where: str, gold: bool = False) -> list[str]:
+    """Validate character-offset redaction spans (and surface text for gold PII spans)."""
     problems: list[str] = []
     last_end = 0
     gold_offsets: list[tuple[int, int]] = []
@@ -120,6 +123,7 @@ def _spans(spans: list[Any], where: str, gold: bool = False) -> list[str]:
 def _values(
     obj: dict[str, Any], text: str | None, where: str, *, defer_placeholders: bool = False
 ) -> list[str]:
+    """Validate extracted text fields for trimming, punctuation, and presence in text."""
     problems = []
     for key in _TEXT_FIELDS:
         value = obj.get(key)
@@ -163,137 +167,148 @@ def apply_redactions(text: str, redactions: list[dict[str, Any]] | list[Redactio
     return text
 
 
-def validate_file(kind: str, data: Any, messages: Any = None) -> list[str]:
-    """Report structural problems; semantic labeling and PII still require review."""
-    if not isinstance(kind, str) or kind not in {"messages", "transcripts", "records", "gold"}:
-        raise ValueError(f"unknown kind: {kind}")
-    if not isinstance(data, list):
-        return ["top level must be an array"]
+def _build_message_index(
+    kind: str, messages: Any
+) -> tuple[bool, dict[str, dict[str, Any]], list[str]]:
+    """Validate reference messages and build an ID-to-message lookup for records or gold."""
+    if messages is None or kind not in {"records", "gold"}:
+        return False, {}, []
+    reference_problems = validate_file("messages", messages)
+    problems = [f"messages: {problem}" for problem in reference_problems]
+    if reference_problems or not isinstance(messages, list):
+        return False, {}, problems
+    by_id = {
+        m["id"]: m for m in messages if isinstance(m, dict) and isinstance(m.get("id"), str)
+    }
+    return True, by_id, problems
+
+
+def _validate_message_item(obj: dict[str, Any], kind: str, where: str) -> list[str]:
+    """Validate a single input message or audio transcript dictionary."""
+    problems = _fields(obj, _MESSAGE, _MESSAGE_OPTIONAL, where)
+    source = obj.get("source")
+    if source is not None and (not isinstance(source, str) or source not in SOURCES):
+        problems.append(f"{where}: invalid source")
+    if kind == "transcripts" and source != "audio":
+        problems.append(f"{where}: transcript must have audio source")
+    if "asr_text" in obj and source != "audio":
+        problems.append(f"{where}: asr_text requires a cleaned audio transcript")
+    return problems
+
+
+def _validate_labeled_item_common(obj: dict[str, Any], record: bool, where: str) -> list[str]:
+    """Validate shared relevance, activity_type, and reported_count rules for records/gold."""
+    problems = _fields(obj, _RECORD if record else _GOLD, {} if record else _GOLD_OPTIONAL, where)
+    relevant, activity = obj.get("relevant"), obj.get("activity_type")
+    if relevant is True and (not isinstance(activity, str) or activity not in ACTIVITY_TYPES):
+        problems.append(f"{where}: relevant activity type invalid")
+    if relevant is False and activity is not None:
+        problems.append(f"{where}: irrelevant activity type must be null")
+    count = obj.get("reported_count")
+    if type(count) is int and count < 0:
+        problems.append(f"{where}: negative reported_count")
+    return problems
+
+
+def _validate_record_item(
+    obj: dict[str, Any], message: dict[str, Any] | None, where: str
+) -> list[str]:
+    """Validate a pipeline output Record against its rules and optional source Message."""
     problems: list[str] = []
-    use_messages = messages is not None and kind in {"records", "gold"}
-    if use_messages:
-        reference_problems = validate_file("messages", messages)
-        problems.extend(f"messages: {problem}" for problem in reference_problems)
-        use_messages = not reference_problems
-    by_id: dict[str, dict[str, Any]] = (
-        {m["id"]: m for m in messages if isinstance(m, dict) and isinstance(m.get("id"), str)}
-        if use_messages and isinstance(messages, list)
-        else {}
-    )
-    ids: list[Any] = []
-    for i, obj in enumerate(data):
-        where = f"item {i}"
-        if not isinstance(obj, dict):
-            problems.append(f"{where}: not an object")
-            continue
-        id_ = obj.get("id")
-        ids.append(id_)
-        if not isinstance(id_, str) or _ID.fullmatch(id_) is None:
-            problems.append(f"{where}: invalid id")
-        message = by_id.get(id_) if isinstance(id_, str) else None
-        if kind in {"messages", "transcripts"}:
-            problems += _fields(obj, _MESSAGE, _MESSAGE_OPTIONAL, where)
-            source = obj.get("source")
-            if source is not None and (not isinstance(source, str) or source not in SOURCES):
-                problems.append(f"{where}: invalid source")
-            if kind == "transcripts" and source != "audio":
-                problems.append(f"{where}: transcript must have audio source")
-            if "asr_text" in obj and source != "audio":
-                problems.append(f"{where}: asr_text requires a cleaned audio transcript")
-            continue
-        record = kind == "records"
-        problems += _fields(
-            obj, _RECORD if record else _GOLD, {} if record else _GOLD_OPTIONAL, where
-        )
-        relevant, activity = obj.get("relevant"), obj.get("activity_type")
-        if relevant is True and (not isinstance(activity, str) or activity not in ACTIVITY_TYPES):
-            problems.append(f"{where}: relevant activity type invalid")
-        if relevant is False and activity is not None:
-            problems.append(f"{where}: irrelevant activity type must be null")
-        count = obj.get("reported_count")
-        if type(count) is int and count < 0:
-            problems.append(f"{where}: negative reported_count")
-        if record:
-            status = obj.get("verification_status")
-            if (
-                not isinstance(status, str)
-                or status not in VERIFICATION_STATUSES
-                or (relevant is False) != (status == "not_applicable")
-            ):
-                problems.append(f"{where}: invalid verification_status")
-            if not isinstance(obj.get("source"), str) or obj["source"] not in SOURCES:
-                problems.append(f"{where}: invalid source")
-            confidence = obj.get("confidence")
-            if (
-                isinstance(confidence, (int, float))
-                and not isinstance(confidence, bool)
-                and not 0 <= confidence <= 1
-            ):
-                problems.append(f"{where}: confidence out of range")
-            text = obj.get("text_redacted")
-            spans = obj.get("redactions")
-            if isinstance(spans, list):
-                problems += _spans(spans, where)
-                if isinstance(text, str) and message is None:
-                    for t in REDACTION_TYPES:
-                        n = sum(1 for s in spans if isinstance(s, dict) and s.get("type") == t)
-                        if text.count(f"[{t}]") < n:
-                            problems.append(f"{where}: missing placeholder for {t}")
-            problems += _values(obj, text if isinstance(text, str) else None, where)
-            if message is not None:
-                if obj.get("sender_id") != message.get("sender_id"):
-                    problems.append(f"{where}: sender_id differs")
-                if obj.get("source") != message.get("source", "text"):
-                    problems.append(f"{where}: source differs")
-                original = message.get("message")
-                if (
-                    isinstance(original, str)
-                    and isinstance(spans, list)
-                    and not _spans(spans, where)
-                ):
-                    try:
-                        expected = apply_redactions(original, spans)
-                    except ValueError as exc:
-                        problems.append(f"{where}: {exc}")
-                    else:
-                        if text != expected:
-                            problems.append(f"{where}: redacted text does not match message")
+    relevant = obj.get("relevant")
+    status = obj.get("verification_status")
+    if (
+        not isinstance(status, str)
+        or status not in VERIFICATION_STATUSES
+        or (relevant is False) != (status == "not_applicable")
+    ):
+        problems.append(f"{where}: invalid verification_status")
+    if not isinstance(obj.get("source"), str) or obj["source"] not in SOURCES:
+        problems.append(f"{where}: invalid source")
+    confidence = obj.get("confidence")
+    if (
+        isinstance(confidence, (int, float))
+        and not isinstance(confidence, bool)
+        and not 0 <= confidence <= 1
+    ):
+        problems.append(f"{where}: confidence out of range")
+    text = obj.get("text_redacted")
+    spans = obj.get("redactions")
+    if isinstance(spans, list):
+        problems += _spans(spans, where)
+        if isinstance(text, str) and message is None:
+            for t in REDACTION_TYPES:
+                n = sum(1 for s in spans if isinstance(s, dict) and s.get("type") == t)
+                if text.count(f"[{t}]") < n:
+                    problems.append(f"{where}: missing placeholder for {t}")
+    problems += _values(obj, text if isinstance(text, str) else None, where)
+    if message is None:
+        return problems
+    if obj.get("sender_id") != message.get("sender_id"):
+        problems.append(f"{where}: sender_id differs")
+    if obj.get("source") != message.get("source", "text"):
+        problems.append(f"{where}: source differs")
+    original = message.get("message")
+    if isinstance(original, str) and isinstance(spans, list) and not _spans(spans, where):
+        try:
+            expected = apply_redactions(original, spans)
+        except ValueError as exc:
+            problems.append(f"{where}: {exc}")
         else:
-            original = message.get("message") if message else None
-            spans = obj.get("pii")
-            value_text = original if isinstance(original, str) else None
-            defer_placeholders = True
-            if (
-                value_text is not None
-                and isinstance(original, str)
-                and isinstance(spans, list)
-                and not _spans(spans, where, True)
-                and all(
-                    span["end"] <= len(original)
-                    and original[span["start"] : span["end"]] == span["text"]
-                    for span in spans
-                )
-            ):
-                plain = sorted(
-                    ({k: span[k] for k in ("type", "start", "end")} for span in spans),
-                    key=lambda span: span["start"],
-                )
-                value_text = apply_redactions(value_text, plain)
-                defer_placeholders = False
-            problems += _values(obj, value_text, where, defer_placeholders=defer_placeholders)
-            if isinstance(spans, list):
-                problems += _spans(spans, where, gold=True)
-                if isinstance(original, str):
-                    for span in spans:
-                        if (
-                            isinstance(span, dict)
-                            and type(span.get("start")) is int
-                            and type(span.get("end")) is int
-                        ):
-                            if span["end"] > len(original):
-                                problems.append(f"{where}: PII span exceeds message")
-                            elif original[span["start"] : span["end"]] != span.get("text"):
-                                problems.append(f"{where}: PII text does not match offsets")
+            if text != expected:
+                problems.append(f"{where}: redacted text does not match message")
+    return problems
+
+
+def _validate_gold_item(
+    obj: dict[str, Any], message: dict[str, Any] | None, where: str
+) -> list[str]:
+    """Validate a gold evaluation entry against its rules and optional source Message."""
+    problems: list[str] = []
+    original = message.get("message") if message else None
+    spans = obj.get("pii")
+    value_text = original if isinstance(original, str) else None
+    defer_placeholders = True
+    if (
+        value_text is not None
+        and isinstance(original, str)
+        and isinstance(spans, list)
+        and not _spans(spans, where, True)
+        and all(
+            span["end"] <= len(original) and original[span["start"] : span["end"]] == span["text"]
+            for span in spans
+        )
+    ):
+        plain = sorted(
+            ({k: span[k] for k in ("type", "start", "end")} for span in spans),
+            key=lambda span: span["start"],
+        )
+        value_text = apply_redactions(value_text, plain)
+        defer_placeholders = False
+    problems += _values(obj, value_text, where, defer_placeholders=defer_placeholders)
+    if not isinstance(spans, list):
+        return problems
+    problems += _spans(spans, where, gold=True)
+    if not isinstance(original, str):
+        return problems
+    for span in spans:
+        if (
+            isinstance(span, dict)
+            and type(span.get("start")) is int
+            and type(span.get("end")) is int
+        ):
+            if span["end"] > len(original):
+                problems.append(f"{where}: PII span exceeds message")
+            elif original[span["start"] : span["end"]] != span.get("text"):
+                problems.append(f"{where}: PII text does not match offsets")
+    return problems
+
+
+def _validate_collection_ids(
+    ids: list[Any], kind: str, use_messages: bool, by_id: dict[str, dict[str, Any]]
+) -> list[str]:
+    """Check ID uniqueness, consistent zero-padding widths, sort order, and message pairing."""
+    problems: list[str] = []
     string_ids = [id_ for id_ in ids if isinstance(id_, str)]
     if len(set(string_ids)) != len(string_ids):
         problems.append("duplicate IDs")
@@ -315,12 +330,46 @@ def validate_file(kind: str, data: Any, messages: Any = None) -> list[str]:
     return problems
 
 
+def validate_file(kind: str, data: Any, messages: Any = None) -> list[str]:
+    """Report structural problems; semantic labeling and PII still require review."""
+    if not isinstance(kind, str) or kind not in {"messages", "transcripts", "records", "gold"}:
+        raise ValueError(f"unknown kind: {kind}")
+    if not isinstance(data, list):
+        return ["top level must be an array"]
+    use_messages, by_id, problems = _build_message_index(kind, messages)
+    ids: list[Any] = []
+    for i, obj in enumerate(data):
+        where = f"item {i}"
+        if not isinstance(obj, dict):
+            problems.append(f"{where}: not an object")
+            continue
+        id_ = obj.get("id")
+        ids.append(id_)
+        if not isinstance(id_, str) or _ID.fullmatch(id_) is None:
+            problems.append(f"{where}: invalid id")
+        if kind in {"messages", "transcripts"}:
+            problems += _validate_message_item(obj, kind, where)
+            continue
+        record = kind == "records"
+        problems += _validate_labeled_item_common(obj, record, where)
+        message = by_id.get(id_) if isinstance(id_, str) else None
+        if record:
+            problems += _validate_record_item(obj, message, where)
+        else:
+            problems += _validate_gold_item(obj, message, where)
+    problems += _validate_collection_ids(ids, kind, use_messages, by_id)
+    return problems
+
+
 class _Model:
+    """Base class for validated contract objects backed by a deep-copied dictionary."""
+
     required: ClassVar[dict[str, tuple[type, ...]]] = {}
     optional: ClassVar[dict[str, tuple[type, ...]]] = {}
     kind: ClassVar[str | None] = None
 
     def __init__(self, data: dict[str, Any]) -> None:
+        """Validate *data* against the model's schema rules and store a deep copy."""
         if not isinstance(data, dict):
             raise ValueError("expected an object")
         errors = _fields(data, self.required, self.optional, type(self).__name__)
@@ -358,19 +407,25 @@ class _Model:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Self:
+        """Construct and validate a model instance from a dictionary."""
         return cls(data)
 
     def to_dict(self) -> dict[str, Any]:
+        """Return a deep copy of the validated model fields as a dictionary."""
         return copy.deepcopy(
             {key: self._data[key] for key in (*self.required, *self.optional) if key in self._data}
         )
 
 
 class Message(_Model):
+    """Input message record containing text or audio metadata."""
+
     required, optional, kind = _MESSAGE, _MESSAGE_OPTIONAL, "messages"
 
 
 class Redaction(_Model):
+    """Character-level redaction span predicted for a record."""
+
     required: ClassVar[dict[str, tuple[type, ...]]] = {
         "type": (str,),
         "start": (int,),
@@ -379,10 +434,14 @@ class Redaction(_Model):
 
 
 class Record(_Model):
+    """Pipeline output record with transcript, classification, and redactions."""
+
     required, kind = _RECORD, "records"
 
 
 class GoldPiiSpan(_Model):
+    """Ground-truth PII span annotation with label, offsets, and surface text."""
+
     required: ClassVar[dict[str, tuple[type, ...]]] = {
         "type": (str,),
         "start": (int,),
@@ -392,14 +451,19 @@ class GoldPiiSpan(_Model):
 
 
 class Gold(_Model):
+    """Ground-truth evaluation record for a single message."""
+
     required, optional, kind = _GOLD, _GOLD_OPTIONAL, "gold"
 
 
 class RecordResults(_Model):
+    """Per-record evaluation metrics produced by scoring scripts."""
+
     required = _RESULT
 
 
 def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    """JSON object_pairs_hook that rejects duplicate keys in the same JSON object."""
     result: dict[str, Any] = {}
     for key, value in pairs:
         if key in result:
@@ -409,10 +473,12 @@ def _unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def _reject_nonfinite_constant(value: str) -> NoReturn:
+    """Reject non-standard JSON constants like NaN, Infinity, and -Infinity."""
     raise ValueError(f"nonfinite JSON constant: {value}")
 
 
 def _check_json_value(value: Any, active: set[int]) -> None:
+    """Recursively verify that a value contains only acyclic, JSON-serializable types."""
     if type(value) in (str, int, float, bool, type(None)):
         return
     if type(value) not in (dict, list):
@@ -435,6 +501,7 @@ def _check_json_value(value: Any, active: set[int]) -> None:
 def _load[ModelT: _Model](
     path: str | Path, kind: str, cls: type[ModelT], messages: list[dict[str, Any]] | None = None
 ) -> list[ModelT]:
+    """Read a JSON file strictly, validate its contents, and return typed model instances."""
     with open(path, encoding="utf-8") as stream:
         data: Any = json.load(
             stream, object_pairs_hook=_unique_object, parse_constant=_reject_nonfinite_constant

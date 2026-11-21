@@ -36,33 +36,32 @@ DEFAULT_ARTIFACTS_DIR = DEMO_DIR / "outputs"
 
 
 def _ensure_utf8_stdout() -> None:
+    """Reconfigure stdout to UTF-8 so Unicode symbols print cleanly on Windows."""
     if isinstance(sys.stdout, io.TextIOWrapper):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 
 def _print_banner(title: str) -> None:
+    """Print a section heading framed by horizontal rules."""
     bar = "=" * 80
     print(f"\n{bar}\n{title}\n{bar}")
 
 
 def _wrap_labeled(label: str, text: str, width: int = 80) -> str:
+    """Wrap a long text field with an aligned label prefix on the first line."""
     prefix = f"  {label:<13}: "
     indent = " " * len(prefix)
     return textwrap.fill(text, width=width, initial_indent=prefix, subsequent_indent=indent)
 
 
-def format_demo_summary(
+def _format_summary_header(
     rows: Sequence[dict[str, str]],
-    messages: Sequence[dict[str, Any]],
-    records: Sequence[dict[str, Any]],
     meta: dict[str, Any] | None,
     *,
     elapsed_seconds: float,
     out_csv: Path,
-    show_raw: bool = False,
-) -> str:
-    """Format the pipeline outputs into a readable terminal report for live demos."""
-    lines: list[str] = []
+) -> list[str]:
+    """Build the top-level summary lines (counts, redactions, and runtime) for the report."""
     event_count = sum(1 for r in rows if r["relevance"] == "Event")
     chitchat_count = sum(1 for r in rows if r["relevance"] == "Chit-chat")
     dup_count = sum(1 for r in rows if r["duplicate_of"] != "none")
@@ -70,15 +69,15 @@ def format_demo_summary(
     n_loc = sum(r["anonymized_text"].count("[LOCATION]") for r in rows)
     n_phone = sum(r["anonymized_text"].count("[PHONE]") for r in rows)
 
-    lines.append("=" * 80)
-    lines.append("DANDELION AUDIO-TO-INSIGHTS DEMO REPORT")
-    lines.append("=" * 80)
-    lines.append(f"  Output CSV     : {out_csv}")
-    lines.append(
-        f"  Total messages : {len(rows)} ({event_count} Event, {chitchat_count} Chit-chat)"
-    )
-    lines.append(f"  Duplicates     : {dup_count} duplicate report(s) linked")
-    lines.append(f"  Anonymized PII : {n_name} [NAME], {n_loc} [LOCATION], {n_phone} [PHONE]")
+    lines = [
+        "=" * 80,
+        "DANDELION AUDIO-TO-INSIGHTS DEMO REPORT",
+        "=" * 80,
+        f"  Output CSV     : {out_csv}",
+        f"  Total messages : {len(rows)} ({event_count} Event, {chitchat_count} Chit-chat)",
+        f"  Duplicates     : {dup_count} duplicate report(s) linked",
+        f"  Anonymized PII : {n_name} [NAME], {n_loc} [LOCATION], {n_phone} [PHONE]",
+    ]
     if meta is not None:
         lines.append(
             f"  Audio runtime  : {meta.get('audio_seconds_total', '?')} s audio in "
@@ -86,14 +85,18 @@ def format_demo_summary(
             f"({meta.get('device', '?')}, {meta.get('model', '?')})"
         )
     lines.append(f"  End-to-end     : {elapsed_seconds:.2f} s total")
+    return lines
 
-    lines.append("\n" + "-" * 80)
-    lines.append("SUMMARY TABLE")
-    lines.append("-" * 80)
-    lines.append(
-        f"{'ID':>3} | {'Relevance':<9} | {'Activity Type':<40} | {'Count':>5} | {'Dup Of':<6}"
-    )
-    lines.append("-" * 80)
+
+def _format_summary_table(rows: Sequence[dict[str, str]]) -> list[str]:
+    """Format the per-message predictions as a fixed-width ASCII summary table."""
+    lines = [
+        "\n" + "-" * 80,
+        "SUMMARY TABLE",
+        "-" * 80,
+        f"{'ID':>3} | {'Relevance':<9} | {'Activity Type':<40} | {'Count':>5} | {'Dup Of':<6}",
+        "-" * 80,
+    ]
     for row in rows:
         act = row["activity_type"] or "-"
         if len(act) > 40:
@@ -103,14 +106,26 @@ def format_demo_summary(
             f"{row['Message_id']:>3} | {row['relevance']:<9} | {act:<40} | {cnt:>5} | "
             f"{row['duplicate_of']:<6}"
         )
+    return lines
 
+
+def _format_per_message_details(
+    rows: Sequence[dict[str, str]],
+    messages: Sequence[dict[str, Any]],
+    records: Sequence[dict[str, Any]],
+    *,
+    show_raw: bool,
+) -> list[str]:
+    """Format detailed per-message text (optional raw/cleaned ASR, anonymized text, entities)."""
     parse_num = hidden_test_pipeline.parse_numeric_message_id
     msg_by_id = {str(parse_num(str(m["id"]))): m for m in messages}
     rec_by_id = {str(parse_num(str(r["id"]))): r for r in records}
 
-    lines.append("\n" + "-" * 80)
-    lines.append("PER-MESSAGE DETAILS & ANONYMIZED TEXT")
-    lines.append("-" * 80)
+    lines = [
+        "\n" + "-" * 80,
+        "PER-MESSAGE DETAILS & ANONYMIZED TEXT",
+        "-" * 80,
+    ]
     for row in rows:
         mid = row["Message_id"]
         msg = msg_by_id.get(mid, {})
@@ -132,11 +147,32 @@ def format_demo_summary(
                 f"location={rec.get('location')} | date={rec.get('date_text')} | "
                 f"redactions={len(rec.get('redactions', []))}"
             )
+    return lines
 
+
+def format_demo_summary(
+    rows: Sequence[dict[str, str]],
+    messages: Sequence[dict[str, Any]],
+    records: Sequence[dict[str, Any]],
+    meta: dict[str, Any] | None,
+    *,
+    elapsed_seconds: float,
+    out_csv: Path,
+    show_raw: bool = False,
+) -> str:
+    """Format the pipeline outputs into a readable terminal report for live demos."""
+    lines = [
+        *_format_summary_header(
+            rows, meta, elapsed_seconds=elapsed_seconds, out_csv=out_csv
+        ),
+        *_format_summary_table(rows),
+        *_format_per_message_details(rows, messages, records, show_raw=show_raw),
+    ]
     return "\n".join(lines)
 
 
 def _format_metric_lines(metrics: dict[str, float]) -> list[str]:
+    """Convert raw metric keys and numbers into human-readable label/value lines."""
     lines: list[str] = []
     for key, val in metrics.items():
         if key.endswith("_pct"):
@@ -154,6 +190,90 @@ def _format_metric_lines(metrics: dict[str, float]) -> list[str]:
         )
         lines.append(f"  {label:<32}: {value_str}")
     return lines
+
+
+def _print_run_header(
+    *,
+    input_audio: Path | None,
+    transcripts_path: Path | None,
+    device: str,
+    model_id: str | None,
+    out_csv: Path,
+) -> None:
+    """Print the input source, models, device, and output CSV path before running the pipeline."""
+    if transcripts_path is not None:
+        print(f"Input mode     : Transcripts JSON ({transcripts_path})")
+    else:
+        print(f"Input source   : {input_audio}")
+    print(f"Device request : {device}")
+    print(f"ASR model      : {model_id or transcribe.resolve_default_model(device=device)}")
+    gliner_src, local_only = gliner_system.resolve_gliner_model()
+    print(f"GLiNER model   : {gliner_src} (local_only={local_only})")
+    print(f"CSV destination: {out_csv}")
+    print("Executing pipeline stages (ASR -> cleaning -> GLiNER -> dedup -> CSV)...")
+
+
+def _build_pipeline_kwargs(
+    *,
+    model_id: str | None,
+    batch_size: int,
+    num_beams: int,
+    initial_prompt: str | None,
+) -> dict[str, Any]:
+    """Collect optional ASR keyword arguments that differ from pipeline defaults."""
+    extra_kw: dict[str, Any] = {}
+    if model_id is not None:
+        extra_kw["model_id"] = model_id
+    if batch_size != transcribe.DEFAULT_BATCH_SIZE:
+        extra_kw["batch_size"] = batch_size
+    if num_beams != 1:
+        extra_kw["num_beams"] = num_beams
+    if initial_prompt is not None:
+        extra_kw["initial_prompt"] = initial_prompt
+    return extra_kw
+
+
+def _load_and_validate_artifacts(
+    artifacts_dir: Path,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any] | None]:
+    """Load intermediate transcript/record JSON files and check them against Interface Spec v2."""
+    messages_file = artifacts_dir / "predicted_transcripts.json"
+    records_file = artifacts_dir / "predicted_records.json"
+    meta_file = artifacts_dir / "predicted_transcripts.meta.json"
+
+    messages: list[dict[str, Any]] = json.loads(messages_file.read_text(encoding="utf-8"))
+    records: list[dict[str, Any]] = json.loads(records_file.read_text(encoding="utf-8"))
+    meta: dict[str, Any] | None = (
+        json.loads(meta_file.read_text(encoding="utf-8")) if meta_file.is_file() else None
+    )
+
+    t_errs = contracts.validate_file("transcripts", messages)
+    r_errs = contracts.validate_file("records", records, messages)
+    if t_errs or r_errs:
+        raise ValueError("Interface Spec v2 contract check failed:\n" + "\n".join(t_errs + r_errs))
+    print(
+        f"Contract checks: PASSED ({len(messages)} Message items, "
+        f"{len(records)} Record items valid)"
+    )
+    return messages, records, meta
+
+
+def _evaluate_and_print_metrics(
+    rows: list[dict[str, str]],
+    messages: list[dict[str, Any]],
+    expected_csv: Path,
+    artifacts_dir: Path,
+) -> None:
+    """Score predicted CSV rows and transcripts against expected answers, then save and print."""
+    expected_rows = hidden_test_pipeline.load_csv_rows(expected_csv)
+    metrics = hidden_test_pipeline.evaluate_csv_outputs(rows, expected_rows)
+    metrics.update(hidden_test_pipeline.evaluate_transcript_wer(messages, expected_rows))
+    metrics_file = artifacts_dir / "demo_metrics.json"
+    metrics_file.write_text(json.dumps(metrics, indent=2) + "\n", encoding="utf-8", newline="\n")
+    _print_banner(f"VALIDATION METRICS vs. {expected_csv.name}")
+    for line in _format_metric_lines(metrics):
+        print(line)
+    print(f"  Saved metrics  : {metrics_file}")
 
 
 def run_demo(
@@ -177,27 +297,19 @@ def run_demo(
     """Execute the full hidden-test pipeline, verify contracts, and print demo results."""
     _ensure_utf8_stdout()
     _print_banner("RUNNING DANDELION END-TO-END PIPELINE DEMO")
-
-    if transcripts_path is not None:
-        print(f"Input mode     : Transcripts JSON ({transcripts_path})")
-    else:
-        print(f"Input source   : {input_audio}")
-    print(f"Device request : {device}")
-    print(f"ASR model      : {model_id or transcribe.resolve_default_model(device=device)}")
-    gliner_src, local_only = gliner_system.resolve_gliner_model()
-    print(f"GLiNER model   : {gliner_src} (local_only={local_only})")
-    print(f"CSV destination: {out_csv}")
-    print("Executing pipeline stages (ASR -> cleaning -> GLiNER -> dedup -> CSV)...")
-
-    extra_kw: dict[str, Any] = {}
-    if model_id is not None:
-        extra_kw["model_id"] = model_id
-    if batch_size != transcribe.DEFAULT_BATCH_SIZE:
-        extra_kw["batch_size"] = batch_size
-    if num_beams != 1:
-        extra_kw["num_beams"] = num_beams
-    if initial_prompt is not None:
-        extra_kw["initial_prompt"] = initial_prompt
+    _print_run_header(
+        input_audio=input_audio,
+        transcripts_path=transcripts_path,
+        device=device,
+        model_id=model_id,
+        out_csv=out_csv,
+    )
+    extra_kw = _build_pipeline_kwargs(
+        model_id=model_id,
+        batch_size=batch_size,
+        num_beams=num_beams,
+        initial_prompt=initial_prompt,
+    )
 
     t0 = time.perf_counter()
     rows = pipeline_fn(
@@ -211,25 +323,7 @@ def run_demo(
     )
     elapsed = time.perf_counter() - t0
 
-    messages_file = artifacts_dir / "predicted_transcripts.json"
-    records_file = artifacts_dir / "predicted_records.json"
-    meta_file = artifacts_dir / "predicted_transcripts.meta.json"
-
-    messages: list[dict[str, Any]] = json.loads(messages_file.read_text(encoding="utf-8"))
-    records: list[dict[str, Any]] = json.loads(records_file.read_text(encoding="utf-8"))
-    meta: dict[str, Any] | None = (
-        json.loads(meta_file.read_text(encoding="utf-8")) if meta_file.is_file() else None
-    )
-
-    t_errs = contracts.validate_file("transcripts", messages)
-    r_errs = contracts.validate_file("records", records, messages)
-    if t_errs or r_errs:
-        raise ValueError("Interface Spec v2 contract check failed:\n" + "\n".join(t_errs + r_errs))
-    print(
-        f"Contract checks: PASSED ({len(messages)} Message items, "
-        f"{len(records)} Record items valid)"
-    )
-
+    messages, records, meta = _load_and_validate_artifacts(artifacts_dir)
     print(
         format_demo_summary(
             rows,
@@ -242,17 +336,7 @@ def run_demo(
         )
     )
     if expected_csv is not None:
-        expected_rows = hidden_test_pipeline.load_csv_rows(expected_csv)
-        metrics = hidden_test_pipeline.evaluate_csv_outputs(rows, expected_rows)
-        metrics.update(hidden_test_pipeline.evaluate_transcript_wer(messages, expected_rows))
-        metrics_file = artifacts_dir / "demo_metrics.json"
-        metrics_file.write_text(
-            json.dumps(metrics, indent=2) + "\n", encoding="utf-8", newline="\n"
-        )
-        _print_banner(f"VALIDATION METRICS vs. {expected_csv.name}")
-        for line in _format_metric_lines(metrics):
-            print(line)
-        print(f"  Saved metrics  : {metrics_file}")
+        _evaluate_and_print_metrics(rows, messages, expected_csv, artifacts_dir)
 
     _print_banner(f"RAW CSV WRITTEN TO {out_csv}")
     print(out_csv.read_text(encoding="utf-8").rstrip())
@@ -260,6 +344,7 @@ def run_demo(
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for the standalone demo runner."""
     parser = argparse.ArgumentParser(
         description="Run the full Dandelion demo pipeline locally and print all outputs."
     )
@@ -288,6 +373,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def _resolve_expected_csv(args: argparse.Namespace) -> Path | None:
+    """Determine which ground-truth CSV to score against, or None if evaluation is disabled."""
     if args.no_eval:
         return None
     if args.expected is not None:
@@ -302,6 +388,7 @@ def _resolve_expected_csv(args: argparse.Namespace) -> Path | None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    """Run the demo pipeline and return an exit code."""
     args = parse_args(argv)
     if (
         args.model is None

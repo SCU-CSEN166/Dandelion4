@@ -435,6 +435,7 @@ def _merge_spans(candidates: list[tuple[int, int, str]]) -> list[dict[str, Any]]
 
 
 def _looks_like_person_phrase(phrase: str, location_hints: set[str]) -> bool:
+    """Return True if ``phrase`` looks like a person's name rather than a place or role."""
     tokens = [re.sub(r"[^A-Za-z']", "", t).lower().rstrip("'") for t in phrase.split()]
     tokens = [t for t in tokens if t]
     if not tokens or len(tokens) > 4:
@@ -549,58 +550,59 @@ def extract_name_spans(
     return candidates
 
 
-def extract_location_spans(
-    text: str,
-    entities: list[dict[str, Any]],
-    blocked_spans: list[dict[str, Any]] | None = None,
-) -> list[dict[str, Any]]:
-    """Extract non-overlapping LOCATION spans (for v2 ``location`` field and CSV anonymization)."""
-    blocked = blocked_spans or []
+def _overlaps_any(start: int, end: int, blocked: list[dict[str, Any]]) -> bool:
+    """Return True if the character range ``[start, end)`` overlaps any already-reserved span."""
+    return any(start < int(b["end"]) and end > int(b["start"]) for b in blocked)
 
-    def overlaps_blocked(s: int, e: int) -> bool:
-        return any(s < int(b["end"]) and e > int(b["start"]) for b in blocked)
 
+def _is_valid_location_phrase(phrase: str) -> bool:
+    """Filter out dates, app names, titles, and person-only phrases that are not real places."""
+    title_words = {t.lower().rstrip(".") for t in _PERSON_TITLES}
+    words = [re.sub(r"[^a-z']", "", w.lower()) for w in phrase.split()]
+    words = [w for w in words if w]
+    if not words or all(w in _NON_LOCATION_WORDS for w in words):
+        return False
+    if words[0] in _NON_LOCATION_WORDS or any(w in title_words for w in words):
+        return False
+    venue_words = {"center", "centre", "hall", "school", "clinic", "hospital"}
+    return not (
+        any(w in {"women", "women's", "womens", "men", "too", "many"} for w in words)
+        and not any(w in venue_words for w in words)
+    )
+
+
+def _collect_regex_location_candidates(
+    text: str, blocked: list[dict[str, Any]]
+) -> list[tuple[int, int, str]]:
+    """Find location spans from facility suffixes, known place names, and preposition cues."""
     candidates: list[tuple[int, int, str]] = []
-    for pattern in (_PLACE_SUFFIX_RE, _LEVEL_HOSPITAL_RE):
+    for pattern in (_PLACE_SUFFIX_RE, _LEVEL_HOSPITAL_RE, _CHIEFS_CAMP_RE):
         for match in pattern.finditer(text):
             s, e = match.start(), match.end()
-            if not overlaps_blocked(s, e):
+            if not _overlaps_any(s, e, blocked):
                 candidates.append((s, e, "LOCATION"))
-
-    for match in _CHIEFS_CAMP_RE.finditer(text):
-        s, e = match.start(), match.end()
-        if not overlaps_blocked(s, e):
-            candidates.append((s, e, "LOCATION"))
 
     for place in _KNOWN_LOCATIONS:
         for match in re.finditer(rf"\b{re.escape(place)}\b", text, re.IGNORECASE):
             s, e = match.start(), match.end()
-            if not overlaps_blocked(s, e):
+            if not _overlaps_any(s, e, blocked):
                 candidates.append((s, e, "LOCATION"))
-
-    title_words = {t.lower().rstrip(".") for t in _PERSON_TITLES}
-
-    def _valid_location(phrase: str) -> bool:
-        words = [re.sub(r"[^a-z']", "", w.lower()) for w in phrase.split()]
-        words = [w for w in words if w]
-        if not words or all(w in _NON_LOCATION_WORDS for w in words):
-            return False
-        if words[0] in _NON_LOCATION_WORDS:
-            return False
-        if any(w in title_words for w in words):
-            return False
-        venue_words = {"center", "centre", "hall", "school", "clinic", "hospital"}
-        return not (
-            any(w in {"women", "women's", "womens", "men", "too", "many"} for w in words)
-            and not any(w in venue_words for w in words)
-        )
 
     for match in _PREP_PLACE_RE.finditer(text):
         s, e = match.start(1), match.end(1)
         phrase = text[s:e].strip()
-        if s < e and not overlaps_blocked(s, e) and _valid_location(phrase):
+        if s < e and not _overlaps_any(s, e, blocked) and _is_valid_location_phrase(phrase):
             candidates.append((s, e, "LOCATION"))
+    return candidates
 
+
+def _collect_entity_location_candidates(
+    text: str,
+    entities: list[dict[str, Any]],
+    blocked: list[dict[str, Any]],
+) -> list[tuple[int, int, str]]:
+    """Collect GLiNER ``location`` and ``facility`` spans that do not overlap blocked PII spans."""
+    candidates: list[tuple[int, int, str]] = []
     for ent in entities:
         label = str(ent.get("label", "")).lower()
         if label not in {"location", "facility"}:
@@ -613,13 +615,27 @@ def extract_location_spans(
         if adj_s == -1:
             continue
         adj_e = adj_s + len(trimmed)
-        if not overlaps_blocked(adj_s, adj_e) and _valid_location(trimmed):
+        if not _overlaps_any(adj_s, adj_e, blocked) and _is_valid_location_phrase(trimmed):
             candidates.append((adj_s, adj_e, "LOCATION"))
+    return candidates
 
+
+def extract_location_spans(
+    text: str,
+    entities: list[dict[str, Any]],
+    blocked_spans: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Extract non-overlapping LOCATION spans (for v2 ``location`` field and CSV anonymization)."""
+    blocked = blocked_spans or []
+    candidates = [
+        *_collect_regex_location_candidates(text, blocked),
+        *_collect_entity_location_candidates(text, entities, blocked),
+    ]
     return _merge_spans(candidates)
 
 
 def _split_sentences(text: str) -> list[tuple[int, int, str]]:
+    """Split text into ``(start, end, sentence_text)`` tuples for sentence-level rule checks."""
     spans: list[tuple[int, int, str]] = []
     start = 0
     for match in re.finditer(r"[.!?]+(?:\s+|$)", text):
@@ -697,6 +713,7 @@ def _extract_event_name(
     entities: list[dict[str, Any]] | None = None,
     location_hints: set[str] | None = None,
 ) -> str | None:
+    """Extract a specific event phrase using domain patterns first, then GLiNER event spans."""
     for pattern in _EVENT_PHRASE_PATTERNS:
         m = pattern.search(text)
         if m:
@@ -742,6 +759,40 @@ def extract_reported_count(text: str) -> int | None:
     return None
 
 
+def _extract_first_location_text(
+    text: str,
+    location_spans: list[dict[str, Any]],
+    text_redacted: str,
+) -> str | None:
+    """Copy the first detected location if it still appears intact after PII redaction."""
+    if not location_spans:
+        return None
+    first_loc = location_spans[0]
+    raw_loc = text[int(first_loc["start"]) : int(first_loc["end"])]
+    return trim_copied_value(raw_loc, text_redacted)
+
+
+def _extract_date_text(entities: list[dict[str, Any]], text_redacted: str) -> str | None:
+    """Copy the first GLiNER date mention that remains intact after PII redaction."""
+    for ent in entities:
+        if str(ent.get("label", "")).lower() == "date":
+            date_val = trim_copied_value(str(ent.get("text", "")), text_redacted)
+            if date_val:
+                return date_val
+    return None
+
+
+def _compute_message_confidence(entities: list[dict[str, Any]], relevant: bool) -> float:
+    """Compute a 0..1 confidence score from mean GLiNER entity scores or a heuristic default."""
+    scores = [
+        float(ent["score"])
+        for ent in entities
+        if isinstance(ent.get("score"), (int, float))
+    ]
+    confidence = round(sum(scores) / len(scores), 4) if scores else (0.75 if relevant else 0.80)
+    return max(0.0, min(1.0, confidence))
+
+
 class GLiNERSystem:
     """Interface Spec v2 NLP system wrapping ``urchade/gliner_medium-v2.1``."""
 
@@ -754,6 +805,7 @@ class GLiNERSystem:
         threshold: float = THRESHOLD,
         device: str = "auto",
     ) -> None:
+        """Configure the GLiNER model source, entity labels, score threshold, and device."""
         self.model_id = model_id
         self.labels = labels
         self.threshold = threshold
@@ -761,6 +813,7 @@ class GLiNERSystem:
         self._model: Any = None
 
     def _load_model(self) -> Any:
+        """Lazy-load the GLiNER weights onto CPU or CUDA once per instance."""
         if self._model is None:  # pragma: no cover - requires model weights
             import importlib
 
@@ -780,7 +833,7 @@ class GLiNERSystem:
             try:
                 hf_logging: Any = importlib.import_module("transformers.utils.logging")
                 hf_logging.set_verbosity_error()
-            except Exception:
+            except (ImportError, AttributeError):
                 pass
             model = gliner.GLiNER.from_pretrained(resolved, local_files_only=local_only)
             if target_device.startswith("cuda"):
@@ -789,6 +842,7 @@ class GLiNERSystem:
         return self._model
 
     def _predict_entities(self, text: str) -> list[dict[str, Any]]:
+        """Run GLiNER entity recognition on ``text`` and return normalized entity dicts."""
         model = self._load_model()
         raw = model.predict_entities(text, list(self.labels), threshold=self.threshold)
         return [dict(item) for item in raw]
@@ -800,9 +854,11 @@ class GLiNERSystem:
         text = str(message["message"])
         entities = self._predict_entities(text)
 
+        # Find location hints first so place names (e.g., Baringo) are not mistaken for people.
         raw_locs = extract_location_spans(text, entities)
         location_hints = {text[int(s["start"]) : int(s["end"])].casefold() for s in raw_locs}
 
+        # Redact phone numbers and person names first, then extract locations outside PII spans.
         phone_spans = extract_phone_spans(text, entities)
         name_spans = extract_name_spans(text, entities, location_hints)
         redactions = _merge_spans([*phone_spans, *name_spans])
@@ -815,19 +871,8 @@ class GLiNERSystem:
 
         text_redacted = contracts.apply_redactions(text, redactions)
         relevant, v2_activity, regex_event = classify_message_semantics(text)
-
-        location_val: str | None = None
-        if location_spans:
-            first_loc = location_spans[0]
-            raw_loc = text[int(first_loc["start"]) : int(first_loc["end"])]
-            location_val = trim_copied_value(raw_loc, text_redacted)
-
-        date_val: str | None = None
-        for ent in entities:
-            if str(ent.get("label", "")).lower() == "date":
-                date_val = trim_copied_value(str(ent.get("text", "")), text_redacted)
-                if date_val:
-                    break
+        location_val = _extract_first_location_text(text, location_spans, text_redacted)
+        date_val = _extract_date_text(entities, text_redacted)
 
         event_name_val: str | None = None
         if relevant:
@@ -835,14 +880,7 @@ class GLiNERSystem:
             event_name_val = trim_copied_value(cand_event, text_redacted)
 
         reported_count = extract_reported_count(text) if relevant else None
-
-        scores = [
-            float(ent["score"])
-            for ent in entities
-            if isinstance(ent.get("score"), (int, float))
-        ]
-        confidence = round(sum(scores) / len(scores), 4) if scores else (0.75 if relevant else 0.80)
-        confidence = max(0.0, min(1.0, confidence))
+        confidence = _compute_message_confidence(entities, relevant)
 
         record: dict[str, Any] = contracts.build_record(
             message,
@@ -876,6 +914,7 @@ def process_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for standalone GLiNER v2 extraction and redaction."""
     parser = argparse.ArgumentParser(description="Run the GLiNER v2 extraction/redaction system.")
     parser.add_argument("input", nargs="?", default="examples/synthetic_messages.json")
     parser.add_argument("--out", type=Path, default=None)
@@ -883,6 +922,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """Run the GLiNER v2 CLI entrypoint and return an exit code."""
     args = parse_args(argv)
     input_path = Path(args.input)
     out_path = (

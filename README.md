@@ -357,11 +357,12 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | Feedback / issue | Change made | Worked? (Yes / Partly / No) | Evidence | Remaining limitation |
 |---|---|---|---|---|
 | setup and run instructions / large-batch speed | added unified cli (python -m src.main) with github release auto-download, chunked streaming, cpu multi-worker int8, gpu fp16, and cleaner output without warnings | Yes | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2), 291 tests passing, 647 fleurs clips ran in 2m40s on gpu | still misses some balanced afrispeech wer targets so human review is needed |
+| code readability, setup docs, and spec alignment | refactored long functions across src/evaluation/demo, added full docstrings and plain-english comments, fixed cpu tokenizer warning, and updated readme setup/reproducibility and interface-spec.md | Yes | 291 fast tests passing (98.70% coverage), ruff and mypy clean | frontend ui still pending teammate integration |
 
 ### Individual contributions during that week
 | Member | Final implementation / evaluation / documentation contribution | Result (worked / partly / failed) | Evidence | Reflection / remaining work |
 |---|---|---|---|---|
-| Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2) | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
+| Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download; cleaned up and documented codebase, fixed cpu tokenizer warning, and updated setup/reproducibility and interface-spec.md | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2), [7f76928](https://github.com/SCU-CSEN166/Dandelion4/commit/7f76928), [746832f](https://github.com/SCU-CSEN166/Dandelion4/commit/746832f), [aa5c1b8](https://github.com/SCU-CSEN166/Dandelion4/commit/aa5c1b8), 291 tests passing, ruff and mypy clean | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
 | Terence Zhou | documented results, updated/cleaned README | Worked | [dc6200f](https://github.com/SCU-CSEN166/Dandelion4/commit/dc6200ffe1e491dc4ddadecaa18da78cb6f4f3c1), [dc566a4](https://github.com/SCU-CSEN166/Dandelion4/commit/dc566a4a9559d9ff9c04401a9317d6138c09a9ca) | final(?) check of README soon |
 
 

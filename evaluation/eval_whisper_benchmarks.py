@@ -98,6 +98,7 @@ def fix_missing_apostrophes(text: str) -> str:
 
 
 def _decode_row_audio(row: dict[str, Any]) -> tuple[npt.NDArray[np.float32], str] | None:
+    """Extract 16 kHz audio and reference text from a dataset row, or None if invalid/too long."""
     raw_text = str(row.get("transcript") or row.get("transcription") or "")
     text = " ".join(raw_text.split())
     audio_info = row.get("audio")
@@ -115,6 +116,7 @@ def _decode_row_audio(row: dict[str, Any]) -> tuple[npt.NDArray[np.float32], str
     else:
         return None
     wave = finetune_whisper.resample_to_16k(arr, sr)
+    # Whisper processes at most 30 seconds per window, so skip longer clips.
     if len(wave) > 30 * transcribe.ASR_SAMPLE_RATE:
         return None
     return wave, text
@@ -123,6 +125,7 @@ def _decode_row_audio(row: dict[str, Any]) -> tuple[npt.NDArray[np.float32], str
 def _rows_to_items(
     rows: Iterable[dict[str, Any]], *, limit: int | None = None
 ) -> list[BenchmarkItem]:
+    """Convert decoded dataset rows into bounded ``BenchmarkItem`` records."""
     items: list[BenchmarkItem] = []
     for row in rows:
         decoded = _decode_row_audio(row)
@@ -226,13 +229,16 @@ def score_predictions(
     refs = [item.text for item in items]
 
     def fair_ref_norm(text: str) -> str:
+        """Restore missing apostrophes in crowd-sourced references before Whisper normalization."""
         return str(whisper_norm(fix_missing_apostrophes(text)))
 
     def fair_hyp_norm(text: str) -> str:
+        """Apply Whisper's standard text normalizer to a model hypothesis."""
         return str(whisper_norm(text))
 
     # Build paired fair-normalized lists so slice stats match corpus jiwer computation.
     def _pair_wer(sub_indices: Sequence[int], *, use_fair: bool) -> float:
+        """Compute corpus WER (0-100%) for a subset of clip indices."""
         r_list: list[str] = []
         h_list: list[str] = []
         for idx in sub_indices:
@@ -255,6 +261,8 @@ def score_predictions(
         if item.accent:
             accent_groups[item.accent].append(idx)
 
+    # Report three WER variants: regex_wer (punctuation-free), whisper_norm_wer (Whisper
+    # normalizer), and fair_norm_wer (also fixes missing apostrophes in AfriSpeech labels).
     return {
         "n": len(items),
         "regex_wer": compute_corpus_wer(refs, hyps, regex_normalize),
@@ -272,6 +280,7 @@ def score_predictions(
 
 
 def _load_whisper_normalizer() -> Callable[[str], str]:
+    """Load Whisper's built-in English text normalizer from local model files."""
     from transformers import WhisperTokenizer
 
     tok_dir = (
@@ -282,9 +291,69 @@ def _load_whisper_normalizer() -> Callable[[str], str]:
     tok = WhisperTokenizer.from_pretrained(str(tok_dir), local_files_only=True)
 
     def _norm(text: str) -> str:
+        """Normalize a single string using the loaded Whisper tokenizer."""
         return str(tok.normalize(text))
 
     return _norm
+
+
+def _load_benchmark_suites(
+    suites: Sequence[str],
+) -> dict[str, list[BenchmarkItem]]:  # pragma: no cover - heavy GPU evaluation
+    """Ensure requested public-speech suites exist locally and load their clips."""
+    loaders: dict[str, Callable[[], list[BenchmarkItem]]] = {
+        "test_300_seed1234": load_test_300_seed1234,
+        "test_330_balanced": load_test_330_balanced,
+        "kenyan_ea_test": load_kenyan_ea_test,
+        "fleurs_all": load_fleurs_all,
+    }
+    if os.environ.get("HF_HUB_OFFLINE") != "1":
+        from evaluation import fetch_public_datasets
+
+        for name in suites:
+            if name in loaders:
+                fetch_public_datasets.prepare_suite(name)
+    return {name: loaders[name]() for name in suites}
+
+
+def _evaluate_mode(
+    model_id: str,
+    mode: str,
+    num_beams: int,
+    loaded_suites: dict[str, list[BenchmarkItem]],
+    whisper_norm: Callable[[str], str],
+    *,
+    batch_size: int,
+    device: str,
+    initial_prompt: str | None,
+) -> dict[str, Any]:  # pragma: no cover - heavy GPU evaluation
+    """Run transcription and WER scoring for one decoding mode (e.g. greedy or beam3)."""
+    import torch
+
+    asr = transcribe.make_whisper(
+        model_id,
+        device,
+        batch_size=batch_size,
+        initial_prompt=initial_prompt,
+        num_beams=num_beams,
+    )
+    asr.load()
+    mode_out: dict[str, Any] = {}
+    for name, items in loaded_suites.items():
+        print(f"[{mode}] Evaluating {name} ({len(items)} clips)...", flush=True)
+        hyps = asr([item.audio for item in items])
+        mode_out[name] = score_predictions(items, hyps, whisper_norm)
+        s = mode_out[name]
+        print(
+            f"  -> {name}: regex={s['regex_wer']:.2f}% "
+            f"whisper={s['whisper_norm_wer']:.2f}% fair={s['fair_norm_wer']:.2f}%",
+            flush=True,
+        )
+    del asr
+    gc.collect()
+    if device.startswith("cuda"):
+        torch.cuda.empty_cache()
+    return mode_out
 
 
 def run_benchmarks(
@@ -302,57 +371,28 @@ def run_benchmarks(
     initial_prompt: str | None = None,
 ) -> dict[str, Any]:  # pragma: no cover - heavy GPU evaluation
     """Evaluate *model_id* across the requested real-speech suites and decoding modes."""
-    import torch
-
-    loaders: dict[str, Callable[[], list[BenchmarkItem]]] = {
-        "test_300_seed1234": load_test_300_seed1234,
-        "test_330_balanced": load_test_330_balanced,
-        "kenyan_ea_test": load_kenyan_ea_test,
-        "fleurs_all": load_fleurs_all,
-    }
-    if os.environ.get("HF_HUB_OFFLINE") != "1":
-        from evaluation import fetch_public_datasets
-
-        for name in suites:
-            if name in loaders:
-                fetch_public_datasets.prepare_suite(name)
-    loaded_suites = {name: loaders[name]() for name in suites}
+    loaded_suites = _load_benchmark_suites(suites)
     whisper_norm = _load_whisper_normalizer()
     resolved_device = transcribe.resolve_device(device)
     beam_map = {"greedy": 1, "beam3": 3, "beam5": 5}
 
     results: dict[str, Any] = {"model": model_id}
     for mode in modes:
-        num_beams = beam_map[mode]
-        asr = transcribe.make_whisper(
+        results[mode] = _evaluate_mode(
             model_id,
-            resolved_device,
+            mode,
+            beam_map[mode],
+            loaded_suites,
+            whisper_norm,
             batch_size=batch_size,
+            device=resolved_device,
             initial_prompt=initial_prompt,
-            num_beams=num_beams,
         )
-        asr.load()
-        mode_out: dict[str, Any] = {}
-        for name, items in loaded_suites.items():
-            print(f"[{mode}] Evaluating {name} ({len(items)} clips)...", flush=True)
-            hyps = asr([item.audio for item in items])
-            mode_out[name] = score_predictions(items, hyps, whisper_norm)
-            s = mode_out[name]
-            print(
-                f"  -> {name}: regex={s['regex_wer']:.2f}% "
-                f"whisper={s['whisper_norm_wer']:.2f}% fair={s['fair_norm_wer']:.2f}%",
-                flush=True,
-            )
-        results[mode] = mode_out
-        del asr
-        gc.collect()
-        if resolved_device.startswith("cuda"):
-            torch.cuda.empty_cache()
-
     return results
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for Whisper benchmark evaluation."""
     parser = argparse.ArgumentParser(
         description="Run multi-benchmark Whisper WER evaluations (AfriSpeech, Kenyan/EA, FLEURS)."
     )
@@ -374,6 +414,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - GPU CLI
+    """Run Whisper benchmark evaluation and return an exit code."""
     args = parse_args(argv)
     report = run_benchmarks(
         args.model,

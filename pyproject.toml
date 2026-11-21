@@ -37,3 +37,9 @@ files = [
 [[tool.mypy.overrides]]
 module = ["soundfile", "av", "gliner", "faster_whisper", "ctranslate2"]
 ignore_missing_imports = true
+
+[tool.pyright]
+typeCheckingMode = "standard"
+pythonVersion = "3.12"
+include = ["demo", "evaluation", "src", "tests"]
+exclude = ["src/legacy", "notebooks", ".venv", ".temp"]

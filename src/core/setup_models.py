@@ -27,17 +27,21 @@ WHISPER_HF_ASSET_PARTS: tuple[str, str] = (
     "whisper-large-v3-tuned.tar.gz.part0",
     "whisper-large-v3-tuned.tar.gz.part1",
 )
+# Keep each release archive part under GitHub Releases' 2 GiB per-asset limit.
 MAX_RELEASE_PART_BYTES = 1_800 * 1024 * 1024
 NLP_ASSET_NAME = "nlp-models.tar.gz"
 
 
 def _cuda_is_available() -> bool:
+    """Return True if PyTorch is installed and a CUDA GPU is available."""
     try:
         import torch
 
         cuda_mod = getattr(torch, "cuda", None)
         return bool(cuda_mod is not None and cuda_mod.is_available())
     except Exception:
+        # Intentional resilience boundary: torch import (e.g. missing DLLs) or CUDA driver
+        # probe errors must never abort readiness checks; fall back to CPU-only mode.
         return False
 
 
@@ -96,57 +100,91 @@ def _safe_extract_tar_gz(archive_path: Path, dest_dir: Path) -> None:
         tf.extractall(dest_resolved, members=iterator, filter="data")  # type: ignore[arg-type]
 
 
+def _open_progress_bar(total: int, asset_name: str) -> Any:
+    """Create a byte-level tqdm progress bar if tqdm is installed, else return None."""
+    try:
+        tqdm_cls = importlib.import_module("tqdm").tqdm
+        return tqdm_cls(
+            total=total or None,
+            unit="B",
+            unit_scale=True,
+            unit_divisor=1024,
+            desc=asset_name,
+        )
+    except ImportError:
+        return None
+
+
+def _stream_response_to_file(resp: Any, dest_file: Path, asset_name: str) -> None:
+    """Write an HTTP response stream to a local file in 1 MB chunks with a progress bar."""
+    total = int(resp.headers.get("Content-Length") or 0)
+    bar = _open_progress_bar(total, asset_name)
+    try:
+        with dest_file.open("wb") as out:
+            while chunk := resp.read(1024 * 1024):
+                out.write(chunk)
+                if bar is not None:
+                    bar.update(len(chunk))
+    finally:
+        if bar is not None:
+            bar.close()
+
+
+def _download_with_gh(repo: str, tag: str, asset_name: str, dest_dir: Path, url: str) -> None:
+    """Download a release asset using the GitHub CLI (``gh``) as a fallback."""
+    gh = shutil.which("gh")
+    if gh is None:
+        raise RuntimeError(f"Failed to download {url} and `gh` CLI is not available")
+    subprocess.run(
+        [
+            gh,
+            "release",
+            "download",
+            tag,
+            "--repo",
+            repo,
+            "--pattern",
+            asset_name,
+            "--dir",
+            str(dest_dir),
+            "--clobber",
+        ],
+        check=True,
+    )
+
+
 def _download_release_asset(repo: str, tag: str, asset_name: str, dest_file: Path) -> None:
     """Download *asset_name* from a GitHub Release with a progress bar, falling back to `gh`."""
     url = f"https://github.com/{repo}/releases/download/{tag}/{asset_name}"
     try:
-        with urllib.request.urlopen(url, timeout=120) as resp, dest_file.open("wb") as out:
-            total = int(resp.headers.get("Content-Length") or 0)
-            try:
-                tqdm_cls = importlib.import_module("tqdm").tqdm
-                bar: Any = tqdm_cls(
-                    total=total or None,
-                    unit="B",
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    desc=asset_name,
-                )
-            except ImportError:
-                bar = None
-            try:
-                while True:
-                    chunk = resp.read(1024 * 1024)
-                    if not chunk:
-                        break
-                    out.write(chunk)
-                    if bar is not None:
-                        bar.update(len(chunk))
-            finally:
-                if bar is not None:
-                    bar.close()
+        with urllib.request.urlopen(url, timeout=120) as resp:
+            _stream_response_to_file(resp, dest_file, asset_name)
         return
     except Exception as url_exc:
-        gh = shutil.which("gh")
-        if gh is None:
-            raise RuntimeError(
-                f"Failed to download {url} and `gh` CLI is not available"
-            ) from url_exc
-        subprocess.run(
-            [
-                gh,
-                "release",
-                "download",
-                tag,
-                "--repo",
-                repo,
-                "--pattern",
-                asset_name,
-                "--dir",
-                str(dest_file.parent),
-                "--clobber",
-            ],
-            check=True,
-        )
+        # Intentional fallback boundary: any direct HTTP, TLS, proxy, or stream failure
+        # falls back to `gh release download` if the GitHub CLI is available.
+        try:
+            _download_with_gh(repo, tag, asset_name, dest_file.parent, url)
+        except RuntimeError as gh_exc:
+            raise gh_exc from url_exc
+
+
+def _download_and_extract_hf_parts(
+    repo: str, tag: str, tmp_dir: Path, models_dir: Path
+) -> None:
+    """Download split GPU Whisper archive parts, rejoin them, and extract into models_dir."""
+    combined = tmp_dir / WHISPER_HF_ARCHIVE_NAME
+    with combined.open("wb") as out_fh:
+        for part_name in WHISPER_HF_ASSET_PARTS:
+            part_path = tmp_dir / part_name
+            print(f"Downloading {part_name} from {repo} ({tag})...", flush=True)
+            _download_release_asset(repo, tag, part_name, part_path)
+            with part_path.open("rb") as in_fh:
+                shutil.copyfileobj(in_fh, out_fh)
+            part_path.unlink(missing_ok=True)
+    print(f"Extracting {WHISPER_HF_ARCHIVE_NAME} into {models_dir}...", flush=True)
+    _safe_extract_tar_gz(combined, models_dir)
+    combined.unlink(missing_ok=True)
 
 
 def ensure_runtime_models(
@@ -180,18 +218,7 @@ def ensure_runtime_models(
             archive.unlink(missing_ok=True)
 
         if need_hf_download:
-            combined = tmp_dir / WHISPER_HF_ARCHIVE_NAME
-            with combined.open("wb") as out_fh:
-                for part_name in WHISPER_HF_ASSET_PARTS:
-                    part_path = tmp_dir / part_name
-                    print(f"Downloading {part_name} from {repo} ({tag})...", flush=True)
-                    _download_release_asset(repo, tag, part_name, part_path)
-                    with part_path.open("rb") as in_fh:
-                        shutil.copyfileobj(in_fh, out_fh)
-                    part_path.unlink(missing_ok=True)
-            print(f"Extracting {WHISPER_HF_ARCHIVE_NAME} into {models_dir}...", flush=True)
-            _safe_extract_tar_gz(combined, models_dir)
-            combined.unlink(missing_ok=True)
+            _download_and_extract_hf_parts(repo, tag, tmp_dir, models_dir)
     return models_dir
 
 

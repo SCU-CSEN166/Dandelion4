@@ -116,6 +116,7 @@ def wer_stats(ref: str, hyp: str) -> dict[str, Any]:
     if ref_words == 0:
         raise ValueError("reference is empty after normalization; WER is undefined")
     if hyp_words == 0:
+        # Empty transcription counts every reference word as deleted (100% error).
         return {
             "wer": 1.0,
             "substitutions": 0,
@@ -152,6 +153,7 @@ def corpus_wer(refs: Sequence[str], hyps: Sequence[str]) -> float:
 
 
 def _contains_sequence(tokens: list[str], needle: list[str]) -> bool:
+    """Return True if ``needle`` appears as a contiguous slice inside ``tokens``."""
     size = len(needle)
     return any(tokens[i : i + size] == needle for i in range(len(tokens) - size + 1))
 
@@ -167,6 +169,7 @@ def number_token_ok(ref: str, hyp: str) -> bool | None:
     hyp_tokens = normalize(hyp).split()
     for digits in numbers:
         value = int(digits)
+        # Accept either digits ("48") or spoken words ("forty eight"), as ASR often spells numbers.
         if digits in hyp_tokens or str(value) in hyp_tokens:
             continue
         if value <= 999 and _contains_sequence(hyp_tokens, int_to_words(value).split()):
@@ -225,6 +228,7 @@ def _ratio_pct(values: Sequence[bool | None]) -> tuple[float | None, int]:
 
 
 def _index_by_id(records: Sequence[Record], what: str) -> dict[str, Record]:
+    """Build an ``id -> record`` lookup table, raising ValueError on duplicate IDs."""
     index: dict[str, Record] = {}
     for record in records:
         record_id = record["id"]
@@ -235,6 +239,7 @@ def _index_by_id(records: Sequence[Record], what: str) -> dict[str, Record]:
 
 
 def _check_id_set(found: set[str], wanted: set[str], what: str) -> None:
+    """Verify that ``found`` IDs match ``wanted`` IDs exactly, or raise ValueError."""
     if found != wanted:
         missing = sorted(wanted - found)
         extra = sorted(found - wanted)
@@ -250,6 +255,7 @@ def manifest_message_ids(manifest: Record) -> list[str]:
 
 
 def _write_json(path: Path, data: Any) -> None:
+    """Write ``data`` as pretty-printed UTF-8 JSON to ``path``."""
     with path.open("w", encoding="utf-8") as handle:
         json.dump(data, handle, indent=2, ensure_ascii=False)
         handle.write("\n")
@@ -258,6 +264,7 @@ def _write_json(path: Path, data: Any) -> None:
 def _system_summary(
     clips: list[Record], voices: list[str], original_acc: float | None
 ) -> dict[str, Any]:
+    """Aggregate per-clip scores into overall and per-voice summary metrics for one version."""
     refs = [c["reference"] for c in clips]
     hyps = [c["hypothesis"] for c in clips]
     number_pct, number_n = _ratio_pct([c["number_token_ok"] for c in clips])
@@ -266,6 +273,7 @@ def _system_summary(
     loc_field_pct, loc_field_n = _ratio_pct([c["location_field_ok"] for c in clips])
     acc_pct, _ = _ratio_pct([c["classification_ok"] for c in clips])
     wer_pct = 100.0 * corpus_wer(refs, hyps)
+    # Positive drop means downstream accuracy fell on ASR transcripts compared to original text.
     drop = None if original_acc is None or acc_pct is None else original_acc - acc_pct
     by_voice: dict[str, float | None] = {}
     for voice in voices:
@@ -302,24 +310,19 @@ def _system_summary(
     }
 
 
-def evaluate(
+def _index_and_validate_inputs(
     manifest: Record,
     transcripts: dict[str, list[Record]],
     messages: list[Record],
     expected: list[Record],
-    run_baseline: RunBaseline,
-    workdir: Path,
-    *,
-    manifest_path: str = "examples/audio_manifest.json",
-    asr_model: str | None = None,
-    created_utc: str | None = None,
-) -> dict[str, Any]:
-    """Run the whole evaluation and return the section 6.7 structure, unrounded.
-
-    The only I/O is writing ``<workdir>/<system>.json`` (the baseline inputs) and passing
-    those paths to ``run_baseline``. Raises ``ValueError`` if any input's id set differs
-    from the manifest's message ids, or a manifest clip is missing.
-    """
+) -> tuple[
+    list[str],
+    dict[tuple[str, str], Record],
+    dict[str, dict[str, Record]],
+    dict[str, Record],
+    dict[str, Record],
+]:
+    """Index all input files by ID and verify every message has all audio versions and labels."""
     ids = manifest_message_ids(manifest)
     id_set = set(ids)
     if not ids:
@@ -350,7 +353,18 @@ def evaluate(
     if missing_expected:
         raise ValueError(f"expected: missing ids {missing_expected}")
 
-    # Baseline inputs: the original-text subset and the three transcript files.
+    return ids, clip_index, transcript_index, message_index, expected_index
+
+
+def _run_baseline_systems(
+    ids: list[str],
+    message_index: dict[str, Record],
+    transcript_index: dict[str, dict[str, Record]],
+    run_baseline: RunBaseline,
+    workdir: Path,
+) -> dict[str, dict[str, Record]]:
+    """Run the downstream baseline on original text and on each ASR version's transcripts."""
+    id_set = set(ids)
     inputs: dict[str, list[Record]] = {
         "original_text": [
             {
@@ -372,70 +386,123 @@ def evaluate(
         index = _index_by_id(run_baseline(input_path), f"baseline predictions ({system})")
         _check_id_set(set(index), id_set, f"baseline predictions ({system})")
         predictions[system] = index
+    return predictions
 
-    def gold_for(message_id: str) -> Record:
-        original = predictions["original_text"][message_id]
-        gold_entry = expected_index[message_id]
-        return {
-            "relevant": gold_entry["relevant"],
-            "activity_type": gold_entry["activity_type"],
-            "location": (
-                gold_entry["location"] if "location" in gold_entry else original["location"]
-            ),
-            "reported_count": (
-                gold_entry["reported_count"]
-                if "reported_count" in gold_entry
-                else original["reported_count"]
-            ),
-        }
+
+def _gold_record(original_pred: Record, gold_entry: Record) -> Record:
+    """Build the reference label record, falling back to original-text predictions if omitted."""
+    # When expected outputs omit location or reported_count, use the original-text prediction
+    # as the reference so we still measure how much ASR errors degrade field extraction.
+    return {
+        "relevant": gold_entry["relevant"],
+        "activity_type": gold_entry["activity_type"],
+        "location": (
+            gold_entry["location"] if "location" in gold_entry else original_pred["location"]
+        ),
+        "reported_count": (
+            gold_entry["reported_count"]
+            if "reported_count" in gold_entry
+            else original_pred["reported_count"]
+        ),
+    }
+
+
+def _score_clip(
+    message_id: str,
+    version: str,
+    clip: Record,
+    transcript: Record,
+    raw_pred: Record,
+    gold: Record,
+    gold_location: Any,
+) -> Record:
+    """Compute WER, token accuracy, and downstream field accuracy for a single audio clip."""
+    reference = clip["reference_text"]
+    asr_raw = transcript.get("asr_text")
+    hypothesis = transcript["message"] if asr_raw is None else asr_raw
+    stats = wer_stats(reference, hypothesis)
+    pred = {field: raw_pred[field] for field in PRED_FIELDS}
+    return {
+        "clip_id": clip["clip_id"],
+        "message_id": message_id,
+        "version": version,
+        "voice": clip["voice"],
+        "reference": reference,
+        "hypothesis": hypothesis,
+        "reference_norm": normalize(reference),
+        "hypothesis_norm": normalize(hypothesis),
+        "wer_pct": 100.0 * stats["wer"],
+        "substitutions": stats["substitutions"],
+        "deletions": stats["deletions"],
+        "insertions": stats["insertions"],
+        "ref_words": stats["ref_words"],
+        "hyp_words": stats["hyp_words"],
+        "number_token_ok": number_token_ok(reference, hypothesis),
+        "location_token_ok": location_token_ok(reference, hypothesis, gold_location),
+        "pred": pred,
+        "gold": dict(gold),
+        "count_field_ok": (
+            None
+            if gold["reported_count"] is None
+            else pred["reported_count"] == gold["reported_count"]
+        ),
+        "location_field_ok": (
+            None if gold["location"] is None else pred["location"] == gold["location"]
+        ),
+        "classification_ok": classification_ok(pred, gold),
+    }
+
+
+def evaluate(
+    manifest: Record,
+    transcripts: dict[str, list[Record]],
+    messages: list[Record],
+    expected: list[Record],
+    run_baseline: RunBaseline,
+    workdir: Path,
+    *,
+    manifest_path: str = "examples/audio_manifest.json",
+    asr_model: str | None = None,
+    created_utc: str | None = None,
+) -> dict[str, Any]:
+    """Run the whole evaluation and return the section 6.7 structure, unrounded.
+
+    The only I/O is writing ``<workdir>/<system>.json`` (the baseline inputs) and passing
+    those paths to ``run_baseline``. Raises ``ValueError`` if any input's id set differs
+    from the manifest's message ids, or a manifest clip is missing.
+    """
+    ids, clip_index, transcript_index, message_index, expected_index = (
+        _index_and_validate_inputs(manifest, transcripts, messages, expected)
+    )
+    predictions = _run_baseline_systems(
+        ids, message_index, transcript_index, run_baseline, workdir
+    )
 
     original_acc, original_n = _ratio_pct(
-        [classification_ok(predictions["original_text"][i], gold_for(i)) for i in ids]
+        [
+            classification_ok(
+                predictions["original_text"][i],
+                _gold_record(predictions["original_text"][i], expected_index[i]),
+            )
+            for i in ids
+        ]
     )
 
     clips_out: list[Record] = []
     per_version: dict[str, list[Record]] = {v: [] for v in VERSIONS}
     for message_id in ids:
-        gold = gold_for(message_id)
+        gold = _gold_record(predictions["original_text"][message_id], expected_index[message_id])
         gold_location = expected_index[message_id].get("location")
         for version in VERSIONS:
-            clip = clip_index[(message_id, version)]
-            reference = clip["reference_text"]
-            transcript = transcript_index[version][message_id]
-            asr_raw = transcript.get("asr_text")
-            hypothesis = transcript["message"] if asr_raw is None else asr_raw
-            stats = wer_stats(reference, hypothesis)
-            raw_pred = predictions[version][message_id]
-            pred = {field: raw_pred[field] for field in PRED_FIELDS}
-            row: Record = {
-                "clip_id": clip["clip_id"],
-                "message_id": message_id,
-                "version": version,
-                "voice": clip["voice"],
-                "reference": reference,
-                "hypothesis": hypothesis,
-                "reference_norm": normalize(reference),
-                "hypothesis_norm": normalize(hypothesis),
-                "wer_pct": 100.0 * stats["wer"],
-                "substitutions": stats["substitutions"],
-                "deletions": stats["deletions"],
-                "insertions": stats["insertions"],
-                "ref_words": stats["ref_words"],
-                "hyp_words": stats["hyp_words"],
-                "number_token_ok": number_token_ok(reference, hypothesis),
-                "location_token_ok": location_token_ok(reference, hypothesis, gold_location),
-                "pred": pred,
-                "gold": dict(gold),
-                "count_field_ok": (
-                    None
-                    if gold["reported_count"] is None
-                    else pred["reported_count"] == gold["reported_count"]
-                ),
-                "location_field_ok": (
-                    None if gold["location"] is None else pred["location"] == gold["location"]
-                ),
-                "classification_ok": classification_ok(pred, gold),
-            }
+            row = _score_clip(
+                message_id,
+                version,
+                clip_index[(message_id, version)],
+                transcript_index[version][message_id],
+                predictions[version][message_id],
+                gold,
+                gold_location,
+            )
             clips_out.append(row)
             per_version[version].append(row)
 
@@ -458,6 +525,7 @@ def evaluate(
 
 
 def _round_value(key: str, value: Any) -> Any:
+    """Recursively round percentage and point-difference fields to 2 decimal places."""
     if isinstance(value, dict):
         if key == "by_voice":
             return {k: None if v is None else round_pct(v) for k, v in value.items()}
@@ -483,6 +551,7 @@ def round_results(results: dict[str, Any]) -> dict[str, Any]:
 
 
 def _fmt(value: Any) -> str:
+    """Format a metric value for the summary table ('-' for None, 2 decimals for floats)."""
     if value is None:
         return "-"
     if isinstance(value, float):
@@ -519,6 +588,7 @@ def format_summary_table(summary: dict[str, Any]) -> str:
 
 
 def _load_json(path: Path) -> Any:
+    """Read and parse a UTF-8 JSON file."""
     with path.open(encoding="utf-8") as handle:
         return json.load(handle)
 
@@ -568,6 +638,7 @@ def load_transcripts(transcripts_dir: Path, message_ids: list[str]) -> dict[str,
 
 
 def build_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser for WER and downstream evaluation."""
     parser = argparse.ArgumentParser(description="Compute WER and downstream baseline metrics.")
     parser.add_argument(
         "--manifest", type=Path, default=REPO_ROOT / "examples" / "audio_manifest.json"
@@ -597,6 +668,7 @@ def main(argv: list[str] | None = None) -> int:
     raw_predictions: dict[str, list[Record]] = {}
 
     def run_system(input_json: Path) -> list[Record]:
+        """Load precomputed predictions or invoke the baseline runner for one system."""
         if args.predictions_dir is not None:
             pred_path = args.predictions_dir / f"{input_json.stem}.json"
             records: list[Record] = _load_json(pred_path)
@@ -629,6 +701,7 @@ def main(argv: list[str] | None = None) -> int:
     out_path: Path = args.out
     out_path.parent.mkdir(parents=True, exist_ok=True)
     _write_json(out_path, rounded)
+    predictions_dir: Path | None = None
     if args.predictions_dir is None:
         predictions_dir = out_path.parent / "baseline_predictions"
         predictions_dir.mkdir(parents=True, exist_ok=True)
@@ -637,7 +710,7 @@ def main(argv: list[str] | None = None) -> int:
 
     print(format_summary_table(rounded["summary"]))
     print(f"\nResults written to {out_path}")
-    if args.predictions_dir is None:
+    if predictions_dir is not None:
         print(f"Baseline predictions written to {predictions_dir}")
     return 0
 

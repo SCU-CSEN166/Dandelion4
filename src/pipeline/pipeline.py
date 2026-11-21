@@ -48,10 +48,12 @@ OUTPUT_CSV_COLUMNS: tuple[str, ...] = (
 
 
 def _is_ignored_path(path: Path) -> bool:
+    """Return True for hidden files, dot-directories, or macOS ``__MACOSX`` archive metadata."""
     return any(part.startswith(".") or part == "__MACOSX" for part in path.parts)
 
 
 def _extract_zip_candidates(zip_path: Path, extract_dir: Path) -> list[Path]:
+    """Unpack non-hidden files from a ``.zip`` archive into ``extract_dir`` in sorted order."""
     extracted: list[Path] = []
     with zipfile.ZipFile(zip_path) as zf:
         for member in sorted(zf.namelist()):
@@ -100,6 +102,7 @@ def discover_inputs(input_path: Path, extract_dir: Path) -> tuple[list[Path], li
 
 
 def _extract_text_from_obj(obj: Any) -> str | None:
+    """Pull the message text from a raw string or common JSON/CSV object fields."""
     if isinstance(obj, str):
         text = obj.strip()
         return text or None
@@ -164,6 +167,7 @@ def load_text_items(path: Path) -> list[tuple[str, str]]:
 
 
 def _load_checkpoint(checkpoint_path: Path) -> list[dict[str, Any]]:
+    """Read previously completed records from a JSONL checkpoint file so runs can resume."""
     items: list[dict[str, Any]] = []
     if not checkpoint_path.is_file():
         return items
@@ -180,6 +184,7 @@ def _process_message_batch(
     nlp: gliner_system.GLiNERSystem,
     checkpoint_fh: Any,
 ) -> list[dict[str, Any]]:
+    """Validate, extract, anonymize, and checkpoint a chunk of messages."""
     messages: list[dict[str, Any]] = []
     meta: list[tuple[str, str]] = []
     for idx, label, src_type, text, asr_text in batch:
@@ -222,6 +227,169 @@ def _process_message_batch(
     return processed
 
 
+def _load_audio_chunk(chunk: Sequence[tuple[int, Path]]) -> list[transcribe.FloatArray]:
+    """Decode and resample a chunk of audio files into 16 kHz arrays for Whisper."""
+    return [transcribe.load_for_asr(*transcribe.read_wav(path)) for _, path in chunk]
+
+
+def _get_tqdm() -> Any:
+    """Return the ``tqdm`` progress bar class if installed, or ``None`` otherwise."""
+    try:
+        return importlib.import_module("tqdm").tqdm
+    except ImportError:
+        return None
+
+
+def _init_asr_backend(
+    asr_backend: transcribe.ASRBackend | None,
+    model_id: str | None,
+    device: str,
+    initial_prompt: str | None,
+    num_beams: int,
+) -> transcribe.ASRBackend:
+    """Create (if needed) and load the Whisper speech-recognition backend."""
+    asr = asr_backend or transcribe.make_whisper(
+        transcribe.resolve_default_model(
+            Path(model_id) if model_id is not None else None,
+            device=device,
+        ),
+        device,
+        transcribe.DEFAULT_BATCH_SIZE,
+        initial_prompt=initial_prompt,
+        num_beams=num_beams,
+    )
+    asr.load()
+    return asr
+
+
+def _process_pending_audio(
+    pending_audio: list[tuple[int, Path]],
+    *,
+    chunk_size: int,
+    width: int,
+    clean: bool,
+    asr: transcribe.ASRBackend,
+    nlp: gliner_system.GLiNERSystem,
+    ckpt_fh: Any,
+    tqdm_cls: Any,
+) -> list[dict[str, Any]]:
+    """Transcribe, clean, and extract pending audio clips in chunks with background prefetching."""
+    new_entries: list[dict[str, Any]] = []
+    audio_bar = (
+        tqdm_cls(total=len(pending_audio), desc="Processing audio", unit="clip")
+        if tqdm_cls is not None
+        else None
+    )
+    audio_chunks = [
+        pending_audio[start : start + chunk_size]
+        for start in range(0, len(pending_audio), chunk_size)
+    ]
+    try:
+        with ThreadPoolExecutor(max_workers=1) as prefetcher:
+            next_future = prefetcher.submit(_load_audio_chunk, audio_chunks[0])
+            for idx_chunk, chunk in enumerate(audio_chunks):
+                waves = next_future.result()
+                if idx_chunk + 1 < len(audio_chunks):
+                    next_future = prefetcher.submit(_load_audio_chunk, audio_chunks[idx_chunk + 1])
+                transcripts = asr(waves)
+                del waves
+                batch: list[tuple[int, str, str, str, str | None]] = []
+                for (idx, path), raw_text in zip(chunk, transcripts, strict=True):
+                    cleaned = (
+                        clean_transcripts.clean_text(raw_text) if clean else raw_text.strip()
+                    )
+                    batch.append((idx, path.name, "audio", cleaned, raw_text.strip()))
+                new_entries.extend(_process_message_batch(batch, width, nlp, ckpt_fh))
+                if audio_bar is not None:
+                    audio_bar.update(len(chunk))
+    finally:
+        if audio_bar is not None:
+            audio_bar.close()
+    return new_entries
+
+
+def _process_pending_text(
+    pending_text: list[tuple[int, str, str]],
+    *,
+    chunk_size: int,
+    width: int,
+    nlp: gliner_system.GLiNERSystem,
+    ckpt_fh: Any,
+    tqdm_cls: Any,
+) -> list[dict[str, Any]]:
+    """Run NLP extraction and checkpointing on pending text items in bounded chunks."""
+    new_entries: list[dict[str, Any]] = []
+    text_bar = (
+        tqdm_cls(total=len(pending_text), desc="Processing text", unit="item")
+        if tqdm_cls is not None
+        else None
+    )
+    try:
+        for start in range(0, len(pending_text), chunk_size):
+            text_chunk = pending_text[start : start + chunk_size]
+            text_batch = [
+                (idx, label, "text", content, None) for idx, label, content in text_chunk
+            ]
+            new_entries.extend(_process_message_batch(text_batch, width, nlp, ckpt_fh))
+            if text_bar is not None:
+                text_bar.update(len(text_chunk))
+    finally:
+        if text_bar is not None:
+            text_bar.close()
+    return new_entries
+
+
+def _build_output_rows(
+    entries: Sequence[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, str]]]:
+    """Detect duplicate event reports across all entries and format final CSV rows."""
+    records = [entry["record"] for entry in entries]
+    location_spans_per_msg = [entry["location_spans"] for entry in entries]
+    activity_labels = [hidden_test_pipeline.format_activity_label(rec) for rec in records]
+    redacted_msgs = [
+        {"id": str(rec["id"]), "message": str(rec["text_redacted"])} for rec in records
+    ]
+    duplicates = hidden_test_pipeline.find_duplicate_events(
+        redacted_msgs, records, location_spans_per_msg, activity_labels
+    )
+
+    rows: list[dict[str, str]] = []
+    for entry, rec, act_label, dup in zip(
+        entries, records, activity_labels, duplicates, strict=True
+    ):
+        relevant = bool(rec.get("relevant"))
+        count = rec.get("reported_count")
+        rows.append(
+            {
+                "Message_id": str(rec["id"]),
+                "source_file": str(entry["source_file"]),
+                "source_type": str(entry["source_type"]),
+                "anonymized_text": str(entry["anonymized_text"]),
+                "relevance": "Event" if relevant else "Chit-chat",
+                "activity_type": act_label if relevant else "",
+                "participants": str(count) if (relevant and isinstance(count, int)) else "",
+                "duplicate_of": dup,
+            }
+        )
+    return records, rows
+
+
+def _write_pipeline_outputs(
+    out_dir: Path,
+    records: Sequence[dict[str, Any]],
+    rows: Sequence[dict[str, str]],
+) -> tuple[Path, Path]:
+    """Write ``records.json`` and ``outputs.csv`` into ``out_dir`` and return their paths."""
+    records_path = out_dir / "records.json"
+    csv_path = out_dir / "outputs.csv"
+    transcribe.write_json(records_path, list(records))
+    with csv_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=list(OUTPUT_CSV_COLUMNS))
+        writer.writeheader()
+        writer.writerows(rows)
+    return records_path, csv_path
+
+
 def run_on_input(
     input_path: Path,
     *,
@@ -247,23 +415,18 @@ def run_on_input(
 
     with tempfile.TemporaryDirectory() as tmp:
         audio_files, text_files = discover_inputs(input_path, Path(tmp))
-
-        text_items: list[tuple[str, str]] = []
-        for text_path in text_files:
-            text_items.extend(load_text_items(text_path))
+        text_items = [item for text_path in text_files for item in load_text_items(text_path)]
 
         total_items = len(audio_files) + len(text_items)
         if total_items == 0:
             raise ValueError(f"No non-empty audio or text content found in {input_path}")
 
+        # Resume from any existing JSONL checkpoint by skipping already-processed source labels.
         width = max(2, len(str(total_items)))
         entries = _load_checkpoint(checkpoint_path)
         done_sources = {str(item["source_file"]) for item in entries}
-
         pending_audio = [
-            (idx, p)
-            for idx, p in enumerate(audio_files, start=1)
-            if p.name not in done_sources
+            (idx, p) for idx, p in enumerate(audio_files, start=1) if p.name not in done_sources
         ]
         pending_text = [
             (idx, label, content)
@@ -273,126 +436,41 @@ def run_on_input(
 
         if pending_audio or pending_text:
             nlp = nlp_system or gliner_system.GLiNERSystem(device=device)
-            asr: transcribe.ASRBackend | None = None
-            if pending_audio:
-                asr = asr_backend or transcribe.make_whisper(
-                    transcribe.resolve_default_model(
-                        Path(model_id) if model_id is not None else None,
-                        device=device,
-                    ),
-                    device,
-                    transcribe.DEFAULT_BATCH_SIZE,
-                    initial_prompt=initial_prompt,
-                    num_beams=num_beams,
-                )
-                asr.load()
-
-            def _load_audio_chunk(
-                chunk: Sequence[tuple[int, Path]],
-            ) -> list[transcribe.FloatArray]:
-                return [transcribe.load_for_asr(*transcribe.read_wav(path)) for _, path in chunk]
-
-            try:
-                tqdm_cls: Any = importlib.import_module("tqdm").tqdm
-            except ImportError:
-                tqdm_cls = None
-
+            asr = (
+                _init_asr_backend(asr_backend, model_id, device, initial_prompt, num_beams)
+                if pending_audio
+                else None
+            )
+            tqdm_cls = _get_tqdm()
             with checkpoint_path.open("a", encoding="utf-8", newline="\n") as ckpt_fh:
                 if pending_audio:
-                    audio_bar = (
-                        tqdm_cls(total=len(pending_audio), desc="Processing audio", unit="clip")
-                        if tqdm_cls is not None
-                        else None
+                    assert asr is not None
+                    entries.extend(
+                        _process_pending_audio(
+                            pending_audio,
+                            chunk_size=chunk_size,
+                            width=width,
+                            clean=clean,
+                            asr=asr,
+                            nlp=nlp,
+                            ckpt_fh=ckpt_fh,
+                            tqdm_cls=tqdm_cls,
+                        )
                     )
-                    audio_chunks = [
-                        pending_audio[start : start + chunk_size]
-                        for start in range(0, len(pending_audio), chunk_size)
-                    ]
-                    try:
-                        with ThreadPoolExecutor(max_workers=1) as prefetcher:
-                            next_future = prefetcher.submit(_load_audio_chunk, audio_chunks[0])
-                            for idx_chunk, chunk in enumerate(audio_chunks):
-                                waves = next_future.result()
-                                if idx_chunk + 1 < len(audio_chunks):
-                                    next_future = prefetcher.submit(
-                                        _load_audio_chunk, audio_chunks[idx_chunk + 1]
-                                    )
-                                assert asr is not None
-                                transcripts = asr(waves)
-                                del waves
-                                batch: list[tuple[int, str, str, str, str | None]] = []
-                                for (idx, path), raw_text in zip(chunk, transcripts, strict=True):
-                                    cleaned = (
-                                        clean_transcripts.clean_text(raw_text)
-                                        if clean
-                                        else raw_text.strip()
-                                    )
-                                    batch.append(
-                                        (idx, path.name, "audio", cleaned, raw_text.strip())
-                                    )
-                                entries.extend(_process_message_batch(batch, width, nlp, ckpt_fh))
-                                if audio_bar is not None:
-                                    audio_bar.update(len(chunk))
-                    finally:
-                        if audio_bar is not None:
-                            audio_bar.close()
+                if pending_text:
+                    entries.extend(
+                        _process_pending_text(
+                            pending_text,
+                            chunk_size=chunk_size,
+                            width=width,
+                            nlp=nlp,
+                            ckpt_fh=ckpt_fh,
+                            tqdm_cls=tqdm_cls,
+                        )
+                    )
 
-                text_bar = (
-                    tqdm_cls(total=len(pending_text), desc="Processing text", unit="item")
-                    if tqdm_cls is not None and pending_text
-                    else None
-                )
-                try:
-                    for start in range(0, len(pending_text), chunk_size):
-                        text_chunk = pending_text[start : start + chunk_size]
-                        text_batch = [
-                            (idx, label, "text", content, None)
-                            for idx, label, content in text_chunk
-                        ]
-                        entries.extend(_process_message_batch(text_batch, width, nlp, ckpt_fh))
-                        if text_bar is not None:
-                            text_bar.update(len(text_chunk))
-                finally:
-                    if text_bar is not None:
-                        text_bar.close()
-
-        records = [entry["record"] for entry in entries]
-        location_spans_per_msg = [entry["location_spans"] for entry in entries]
-        activity_labels = [hidden_test_pipeline.format_activity_label(rec) for rec in records]
-        redacted_msgs = [
-            {"id": str(rec["id"]), "message": str(rec["text_redacted"])} for rec in records
-        ]
-        duplicates = hidden_test_pipeline.find_duplicate_events(
-            redacted_msgs, records, location_spans_per_msg, activity_labels
-        )
-
-        rows: list[dict[str, str]] = []
-        for entry, rec, act_label, dup in zip(
-            entries, records, activity_labels, duplicates, strict=True
-        ):
-            relevant = bool(rec.get("relevant"))
-            count = rec.get("reported_count")
-            rows.append(
-                {
-                    "Message_id": str(rec["id"]),
-                    "source_file": str(entry["source_file"]),
-                    "source_type": str(entry["source_type"]),
-                    "anonymized_text": str(entry["anonymized_text"]),
-                    "relevance": "Event" if relevant else "Chit-chat",
-                    "activity_type": act_label if relevant else "",
-                    "participants": str(count) if (relevant and isinstance(count, int)) else "",
-                    "duplicate_of": dup,
-                }
-            )
-
-        records_path = out_dir / "records.json"
-        csv_path = out_dir / "outputs.csv"
-        transcribe.write_json(records_path, records)
-        with csv_path.open("w", encoding="utf-8", newline="") as handle:
-            writer = csv.DictWriter(handle, fieldnames=list(OUTPUT_CSV_COLUMNS))
-            writer.writeheader()
-            writer.writerows(rows)
-
+        records, rows = _build_output_rows(entries)
+        records_path, csv_path = _write_pipeline_outputs(out_dir, records, rows)
         return {
             "audio_count": len(audio_files),
             "text_count": len(text_items),
@@ -403,34 +481,8 @@ def run_on_input(
         }
 
 
-def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
-    """Parse CLI arguments for the general-purpose pipeline runner."""
-    parser = argparse.ArgumentParser(
-        prog="python -m src.main",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        description=(
-            "Dandelion4 Audio & Text Pipeline\n"
-            "--------------------------------\n"
-            "Turns field voice notes and text reports into a clean, redacted CSV table\n"
-            "and structured JSON files. Runs on CPU by default (no GPU required) and\n"
-            "automatically downloads the pre-trained models on first run if missing.\n\n"
-            "Supported inputs (default: demo/inputs when no path is given):\n"
-            "  - A single audio file (.wav, .mp3, .mp4, .m4a, .ogg, .flac, .aac, ...)\n"
-            "  - A single text or data file (.txt, .md, .json, .jsonl, .csv)\n"
-            "  - A .zip archive containing audio and/or text files\n"
-            "  - A folder (searched recursively for all supported audio & text files)\n\n"
-            "Outputs written to --out-dir (default: demo/outputs/custom_run):\n"
-            "  - outputs.csv  : Reviewable spreadsheet (redacted text, event, count, duplicates)\n"
-            "  - records.json : Full pipeline-processed records (with text_redacted only)"
-        ),
-        epilog=(
-            "Examples:\n"
-            "  python -m src.main\n"
-            "  python -m src.main --in-dir path/to/field_reports_folder --out-dir outputs/week10\n"
-            "  python -m src.main path/to/voice_note.mp4\n"
-            "  python -m src.main demo/inputs --device cpu\n"
-        ),
-    )
+def _add_io_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register input path and output directory CLI flags on ``parser``."""
     parser.add_argument(
         "input",
         nargs="?",
@@ -459,6 +511,10 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
             f"(default: {DEFAULT_OUT_DIR})."
         ),
     )
+
+
+def _add_runtime_arguments(parser: argparse.ArgumentParser) -> None:
+    """Register device, Whisper ASR, chunking, and overwrite CLI flags on ``parser``."""
     parser.add_argument(
         "--device",
         default="auto",
@@ -502,7 +558,44 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Ignore any existing records.jsonl checkpoint in --out-dir and start fresh.",
     )
-    return parser.parse_args(argv)
+
+
+def _build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser with help text and usage examples."""
+    parser = argparse.ArgumentParser(
+        prog="python -m src.main",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=(
+            "Dandelion4 Audio & Text Pipeline\n"
+            "--------------------------------\n"
+            "Turns field voice notes and text reports into a clean, redacted CSV table\n"
+            "and structured JSON files. Runs on CPU by default (no GPU required) and\n"
+            "automatically downloads the pre-trained models on first run if missing.\n\n"
+            "Supported inputs (default: demo/inputs when no path is given):\n"
+            "  - A single audio file (.wav, .mp3, .mp4, .m4a, .ogg, .flac, .aac, ...)\n"
+            "  - A single text or data file (.txt, .md, .json, .jsonl, .csv)\n"
+            "  - A .zip archive containing audio and/or text files\n"
+            "  - A folder (searched recursively for all supported audio & text files)\n\n"
+            "Outputs written to --out-dir (default: demo/outputs/custom_run):\n"
+            "  - outputs.csv  : Reviewable spreadsheet (redacted text, event, count, duplicates)\n"
+            "  - records.json : Full pipeline-processed records (with text_redacted only)"
+        ),
+        epilog=(
+            "Examples:\n"
+            "  python -m src.main\n"
+            "  python -m src.main --in-dir path/to/field_reports_folder --out-dir outputs/week10\n"
+            "  python -m src.main path/to/voice_note.mp4\n"
+            "  python -m src.main demo/inputs --device cpu\n"
+        ),
+    )
+    _add_io_arguments(parser)
+    _add_runtime_arguments(parser)
+    return parser
+
+
+def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for the general-purpose pipeline runner."""
+    return _build_arg_parser().parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wrapper

@@ -92,6 +92,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wrapper
+    """Export a fine-tuned Whisper checkpoint to CTranslate2 format."""
     args = parse_args(argv)
     export_ct2_model(
         args.model,

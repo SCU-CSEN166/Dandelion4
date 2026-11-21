@@ -272,7 +272,9 @@ class TTSBackend(Protocol):
     name: str
     version: str
 
-    def synthesize(self, text: str, voice: str) -> tuple[npt.NDArray[Any], int]: ...
+    def synthesize(self, text: str, voice: str) -> tuple[npt.NDArray[Any], int]:
+        """Synthesize speech audio and sample rate for ``text`` using ``voice``."""
+        ...
 
 
 @runtime_checkable
@@ -286,9 +288,13 @@ class FileTTSBackend(Protocol):
     version: str
     file_suffix: str
 
-    def synthesize(self, text: str, voice: str) -> tuple[npt.NDArray[Any], int]: ...
+    def synthesize(self, text: str, voice: str) -> tuple[npt.NDArray[Any], int]:
+        """Synthesize speech audio and sample rate for ``text`` using ``voice``."""
+        ...
 
-    def synthesize_to_file(self, text: str, voice: str, path: Path) -> None: ...
+    def synthesize_to_file(self, text: str, voice: str, path: Path) -> None:
+        """Synthesize ``text`` with ``voice`` directly to ``path``."""
+        ...
 
 
 class NoiseSource(Protocol):
@@ -296,7 +302,9 @@ class NoiseSource(Protocol):
 
     name: str
 
-    def get(self, n_samples: int, sr: int, seed: int) -> npt.NDArray[Any]: ...
+    def get(self, n_samples: int, sr: int, seed: int) -> npt.NDArray[Any]:
+        """Return ``n_samples`` of noise at sample rate ``sr`` for ``seed``."""
+        ...
 
 
 # --------------------------------------------------------------------------------------
@@ -356,6 +364,7 @@ class PinkNoiseSource:
     name = "pink"
 
     def get(self, n_samples: int, sr: int, seed: int) -> npt.NDArray[Any]:
+        """Generate ``n_samples`` of deterministic pink noise."""
         return pink_noise(n_samples, seed)
 
 
@@ -378,6 +387,7 @@ class FileNoiseSource:
         self._reader = reader
 
     def get(self, n_samples: int, sr: int, seed: int) -> npt.NDArray[Any]:
+        """Slice or loop ``n_samples`` of noise from a pre-recorded file."""
         source = self.files[seed % len(self.files)]
         data, file_sr = self._reader(source)
         wave = np.asarray(data, dtype=np.float32)
@@ -408,7 +418,8 @@ def synthesize_with_retry(
     for attempt in range(tries):
         try:
             return call()
-        except Exception as error:  # network or voice errors of any type
+        except Exception as error:
+            # Intentional resilience boundary: TTS backends raise network, voice, or decode errors.
             last_error = error
             if attempt < tries - 1:
                 sleep(backoff_s * 2**attempt)
@@ -442,10 +453,12 @@ class TTSCache:
         self._sleep = sleep
 
     def path_for(self, message_id: str, voice: str) -> Path:
+        """Return the cache file path for ``message_id`` and ``voice``."""
         suffix = backend_suffix(self.backend)
         return self.cache_dir / f"{message_id}__{voice}{suffix}"
 
     def get(self, message_id: str, text: str, voice: str) -> tuple[Wave, int]:
+        """Load cached TTS audio or synthesize and cache it on miss."""
         path = self.path_for(message_id, voice)
         if path.exists() and not self.force:
             return decode_audio_file(path)
@@ -532,6 +545,75 @@ def render_message(
     return {"clean": clean, "noisy": noisy, "phone": to_phone(clean)}, measured
 
 
+def _render_and_write_message_clips(
+    message: Message,
+    *,
+    voice: str,
+    cache: TTSCache,
+    noise: NoiseSource,
+    settings: Settings,
+    out_dir: Path,
+    repo_root: Path,
+    wav_writer: WavWriter,
+) -> list[dict[str, Any]]:
+    """Synthesize, render, write WAVs, and build manifest entries for one message."""
+    message_id = message["id"]
+    wave, sr = cache.get(message_id, message["message"], voice)
+    seed = clip_seed(settings.base_seed, message_id)
+    rendered, measured = render_message(wave, sr, settings, noise, seed)
+    entries: list[dict[str, Any]] = []
+    for version in VERSIONS:
+        clip_wave = rendered[version]
+        rate = SR_PHONE if version == "phone" else SR_16K
+        wav_path = out_dir / f"{message_id}_{version}.wav"
+        wav_writer(wav_path, clip_wave, rate)
+        is_noisy = version == "noisy"
+        entries.append(
+            build_manifest_entry(
+                message=message,
+                version=version,
+                voice=voice,
+                path=repo_relative(wav_path, repo_root),
+                sample_rate=rate,
+                n_samples=clip_wave.size,
+                snr_db_measured=measured if is_noisy else None,
+                noise_seed=seed if is_noisy else None,
+            )
+        )
+    return entries
+
+
+def _build_audio_manifest(
+    *,
+    created: str,
+    tts: TTSBackend,
+    voices: Sequence[str],
+    settings: Settings,
+    noise: NoiseSource,
+    source_messages: Path | None,
+    repo_root: Path,
+    clips: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Build the ``audio_manifest.json`` dictionary for generated clips."""
+    return {
+        "generator": {
+            "script": "src/training/make_audio.py",
+            "created_utc": created,
+            "tts_backend": tts.name,
+            "tts_backend_version": tts.version,
+            "voices": list(voices),
+            "pad_seconds": float(settings.pad_seconds),
+            "snr_db": float(settings.snr_db),
+            "noise_source": noise.name,
+            "base_seed": settings.base_seed,
+            "source_messages": (
+                None if source_messages is None else repo_relative(source_messages, repo_root)
+            ),
+        },
+        "clips": clips,
+    }
+
+
 def generate(
     messages: list[Message],
     *,
@@ -563,48 +645,30 @@ def generate(
 
     clips: list[dict[str, Any]] = []
     for message in selected:
-        message_id = message["id"]
-        voice = voice_of[message_id]
-        wave, sr = cache.get(message_id, message["message"], voice)
-        seed = clip_seed(settings.base_seed, message_id)
-        rendered, measured = render_message(wave, sr, settings, noise, seed)
-        for version in VERSIONS:
-            clip_wave = rendered[version]
-            rate = SR_PHONE if version == "phone" else SR_16K
-            wav_path = out_dir / f"{message_id}_{version}.wav"
-            wav_writer(wav_path, clip_wave, rate)
-            is_noisy = version == "noisy"
-            clips.append(
-                build_manifest_entry(
-                    message=message,
-                    version=version,
-                    voice=voice,
-                    path=repo_relative(wav_path, repo_root),
-                    sample_rate=rate,
-                    n_samples=clip_wave.size,
-                    snr_db_measured=measured if is_noisy else None,
-                    noise_seed=seed if is_noisy else None,
-                )
+        clips.extend(
+            _render_and_write_message_clips(
+                message,
+                voice=voice_of[message["id"]],
+                cache=cache,
+                noise=noise,
+                settings=settings,
+                out_dir=out_dir,
+                repo_root=repo_root,
+                wav_writer=wav_writer,
             )
+        )
     clips.sort(key=lambda c: (c["message_id"], VERSIONS.index(c["version"])))
 
-    manifest: dict[str, Any] = {
-        "generator": {
-            "script": "src/training/make_audio.py",
-            "created_utc": created,
-            "tts_backend": tts.name,
-            "tts_backend_version": tts.version,
-            "voices": list(voices),
-            "pad_seconds": float(settings.pad_seconds),
-            "snr_db": float(settings.snr_db),
-            "noise_source": noise.name,
-            "base_seed": settings.base_seed,
-            "source_messages": (
-                None if source_messages is None else repo_relative(source_messages, repo_root)
-            ),
-        },
-        "clips": clips,
-    }
+    manifest = _build_audio_manifest(
+        created=created,
+        tts=tts,
+        voices=voices,
+        settings=settings,
+        noise=noise,
+        source_messages=source_messages,
+        repo_root=repo_root,
+        clips=clips,
+    )
     write_json_atomic(manifest_path, manifest)
     return manifest
 
@@ -615,6 +679,7 @@ def generate(
 
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
+    """Parse CLI arguments for synthetic audio dataset generation."""
     examples = REPO_ROOT / "examples"
     parser = argparse.ArgumentParser(description="Generate the test-audio clips (M1).")
     parser.add_argument("--messages", type=Path, default=examples / "synthetic_messages.json")

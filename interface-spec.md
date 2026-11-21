@@ -1,30 +1,30 @@
 # Dandelion4 Interface Spec v2
 
 **For:** Terence, Teresa, Eric
-**Version:** v2, 2026-11-06
-**Based on:** the repo on GitHub as of that date: `main` at `005f409`, `audio` at `0ff69d3` (PR #1), `synthetic-data` at `25dfa5b`
+**Version:** v2, 2026-11-06 (status & module paths updated 2026-11-20)
+**Status:** Implemented for v2 contracts, ASR, GLiNER pipeline, hidden-test evaluation, and demo (see §1, §7, and §12 for current module paths).
 
-**Purpose.** Every module reads and writes the JSON formats defined here, so each of us can build and test our part without waiting for the others. Where this spec and the code disagree, the spec wins and the code gets changed. Section 12 lists exactly what each of us has to change.
+**Purpose.** Every module reads and writes the JSON formats defined here, so each of us can build and test our part without waiting for the others. Where this spec and the code disagree, the spec wins and the code gets changed. Section 12 tracks implementation status.
 
 ---
 
 ## 1. How the pieces fit
 
 ```
- A. Data (Teresa) ─────────────► Message files  ─────────────┬──────────────► C. Systems ──► Record files ──► D. Evaluation
-    any number of datasets       (§3)                        │   baseline (Teresa)                            evaluate.py (Teresa)
-    + gold label files (§6)                                  │   GLiNER   (Terence)                           eval_wer.py (Eric)
+ A. Data / Inputs ─────────────► Message files  ─────────────┬──────────────► C. Systems ──► Record files ──► D. Evaluation
+    synthetic / HF / hidden      (§3)                        │   legacy baseline (frozen, wrapped)            eval_wer.py /
+    + gold label files (§6)                                  │   GLiNER v2 (`src/nlp/gliner_system.py`)       run_evaluation.py
                                                              │
-                                  B. Audio → text (Eric) ────┘
-                                  TTS clips → Whisper → transcripts (also Message files)
+                                  B. Audio → text ───────────┘
+                                  TTS / MP4 / WAV → Whisper → transcripts (also Message files)
 ```
 
-| Stage | Owner | Reads | Writes | Code |
+| Stage | Owner | Reads | Writes | Current Code |
 |---|---|---|---|---|
-| A. Data | Teresa | — | Message files (§3) and gold label files (§6), for any number of datasets | `src/generate_data.py`, or any other script, download or hand-made file |
-| B. Audio → text | Eric | a Message file (today `examples/synthetic_messages.json`) | WAV clips, `examples/audio_manifest.json`, transcript files (Message format, §3) | `src/make_audio.py`, `src/transcribe.py` |
-| C. Systems | baseline: Teresa; GLiNER: Terence | any Message file | a Record file (§4) | `src/baseline.py`, `src/gliner_system.py` (new) |
-| D. Evaluation | `evaluate.py`: Teresa; `eval_wer.py`: Eric | Record files + gold label files | results JSON | `evaluation/` |
+| A. Data | Teresa | — | Message files (§3) and gold label files (§6) | `examples/synthetic_messages.json`, `examples/huggingface_messages.json`, `examples/expected_outputs.json` |
+| B. Audio → text | Eric | Message files or audio/video inputs | WAV clips, `examples/audio_manifest.json`, transcript files (Message format, §3) | `src/training/make_audio.py`, `src/asr/transcribe.py`, `src/asr/clean_transcripts.py`, `src/asr/audio_pipeline.py` |
+| C. Systems | baseline: Teresa; GLiNER: Terence | any Message file | a Record file (§4) | `src/legacy/baseline.py` (frozen v1, wrapped by `evaluation/baseline_runner.py`), `src/nlp/gliner_system.py`, `src/pipeline/pipeline.py`, `src/pipeline/hidden_test_pipeline.py` |
+| D. Evaluation | Eric / Teresa | Record files + gold label files / hidden-test CSV | results JSON / summary | `evaluation/eval_wer.py`, `evaluation/run_evaluation.py`, `demo/run_demo.py` |
 
 The only things that cross a stage boundary are the files in §3–§6. **No module may depend on another module's internal behavior,** only on these formats and on the public functions listed in §7.
 
@@ -284,22 +284,21 @@ python src/<module>.py [INPUT] [--out OUTPUT]
 
 | System | File | Owner | Output for the default input |
 |---|---|---|---|
-| Keyword baseline (the comparison system) | `src/baseline.py` | Teresa | `examples/baseline_output.json` |
-| GLiNER | `src/gliner_system.py` (new; the notebook's logic moves here) | Terence | `examples/gliner_output.json` |
+| Keyword baseline (frozen v1 comparison system) | `src/legacy/baseline.py` (wrapped by `evaluation/baseline_runner.py` & `src/asr/audio_pipeline.py`) | Teresa | `examples/baseline_output.json` |
+| GLiNER | `src/nlp/gliner_system.py` | Terence | `examples/gliner_output.json` |
 
-**Public functions in `baseline.py`.** Other modules may call these; their behavior only changes through §10.
+**Public functions in `src/legacy/baseline.py`.** Other modules may call these (or invoke `baseline.py` via `evaluation/baseline_runner.py`); their behavior only changes through §10.
 - `anonymize(text)`
 - `classify_message(text)`
 - `extract_location(text)`
 - `extract_count(text)`
 - `process_message(message)`
-- `process_messages(messages)`
 
 The GLiNER system may reuse them for fields GLiNER doesn't produce. If it does, its docstring must say so.
 
-**Colab.** Clone the repo in a cell (`!git clone https://github.com/SCU-CSEN166/Dandelion4` then `%cd Dandelion4`), then run `!python src/gliner_system.py examples/synthetic_messages.json`. The notebook can stay for experiments, but it should import `src/gliner_system.py` so its results match the script.
+**Colab / Unified CLI.** Run the end-to-end CLI via `python -m src.main` (or standalone GLiNER via `python -m src.nlp.gliner_system`). Notebooks in `notebooks/` are kept for reference/experiments, while production logic lives in `src/nlp/gliner_system.py`.
 
-**Implementation templates.** `src/contracts.py` contains the standard-library model and validation helpers. The appendix embeds `src/system_template.py` for the shared CLI, `src/gliner_system.py` as a GLiNER skeleton, `evaluation/metrics_template.py` for metric signatures, and `tests/test_contracts.py` for offline checks. They are extractable reference files, not separate files in this commit. The extraction instructions also save the standalone checker as `tests/check_interface.py`. The GLiNER and metric bodies remain unimplemented; use §4–§7 as their contract.
+**Implementation & validation module.** `src/core/contracts.py` contains the standard-library model and validation helpers (`Message`, `Record`, `Gold`, `Redaction`, `GoldPiiSpan`, `RecordResults`, `build_record`, `validate_file`, `load_messages`, `load_records`, `load_gold`, `write_json`). The appendix below preserves the original standalone extractable template bundle from 2026-11-06 for historical reference.
 
 **Minimal usage.** After extracting the companion files, save this as `src/empty_example.py`. It accepts only empty messages and rejects every other message before writing output; it does not attempt PII detection.
 
@@ -334,21 +333,22 @@ python src/generate_data.py [--out examples/huggingface_messages.json] [--prefix
 ### 7.3 Audio → text (stage B)
 
 ```
-python src/make_audio.py
-python src/transcribe.py --version all
+python -m src.training.make_audio
+python -m src.asr.transcribe --version all
 ```
 
-- **Input.** By default `make_audio.py` voices a fixed set of 30 messages from `synthetic_messages.json` (the Week 7 test set). Any Message file, or another selection of IDs, can be voiced instead (§12).
+- **Input.** By default `src/training/make_audio.py` voices a fixed set of 30 messages from `synthetic_messages.json` (the Week 7 test set), and supports voicing other Message files or subsets via CLI flags.
 - **Writes** `examples/transcripts_<version>.json` (Message format, `"source": "audio"`). Those are the only stage B files other modules read.
 - **Private to stage B:** `audio_manifest.json`, `transcripts_*.meta.json` and the WAV clips belong to stage B and may change without a spec update.
-- **Cleaned-up transcripts.** If transcripts are cleaned up (number words → digits, place-name correction), the cleaned text goes in `message`, Whisper's raw output goes in `asr_text`, and WER is computed on `asr_text`. Systems copy their values from `message`, so a corrected place name reaches the Record.
+- **Cleaned-up transcripts.** `src/asr/clean_transcripts.py` normalizes transcripts while preserving Whisper's raw output in `asr_text`, and WER is computed on `asr_text`. Systems copy their values from `message`, so a corrected place name reaches the Record.
 
 ### 7.4 Evaluation (stage D)
 
 | Script | Owner | Command | Writes |
 |---|---|---|---|
-| `evaluation/evaluate.py` | Teresa | `python evaluation/evaluate.py [--messages M] [--predicted P] [--expected E] [--expected-transcript-pii] [--out evaluation/records_results.json]` | the record metrics below |
-| `evaluation/eval_wer.py` | Eric | `python evaluation/eval_wer.py` | `evaluation/wer_results.json` (exists) |
+| `evaluation/run_evaluation.py` | Eric / Teresa | `python -m evaluation.run_evaluation [--mode synthetic\|hidden]` | evaluation summary JSON / CSV metrics |
+| `evaluation/eval_wer.py` | Eric | `python -m evaluation.eval_wer` | `evaluation/wer_results.json` |
+| `demo/run_demo.py` | Team | `python -m demo.run_demo` | `demo/outputs/demo_metrics.json`, `predicted_outputs.csv` |
 
 - **`evaluate.py` arguments.** `M` is the Message file the Records in `P` were made from. The defaults are `examples/synthetic_messages.json`, `examples/baseline_output.json` and `examples/expected_outputs.json`, so the plain command keeps working.
 - **Transcript PII provenance.** `--expected-transcript-pii` declares that PII spans in `E` were labeled for the exact input transcript file `M`. Without this flag, skip audio-source messages for PII, even if their offsets happen to match. Other metrics still use their gold fields. Use the flag only for a Gold file explicitly labeled against that exact transcript.
@@ -474,68 +474,29 @@ Check transcript files with `transcripts` on their own. They share IDs with thei
 
 ---
 
-## 12. Checklist: what each of us changes
+## 12. Checklist: implementation status
 
 The `msg_` IDs and transcript texts stay. Recompute and report any changed results separately: relevance, counting, privacy, metrics and other corrected rules can change prior outputs.
 
-**Teresa**
-- [ ] `generate_data.py`:
-  - put the code under `if __name__ == "__main__":`
-  - add `--out`, `--prefix` (default `hf`) and `--seed`
-  - write `<prefix>_` IDs
-  - strip the `N. *Community Field Worker, Nairobi:` prefixes
-- [ ] Apply the same ID rename and prefix stripping to the existing `examples/huggingface_messages.json`.
-- [ ] `baseline.py`:
-  - put the code under `if __name__ == "__main__":`
-  - CLI `[INPUT] [--out OUTPUT]`, with the default output name from §7.1
-  - add `process_messages`
-  - `extract_location`: return the place that appears first in the text
-  - `classify_message`: when keywords of several types appear, return the type whose keyword comes first in the text
-  - write Record v2: retain the existing field names but apply §4 rules to their values; copy `sender_id` and `source`, detect and redact every NAME and PHONE span under §5, and construct `text_redacted` from the spans. If the baseline cannot process a message without leaving personal data, stop with an error and do not create or modify the output file. The legacy phone regex is insufficient on its own.
-  - regenerate `examples/baseline_output.json`
-- [ ] `evaluate.py`:
-  - add `--messages`, `--predicted`, `--expected` and `--out`
-  - score only the messages in the input file (§7.5)
-  - compute the §7.5 record metrics, skipping gold fields that are missing
-  - write `evaluation/records_results.json`
-- [ ] `expected_outputs.json`: add `location` and `reported_count` to all 40 entries, following the §4 rules (`null` for the 10 small-talk messages).
-- [ ] Create `examples/pii_messages.json` and `examples/pii_expected.json`:
-  - at least 10 messages, `pii_001`…
-  - fake names, and phone numbers like `0700 000 101`
-  - only names and phone numbers (§5, "Not covered in v2")
-  - spans labeled by the §5 boundaries (titles inside, articles outside), each with its `text`
-  - each gold entry also has `relevant`, `activity_type`, `location` and `reported_count`
+**Data & Baseline (Teresa / Legacy)**
+- [x] `examples/huggingface_messages.json` updated with `hf_` IDs and cleaned prefixes (`src/generate_data.py` was not added to this repo).
+- [x] `src/legacy/baseline.py` kept frozen as the v1 comparison baseline and wrapped in-repo by `evaluation/baseline_runner.py` (isolated subprocess) and `src/asr/audio_pipeline.py` (adapts v1 output to v2 `Record` contracts).
+- [x] `examples/expected_outputs.json` includes `location` and `reported_count` gold fields (`null` for irrelevant messages).
+- [ ] `evaluation/evaluate.py` and `examples/pii_messages.json` / `examples/pii_expected.json`: superseded by `evaluation/eval_wer.py`, `evaluation/run_evaluation.py`, and hidden-test evaluation in `src/pipeline/hidden_test_pipeline.py` + `demo/run_demo.py`.
 
-**Terence**
-- [ ] Create `src/gliner_system.py`:
-  - `process_messages` plus the §7.1 command line
-  - load `urchade/gliner_medium-v2.1` once per run
-  - the docstring states the label set and threshold
-  - stop with an error on a message it can't process
-- [ ] Map labels to fields: `Location` → `location`, `Date` → `date_text`, `EventName` → `event_name`, `EventDesc` → `event_desc`. Person-identifying `Name` spans become `NAME` redactions.
-- [ ] When GLiNER finds several values, take them from the first activity in reading order (§4, "One record per message").
-- [ ] Trim copied values by §4 "Copying text values". For example, the notebook's `EventName: The STEM Career Fair` becomes `"STEM Career Fair"`.
-- [ ] Redact only what §5 allows: `NAME` spans include titles but not articles; `Attendees` spans only when they name a specific person.
-- [ ] Redact `PHONE` in any format. `baseline.anonymize`'s regex is a starting point, but it misses non-Kenyan numbers.
-- [ ] Decide how `relevant` (by §4 "What counts as relevant"), `activity_type`, `reported_count` and `confidence` are filled: GLiNER labels, or the baseline's public functions (§7.1). Write the choice in the docstring.
-- [ ] Use the placeholders `[NAME]`/`[PHONE]` and fill in `redactions` and `text_redacted`.
-- [ ] Have the notebook import `gliner_system`.
-- [ ] Add `gliner==0.2.30` to `requirements.txt`. (Checked: it installs into the repo's environment and only adds `gliner` and `sentencepiece`; `torch` and `transformers` stay as pinned.)
+**GLiNER & Pipeline (Terence)**
+- [x] Created `src/nlp/gliner_system.py` with `process_messages` and CLI, loading `gliner_medium-v2.1` once per run.
+- [x] Mapped GLiNER labels + regex/rule extraction (`Location` → `location`, `Date` → `date_text`, `EventName` → `event_name`, `EventDesc` → `event_desc`, `NAME` & `PHONE` → `[NAME]`/`[PHONE]` redactions and `text_redacted`).
+- [x] Integrated into `src/pipeline/pipeline.py`, `src/pipeline/hidden_test_pipeline.py`, and `src/main.py`.
+- [x] Added `gliner` to `requirements.txt`.
 
-**Eric**
-- [ ] Get PR #1 reviewed and merged.
-- [ ] `transcribe.py`: write `"source": "audio"`, add it to the three committed transcript files, and update the transcript-format test.
-- [ ] `make_audio.py`: allow voicing another Message file or another selection of IDs from the command line. Keep the current 30 as the default so the Week 7 clips can be rebuilt.
-- [ ] `eval_wer.py`:
-  - add a way to score the GLiNER system's Records as well as the baseline's
-  - compute WER on `asr_text` when it's present; use the normalization, empty-reference insertion, aggregate zero-denominator and rounding rules in §7.5
-  - take each clip's expected location from the gold labels when they have one, instead of only the built-in list of four places
-- [ ] After Teresa's `baseline.py` change:
-  - `baseline_runner.py` must pass `--out` (the default output name now follows the input), or import `baseline.process_messages` directly
-  - update the expected records in `tests/test_baseline_runner.py`
-
-**Everyone**
-- [ ] Review PR #1, run the checker before every PR, and follow §10 for any format change.
+**Audio, ASR, Evaluation & Contracts (Eric)**
+- [x] Implemented `src/core/contracts.py` enforcing §2–§6 schemas and strict JSON validation.
+- [x] `src/asr/transcribe.py` writes `"source": "audio"` across all transcript files and is covered by `tests/test_transcribe.py`.
+- [x] `src/training/make_audio.py` supports voicing custom Message files and ID subsets while preserving the 30-message default.
+- [x] `evaluation/eval_wer.py` scores both baseline and GLiNER Records, computes WER on `asr_text` when present, and reads gold locations.
+- [x] `evaluation/baseline_runner.py` passes `--out` in an isolated temp directory and `tests/test_baseline_runner.py` verifies it.
+- [x] Added `evaluation/run_evaluation.py` and `demo/run_demo.py` with unit tests (`tests/`, 291 fast tests passing).
 
 ---
 
