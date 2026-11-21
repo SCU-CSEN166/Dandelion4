@@ -362,7 +362,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | Member | Final implementation / evaluation / documentation contribution | Result (worked / partly / failed) | Evidence | Reflection / remaining work |
 |---|---|---|---|---|
 | Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2) | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
-| Terence Zhou | documented results, updated/cleaned README | Worked | [dc6200f](https://github.com/SCU-CSEN166/Dandelion4/commit/dc6200ffe1e491dc4ddadecaa18da78cb6f4f3c1), [commit]() | final(?) check of README soon |
+| Terence Zhou | documented results, updated/cleaned README | Worked | [dc6200f](https://github.com/SCU-CSEN166/Dandelion4/commit/dc6200ffe1e491dc4ddadecaa18da78cb6f4f3c1), [dc566a4](https://github.com/SCU-CSEN166/Dandelion4/commit/dc566a4a9559d9ff9c04401a9317d6138c09a9ca) | final(?) check of README soon |
 
 
 
