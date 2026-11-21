@@ -302,7 +302,8 @@ def test_cpu_inference_defaults_to_all_available_threads(
     transcribe.WhisperASR(str(tmp_path), "cuda:0").load()
     assert threads == [24]
 
-    assert transcribe.FasterWhisperASR("model", "cpu").cpu_threads == 24
+    cpu_ct2 = transcribe.FasterWhisperASR("model", "cpu")
+    assert (cpu_ct2.num_workers, cpu_ct2.cpu_threads) == (6, 4)
     assert transcribe.FasterWhisperASR("model", "cpu", cpu_threads=4).cpu_threads == 4
     assert transcribe.FasterWhisperASR("model", "cpu", cpu_threads=0).cpu_threads == 0
     assert transcribe.FasterWhisperASR("model", "cuda:0").cpu_threads == 0
@@ -675,7 +676,6 @@ def test_default_model_follows_device_and_falls_back(
     assert transcribe.resolve_default_model(device="cpu") == str(hf)
     (hf / "config.json").unlink()
     assert transcribe.resolve_default_model(device="cuda:0") == str(base)
-    # When only the INT8 model is present, CUDA also falls back to it before baseline.
     (ct2 / "model.bin").write_bytes(b"weights")
     assert transcribe.resolve_default_model(device="cuda:0") == str(ct2)
 

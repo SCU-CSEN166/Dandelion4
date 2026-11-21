@@ -106,3 +106,37 @@ def test_discover_inputs_rejects_empty_folder(tmp_path: Path) -> None:
     empty.mkdir()
     with pytest.raises(ValueError, match="No supported audio or text files"):
         pipeline.discover_inputs(empty, tmp_path / "extract")
+
+
+def test_run_on_input_chunks_and_resumes_from_checkpoint(tmp_path: Path) -> None:
+    in_dir = tmp_path / "inputs"
+    in_dir.mkdir()
+    soundfile.write(in_dir / "clip1.wav", np.zeros(16_000, dtype=np.float32), 16_000)
+    soundfile.write(in_dir / "clip2.wav", np.zeros(16_000, dtype=np.float32), 16_000)
+    (in_dir / "note.txt").write_text("Met 20 women in Nakuru.", encoding="utf-8")
+
+    out_dir = tmp_path / "out"
+    first_asr = _FakeASR(["First clip", "Second clip"])
+    summary1 = pipeline.run_on_input(
+        in_dir,
+        out_dir=out_dir,
+        chunk_size=1,
+        asr_backend=first_asr,
+        nlp_system=_FakeNLP(),  # type: ignore[arg-type]
+    )
+    assert summary1["total_records"] == 3
+    assert (out_dir / "records.jsonl").is_file()
+
+    # Re-running without overwrite skips already-checkpointed items without calling ASR again.
+    class _FailIfCalledASR(_FakeASR):
+        def __call__(self, waves: list[Any]) -> list[str]:
+            raise AssertionError("ASR should not be called when all items are checkpointed")
+
+    summary2 = pipeline.run_on_input(
+        in_dir,
+        out_dir=out_dir,
+        chunk_size=1,
+        asr_backend=_FailIfCalledASR([]),
+        nlp_system=_FakeNLP(),  # type: ignore[arg-type]
+    )
+    assert summary2["total_records"] == 3

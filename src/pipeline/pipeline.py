@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import argparse
 import csv
+import importlib
 import json
 import os
 import sys
 import tempfile
 import zipfile
 from collections.abc import Sequence
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +33,7 @@ AUDIO_SUFFIXES = hidden_test_pipeline.SUPPORTED_AUDIO_SUFFIXES
 TEXT_SUFFIXES = frozenset({".txt", ".md", ".json", ".jsonl", ".csv"})
 DEFAULT_INPUT_DIR = REPO_ROOT / "demo" / "inputs"
 DEFAULT_OUT_DIR = REPO_ROOT / "demo" / "outputs" / "custom_run"
+DEFAULT_CHUNK_SIZE = 64
 
 OUTPUT_CSV_COLUMNS: tuple[str, ...] = (
     "Message_id",
@@ -160,6 +163,65 @@ def load_text_items(path: Path) -> list[tuple[str, str]]:
     return items
 
 
+def _load_checkpoint(checkpoint_path: Path) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    if not checkpoint_path.is_file():
+        return items
+    for raw in checkpoint_path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line:
+            items.append(json.loads(line))
+    return items
+
+
+def _process_message_batch(
+    batch: Sequence[tuple[int, str, str, str, str | None]],
+    width: int,
+    nlp: gliner_system.GLiNERSystem,
+    checkpoint_fh: Any,
+) -> list[dict[str, Any]]:
+    messages: list[dict[str, Any]] = []
+    meta: list[tuple[str, str]] = []
+    for idx, label, src_type, text, asr_text in batch:
+        msg: dict[str, Any] = {
+            "id": f"msg_{idx:0{width}d}",
+            "sender_id": f"worker_{idx:0{width}d}",
+            "source": src_type,
+            "message": text,
+        }
+        if asr_text is not None:
+            msg["asr_text"] = asr_text
+        messages.append(msg)
+        meta.append((label, src_type))
+
+    problems = contracts.validate_file("messages", messages)
+    if problems:
+        raise ValueError("Generated messages failed contract validation:\n" + "\n".join(problems))
+
+    processed: list[dict[str, Any]] = []
+    for msg, (label, src_type) in zip(messages, meta, strict=True):
+        rec, loc_spans = nlp.process_message_detailed(msg)
+        rec_problems = contracts.validate_file("records", [rec])
+        if rec_problems:
+            raise ValueError(
+                "Extracted records failed contract validation:\n" + "\n".join(rec_problems)
+            )
+        anonymized = hidden_test_pipeline.anonymize_csv_text(
+            str(msg["message"]), rec.get("redactions", []), loc_spans
+        )
+        entry = {
+            "record": rec,
+            "location_spans": loc_spans,
+            "anonymized_text": anonymized,
+            "source_file": label,
+            "source_type": src_type,
+        }
+        checkpoint_fh.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        processed.append(entry)
+    checkpoint_fh.flush()
+    return processed
+
+
 def run_on_input(
     input_path: Path,
     *,
@@ -169,108 +231,153 @@ def run_on_input(
     num_beams: int = 1,
     initial_prompt: str | None = None,
     clean: bool = True,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overwrite: bool = False,
     asr_backend: transcribe.ASRBackend | None = None,
     nlp_system: gliner_system.GLiNERSystem | None = None,
 ) -> dict[str, Any]:
-    """Process any audio/text file, .zip, or directory into transcripts, records, and CSV."""
+    """Process any audio/text file, .zip, or directory in bounded chunks with JSONL resume."""
+    if chunk_size < 1:
+        raise ValueError(f"chunk_size must be >= 1, got {chunk_size}")
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_path = out_dir / "records.jsonl"
+    if overwrite and checkpoint_path.exists():
+        checkpoint_path.unlink()
+
     with tempfile.TemporaryDirectory() as tmp:
         audio_files, text_files = discover_inputs(input_path, Path(tmp))
 
-        raw_entries: list[tuple[str, str, str, str | None]] = []
-        # Tuple: (source_label, source_type, message_text, asr_text_or_none)
-
-        if audio_files:
-            asr = asr_backend or transcribe.make_whisper(
-                transcribe.resolve_default_model(
-                    Path(model_id) if model_id is not None else None,
-                    device=device,
-                ),
-                device,
-                transcribe.DEFAULT_BATCH_SIZE,
-                initial_prompt=initial_prompt,
-                num_beams=num_beams,
-            )
-            waves = []
-            for audio_path in audio_files:
-                wave, sr = transcribe.read_wav(audio_path)
-                waves.append(transcribe.load_for_asr(wave, sr))
-            asr.load()
-            transcripts = asr(waves)
-            for audio_path, raw_text in zip(audio_files, transcripts, strict=True):
-                cleaned = (
-                    clean_transcripts.clean_text(raw_text) if clean else raw_text.strip()
-                )
-                raw_entries.append((audio_path.name, "audio", cleaned, raw_text.strip()))
-
+        text_items: list[tuple[str, str]] = []
         for text_path in text_files:
-            for label, content in load_text_items(text_path):
-                raw_entries.append((label, "text", content, None))
+            text_items.extend(load_text_items(text_path))
 
-        if not raw_entries:
+        total_items = len(audio_files) + len(text_items)
+        if total_items == 0:
             raise ValueError(f"No non-empty audio or text content found in {input_path}")
 
-        width = max(2, len(str(len(raw_entries))))
-        messages: list[dict[str, Any]] = []
-        source_meta: list[tuple[str, str]] = []
-        for idx, (label, src_type, text, asr_text) in enumerate(raw_entries, start=1):
-            msg: dict[str, Any] = {
-                "id": f"msg_{idx:0{width}d}",
-                "sender_id": f"worker_{idx:0{width}d}",
-                "source": src_type,
-                "message": text,
-            }
-            if asr_text is not None:
-                msg["asr_text"] = asr_text
-            messages.append(msg)
-            source_meta.append((label, src_type))
+        width = max(2, len(str(total_items)))
+        entries = _load_checkpoint(checkpoint_path)
+        done_sources = {str(item["source_file"]) for item in entries}
 
-        problems = contracts.validate_file("messages", messages)
-        if problems:
-            raise ValueError(
-                "Generated messages failed contract validation:\n" + "\n".join(problems)
-            )
+        pending_audio = [
+            (idx, p)
+            for idx, p in enumerate(audio_files, start=1)
+            if p.name not in done_sources
+        ]
+        pending_text = [
+            (idx, label, content)
+            for idx, (label, content) in enumerate(text_items, start=len(audio_files) + 1)
+            if label not in done_sources
+        ]
 
-        nlp = nlp_system or gliner_system.GLiNERSystem()
-        records: list[dict[str, Any]] = []
-        location_spans_per_msg: list[list[dict[str, Any]]] = []
-        activity_labels: list[str] = []
-        for msg in messages:
-            rec, loc_spans = nlp.process_message_detailed(msg)
-            records.append(rec)
-            location_spans_per_msg.append(loc_spans)
-            activity_labels.append(hidden_test_pipeline.format_activity_label(rec))
+        if pending_audio or pending_text:
+            nlp = nlp_system or gliner_system.GLiNERSystem(device=device)
+            asr: transcribe.ASRBackend | None = None
+            if pending_audio:
+                asr = asr_backend or transcribe.make_whisper(
+                    transcribe.resolve_default_model(
+                        Path(model_id) if model_id is not None else None,
+                        device=device,
+                    ),
+                    device,
+                    transcribe.DEFAULT_BATCH_SIZE,
+                    initial_prompt=initial_prompt,
+                    num_beams=num_beams,
+                )
+                asr.load()
 
-        rec_problems = contracts.validate_file("records", records)
-        if rec_problems:
-            raise ValueError(
-                "Extracted records failed contract validation:\n" + "\n".join(rec_problems)
-            )
+            def _load_audio_chunk(
+                chunk: Sequence[tuple[int, Path]],
+            ) -> list[transcribe.FloatArray]:
+                return [transcribe.load_for_asr(*transcribe.read_wav(path)) for _, path in chunk]
 
+            try:
+                tqdm_cls: Any = importlib.import_module("tqdm").tqdm
+            except ImportError:
+                tqdm_cls = None
+
+            with checkpoint_path.open("a", encoding="utf-8", newline="\n") as ckpt_fh:
+                if pending_audio:
+                    audio_bar = (
+                        tqdm_cls(total=len(pending_audio), desc="Processing audio", unit="clip")
+                        if tqdm_cls is not None
+                        else None
+                    )
+                    audio_chunks = [
+                        pending_audio[start : start + chunk_size]
+                        for start in range(0, len(pending_audio), chunk_size)
+                    ]
+                    try:
+                        with ThreadPoolExecutor(max_workers=1) as prefetcher:
+                            next_future = prefetcher.submit(_load_audio_chunk, audio_chunks[0])
+                            for idx_chunk, chunk in enumerate(audio_chunks):
+                                waves = next_future.result()
+                                if idx_chunk + 1 < len(audio_chunks):
+                                    next_future = prefetcher.submit(
+                                        _load_audio_chunk, audio_chunks[idx_chunk + 1]
+                                    )
+                                assert asr is not None
+                                transcripts = asr(waves)
+                                del waves
+                                batch: list[tuple[int, str, str, str, str | None]] = []
+                                for (idx, path), raw_text in zip(chunk, transcripts, strict=True):
+                                    cleaned = (
+                                        clean_transcripts.clean_text(raw_text)
+                                        if clean
+                                        else raw_text.strip()
+                                    )
+                                    batch.append(
+                                        (idx, path.name, "audio", cleaned, raw_text.strip())
+                                    )
+                                entries.extend(_process_message_batch(batch, width, nlp, ckpt_fh))
+                                if audio_bar is not None:
+                                    audio_bar.update(len(chunk))
+                    finally:
+                        if audio_bar is not None:
+                            audio_bar.close()
+
+                text_bar = (
+                    tqdm_cls(total=len(pending_text), desc="Processing text", unit="item")
+                    if tqdm_cls is not None and pending_text
+                    else None
+                )
+                try:
+                    for start in range(0, len(pending_text), chunk_size):
+                        text_chunk = pending_text[start : start + chunk_size]
+                        text_batch = [
+                            (idx, label, "text", content, None)
+                            for idx, label, content in text_chunk
+                        ]
+                        entries.extend(_process_message_batch(text_batch, width, nlp, ckpt_fh))
+                        if text_bar is not None:
+                            text_bar.update(len(text_chunk))
+                finally:
+                    if text_bar is not None:
+                        text_bar.close()
+
+        records = [entry["record"] for entry in entries]
+        location_spans_per_msg = [entry["location_spans"] for entry in entries]
+        activity_labels = [hidden_test_pipeline.format_activity_label(rec) for rec in records]
+        redacted_msgs = [
+            {"id": str(rec["id"]), "message": str(rec["text_redacted"])} for rec in records
+        ]
         duplicates = hidden_test_pipeline.find_duplicate_events(
-            messages, records, location_spans_per_msg, activity_labels
+            redacted_msgs, records, location_spans_per_msg, activity_labels
         )
 
         rows: list[dict[str, str]] = []
-        for msg, rec, loc_spans, act_label, dup, (label, src_type) in zip(
-            messages,
-            records,
-            location_spans_per_msg,
-            activity_labels,
-            duplicates,
-            source_meta,
-            strict=True,
+        for entry, rec, act_label, dup in zip(
+            entries, records, activity_labels, duplicates, strict=True
         ):
             relevant = bool(rec.get("relevant"))
-            anonymized = hidden_test_pipeline.anonymize_csv_text(
-                str(msg["message"]), rec.get("redactions", []), loc_spans
-            )
             count = rec.get("reported_count")
             rows.append(
                 {
-                    "Message_id": str(msg["id"]),
-                    "source_file": label,
-                    "source_type": src_type,
-                    "anonymized_text": anonymized,
+                    "Message_id": str(rec["id"]),
+                    "source_file": str(entry["source_file"]),
+                    "source_type": str(entry["source_type"]),
+                    "anonymized_text": str(entry["anonymized_text"]),
                     "relevance": "Event" if relevant else "Chit-chat",
                     "activity_type": act_label if relevant else "",
                     "participants": str(count) if (relevant and isinstance(count, int)) else "",
@@ -278,7 +385,6 @@ def run_on_input(
                 }
             )
 
-        out_dir.mkdir(parents=True, exist_ok=True)
         records_path = out_dir / "records.json"
         csv_path = out_dir / "outputs.csv"
         transcribe.write_json(records_path, records)
@@ -289,8 +395,9 @@ def run_on_input(
 
         return {
             "audio_count": len(audio_files),
-            "text_count": len(raw_entries) - len(audio_files),
+            "text_count": len(text_items),
             "total_records": len(rows),
+            "checkpoint_path": str(checkpoint_path),
             "records_path": str(records_path),
             "csv_path": str(csv_path),
         }
@@ -381,6 +488,20 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         action="store_true",
         help="Skip post-ASR transcript normalization (keep raw Whisper text).",
     )
+    parser.add_argument(
+        "--chunk-size",
+        type=int,
+        default=DEFAULT_CHUNK_SIZE,
+        help=(
+            "Items processed per memory-bounded chunk and checkpoint flush "
+            f"(default: {DEFAULT_CHUNK_SIZE})."
+        ),
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Ignore any existing records.jsonl checkpoint in --out-dir and start fresh.",
+    )
     return parser.parse_args(argv)
 
 
@@ -403,6 +524,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # pragma: no cover - CLI wr
         num_beams=args.num_beams,
         initial_prompt=args.initial_prompt,
         clean=not args.no_clean,
+        chunk_size=args.chunk_size,
+        overwrite=args.overwrite,
     )
     print(json.dumps(summary, indent=2), flush=True)
     return 0

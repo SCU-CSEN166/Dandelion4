@@ -14,9 +14,11 @@ only inside ``WhisperASR`` and ``resolve_device``.
 import argparse
 import importlib.metadata
 import json
+import os
 import sys
 import time
 from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any, Protocol
@@ -36,7 +38,7 @@ DEFAULT_MANIFEST = REPO_ROOT / "examples" / "audio_manifest.json"
 DEFAULT_OUT_DIR = REPO_ROOT / "examples"
 BASE_MODEL = "openai/whisper-large-v3-turbo"
 BASE_MODEL_DIR = REPO_ROOT / ".dev_models" / "whisper-large-v3-turbo"
-FINETUNED_MODEL_DIR = REPO_ROOT / ".dev_models" / "whisper-large-v3-tuned"
+FINETUNED_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-tuned"
 FINETUNED_INT8_MODEL_DIR = REPO_ROOT / ".models" / "whisper-large-v3-tuned-int8"
 
 
@@ -477,23 +479,34 @@ class FasterWhisperASR:
         num_beams: int = 1,
         compute_type: str | None = None,
         cpu_threads: int | None = None,
+        num_workers: int | None = None,
     ) -> None:
         if batch_size < 1:
             raise ValueError(f"batch_size must be >= 1, got {batch_size}")
         if num_beams < 1:
             raise ValueError(f"num_beams must be >= 1, got {num_beams}")
+        if num_workers is not None and num_workers < 1:
+            raise ValueError(f"num_workers must be >= 1, got {num_workers}")
         self.model_id = model_id
         self.device = device
         self.batch_size = batch_size
         self.initial_prompt = initial_prompt
         self.num_beams = num_beams
-        self.cpu_threads = (
-            runtime.available_cpu_count()
-            if cpu_threads is None and device == "cpu"
-            else cpu_threads
-        )
-        if self.cpu_threads is None:
-            self.cpu_threads = 0
+        if device == "cpu":
+            if cpu_threads is None and num_workers is None:
+                self.num_workers, self.cpu_threads = runtime.ctranslate2_cpu_parallelism()
+            elif num_workers is None:
+                self.num_workers = 1
+                self.cpu_threads = int(cpu_threads) if cpu_threads is not None else 0
+            elif cpu_threads is None:
+                self.num_workers = num_workers
+                self.cpu_threads = max(1, runtime.available_cpu_count() // num_workers)
+            else:
+                self.num_workers = num_workers
+                self.cpu_threads = cpu_threads
+        else:
+            self.num_workers = 1 if num_workers is None else num_workers
+            self.cpu_threads = 0 if cpu_threads is None else cpu_threads
         self.compute_type = (
             compute_type
             if compute_type is not None
@@ -514,6 +527,16 @@ class FasterWhisperASR:
     def load(self) -> None:  # pragma: no cover - needs CTranslate2 model weights
         """Load the CTranslate2 WhisperModel on demand."""
         if self._model is None:
+            if self.device.startswith("cuda"):
+                import torch
+
+                torch_lib = Path(torch.__file__).resolve().parent / "lib"
+                if torch_lib.is_dir():
+                    add_dll_directory = getattr(os, "add_dll_directory", None)
+                    if add_dll_directory is not None:
+                        add_dll_directory(str(torch_lib))
+                    os.environ["PATH"] = f"{torch_lib}{os.pathsep}{os.environ.get('PATH', '')}"
+
             from faster_whisper import WhisperModel
 
             if self.device.startswith("cuda"):
@@ -529,28 +552,31 @@ class FasterWhisperASR:
                 device_index=device_index,
                 compute_type=self.compute_type,
                 cpu_threads=self.cpu_threads,
+                num_workers=self.num_workers,
                 local_files_only=True,
             )
+
+    def _transcribe_one(self, wave: FloatArray) -> str:
+        assert self._model is not None
+        segments, _info = self._model.transcribe(
+            wave,
+            language=LANGUAGE,
+            task=TASK,
+            beam_size=self.num_beams,
+            condition_on_previous_text=False,
+            initial_prompt=self.initial_prompt,
+        )
+        return " ".join(str(seg.text).strip() for seg in segments if str(seg.text).strip())
 
     def __call__(self, waves: list[FloatArray]) -> list[str]:
         """Transcribe 16 kHz float32 mono waves via CTranslate2, returning one text per wave."""
         if not waves:
             return []
         self.load()
-        assert self._model is not None
-        texts: list[str] = []
-        for wave in waves:
-            segments, _info = self._model.transcribe(
-                wave,
-                language=LANGUAGE,
-                task=TASK,
-                beam_size=self.num_beams,
-                condition_on_previous_text=False,
-                initial_prompt=self.initial_prompt,
-            )
-            joined = " ".join(str(seg.text).strip() for seg in segments if str(seg.text).strip())
-            texts.append(joined)
-        return texts
+        if self.num_workers > 1 and len(waves) > 1:
+            with ThreadPoolExecutor(max_workers=min(self.num_workers, len(waves))) as executor:
+                return list(executor.map(self._transcribe_one, waves))
+        return [self._transcribe_one(wave) for wave in waves]
 
     def metadata(self) -> dict[str, Any]:
         """Model and runtime fields for the .meta.json file (design §2.6)."""

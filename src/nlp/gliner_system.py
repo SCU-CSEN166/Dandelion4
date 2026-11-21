@@ -751,20 +751,34 @@ class GLiNERSystem:
         model_id: str | None = None,
         labels: tuple[str, ...] = LABELS,
         threshold: float = THRESHOLD,
+        device: str = "auto",
     ) -> None:
         self.model_id = model_id
         self.labels = labels
         self.threshold = threshold
+        self.device = device
         self._model: Any = None
 
     def _load_model(self) -> Any:
         if self._model is None:  # pragma: no cover - requires model weights
             import importlib
 
-            runtime.configure_torch_cpu_threads()
+            import torch
+
+            cuda_mod = getattr(torch, "cuda", None)
+            target_device = (
+                ("cuda:0" if (cuda_mod is not None and cuda_mod.is_available()) else "cpu")
+                if self.device == "auto"
+                else self.device
+            )
+            if target_device == "cpu":
+                runtime.configure_torch_cpu_threads()
             resolved, local_only = resolve_gliner_model(self.model_id)
             gliner = importlib.import_module("gliner")
-            self._model = gliner.GLiNER.from_pretrained(resolved, local_files_only=local_only)
+            model = gliner.GLiNER.from_pretrained(resolved, local_files_only=local_only)
+            if target_device.startswith("cuda"):
+                model = model.to(target_device)
+            self._model = model
         return self._model
 
     def _predict_entities(self, text: str) -> list[dict[str, Any]]:
