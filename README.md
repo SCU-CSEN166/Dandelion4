@@ -245,18 +245,27 @@ Since it cannot process videos and images it may be inaccurate for real life con
 
 - **What improved?**
 1. text parsing: data is more related to setting, more NER categories (labels), JSON conversion<br><br>
+2. More NER labels: Tested specific categories for people, jobs, dates, times and locations in order to better address the reporting use case
+3. Redaction: Demonstrated replacing identified sensitive spans with [redacted] and began converting extracted information into JSON records
+4. Working audio baseline: Used whisper and evaluated 90 synthesized audio clips across clean and noisy phone conditions. Which we then measured the WER.
 - **What did not improve?**
 1. text parsing: still misses/mislabels some text, has some false positives<br><br>
+2. Long message processing: Longer or information heavy texts may reduce the accuracy
+3. Redaction: The recorded 100% recall does not tell us if the model removed information unnecessarily. This is important since we must preserve all useful information including attendance despite having to hide sensitive information
+4. Incomplete formatting: JSON conversion was still partial, and the team could not yet validate a common output format across both text and audio
+5. Speech field accuracy: Whisper's WER was under 10% on synthetic audio, but exact names and locations could be transcribed incorrectly
 - **Next experiment:**
 1. text parsing:
     - changes: use shorter messages (so no truncation), add specialized keywords to fish out false positives, improve current keywords to have more comprehensive searches
     - measure: manual checks, and metric checking: PII > 95% and F1 > 95% (redaction and label accuracy)<br><br>
-
+2. Measure the outcome: compare PII recall, entity extraction precision/recall/F1, Whisper WER and accuracy of all necessary components in comparison to their verified labels. 
+3. Improve final JSON output: Store redacted text and extracted attributes in a consistent structure, and test the pipeline of audio to transcript to extraction and final output. 
 ### Individual contributions during that week
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
 | Eric Wang | fine-tuned whisper on afrispeech and added transcript cleaning | Worked | [finetune_whisper.py](src/training/finetune_whisper.py), [wer_results.json](evaluation/wer_results.json) | connect audio pipeline with gliner |
 | Terence Zhou | improved text parsing and redaction, added partial JSON conversion | Partly | [4181acb](https://github.com/SCU-CSEN166/Dandelion4/commit/4181acbf69f7993b08182da285774ebfbe401bc1) | parse data sourced from teammates, improve keyword searching, redact JSONs, store in actual JSON file |
+|Teresa Wei|Generated fictional community worker messages, recorded expected labels and JSON data, tested a rule based classification baseline, experimented with hugging face SmoILM2 model | Worked as development support for synthetic examples and baselines |  [`src/generate_data.py`](src/generate_data.py), [`src/baseline.py`](src/baseline.py), [`evaluation/evaluate.py`](evaluation/evaluate.py) | Expan/review data and labels for fine tuning during week 8.|
 
 ---
 
