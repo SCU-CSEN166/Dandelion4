@@ -311,19 +311,47 @@ Since it cannot process videos and images it may be inaccurate for real life con
 **Deliverable during Week 10 Lab:** Document peer-testing feedback, Responsible AI concerns, changes made in response, and the final runnable system. Submit the final project report as instructed.
 
 ### Peer testing
-- **Team evaluated:** Dandelion 1 (https://github.com/SCU-CSEN166/Dandelion1)
+- **Team evaluated:** [`Dandelion 1`](https://github.com/SCU-CSEN166/Dandelion1)
 - **One thing that worked well:** their fixed hidden-test pipeline (src/main.py) hit 10/10 on relevance, participant count, and duplicate detection, plus 44/46 PII item recall, and outputs clean messages.csv and follow_ups.csv tables
 - **One meaningful failure:** src/main.py only takes pre-transcribed text/spreadsheets rather than raw audio files directly; also pii_count accuracy was 7/10 with 2 partial redactions
 - **One actionable recommendation:** wire src/transcribe.py into src/main.py so raw voice notes run end-to-end in one command
 - **Feedback received from another team:** they flagged a redaction miss on the hidden test, though it was actually an ASR mistranscription (Tumaini -> "Too Many") rather than a redaction leak, so the real name wasn't exposed; they also asked for clearer end-to-end setup and run instructions at the end of the README, which we are fixing going forward
 
 ### Responsible AI assessment
-- **Potential harms or affected users:** [Who could be affected and how?]
-- **Privacy and data handling:** [How sensitive information is protected]
-- **Reliability and unsupported claims:** [How outputs are verified or uncertainty is communicated]
-- **Fairness, accessibility, and usability:** [Relevant concerns and tests]
-- **Human oversight:** [Where a human should review or correct outputs]
-- **Remaining limitations:** [What should not be trusted or deployed yet]
+- **Potential harms or affected users:**
+  - Who could be affected:
+    - voice recordings and transcribed messages
+    - speakers, field workers, and study participants
+    - downstream analysts that rely on generated records
+  - How?
+    - Whisper transcription could mishear critical details due to phone audio compression or background noise
+    - GLiNER could miss sensitive info, or could mislabel extracted info
+- **Privacy and data handling:**
+  - Sensitive PII (eg. names, phone numbers, and locations) are identified by [`gliner_system.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/28f0c8f639fa6e6c26caefbbfd5893bb4464d693/src/nlp/gliner_system.py), and replaced with the corresponding redaction keyword.
+  - These redactions are then validated with [`src/core/contracts.py (line 166)`](https://github.com/SCU-CSEN166/Dandelion4/blob/28f0c8f639fa6e6c26caefbbfd5893bb4464d693/src/core/contracts.py#L166).
+- **Reliability and unsupported claims:**
+  - How outputs are verified:
+    - Text parsing: verfified with [`src/core/contracts.py (line 166)`](https://github.com/SCU-CSEN166/Dandelion4/blob/28f0c8f639fa6e6c26caefbbfd5893bb4464d693/src/core/contracts.py#L166)
+    - Audio processing of clean, noisy, and phone audio: evaluated and verified with [`evaluation/eval_wer.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/28f0c8f639fa6e6c26caefbbfd5893bb4464d693/evaluation/eval_wer.py) and [`evaluation/eval_whisper_benchmarks.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/evaluation/eval_whisper_benchmarks.py)
+  - However, because the pipeline relies on probabilistic ASR and zero-shot/fine-tuned GLiNER span predictions, low-confidence transcriptions or ambiguous entities can still produce misextractions without explicit uncertainty scores surfaced to end users.
+- **Fairness, accessibility, and usability:**
+  - Fairness:
+    - Real-world recording conditions: simulated with clean, noisy, and phone audio variants ([`examples/transcripts_clean.json`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/examples/transcripts_clean.json), [`examples/transcripts_noisy.json`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/examples/transcripts_noisy.json), [`examples/transcripts_phone.json`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/examples/transcripts_phone.json)).
+    - Speaker diversity: fetched, processed, and simulated with FLEURS ([`training/fetch_fleurs.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/training/fetch_fleurs.py))
+  - Accessibility: supported through JSON/CSV outputs ([`predicted_outputs.csv`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/demo/outputs/predicted_outputs.csv))
+  - Usability: supported through CLI demo ([`demo/run_demo.py`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/demo/run_demo.py))
+- **Human oversight:**
+  - Where a human should review/correct:
+    - WER of audio processing shoots up dramatically
+    - GLiNER predicting borderline/overlapping values/keywords
+    - before exporting (hopefully) fully redacted transcripts or structured CSV/JSONs
+- **Remaining limitations:**
+  - The system should not be trusted to run fully autonomously with little to no oversight.
+  - Our model mostly processes casual chat messages or semi-formal announcements. A major increase in the confidentiality of transcripts is another major limitation.
+  - Lesser limitations include:
+    - higher ASR error rates in heavily degraded phone audio
+    - potential false positives/negatives in GLiNER PII detection of uncommon names/locations/miscellaneous keyword phrasings
+    - speakers that are not represented in the FLEURS or synthetic fine-tuning sets
 
 ### Final improvements and outcomes
 | Feedback / issue | Change made | Worked? (Yes / Partly / No) | Evidence | Remaining limitation |
@@ -334,6 +362,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | Member | Final implementation / evaluation / documentation contribution | Result (worked / partly / failed) | Evidence | Reflection / remaining work |
 |---|---|---|---|---|
 | Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2) | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
+| Terence Zhou | documented results, updated/cleaned README | Worked | [dc6200f](https://github.com/SCU-CSEN166/Dandelion4/commit/dc6200ffe1e491dc4ddadecaa18da78cb6f4f3c1), [commit]() | final(?) check of README soon |
 
 
 
