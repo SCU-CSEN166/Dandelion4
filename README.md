@@ -383,30 +383,54 @@ Since it cannot process videos and images it may be inaccurate for real life con
 ## Setup and Reproducibility (keep updated)
 
 ### Requirements
-[Python version, libraries, compute requirements, model access]
+- Python 3.12 and the packages listed in requirements.txt
+- Runs on CPU (no GPU required); uses CUDA GPU automatically if available
+- Pre-trained models (whisper-large-v3-tuned-int8, gliner_medium-v2.1, deberta-v3-base, plus whisper-large-v3-tuned on CUDA) auto-download into .models/ from the models-v5-int8 GitHub Release on first run
 
 ### Installation
 ```bash
-# Add installation commands here
+git clone https://github.com/SCU-CSEN166/Dandelion4.git
+cd Dandelion4
+python3 -m venv .venv
+source .venv/bin/activate   # on Windows PowerShell: .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
 ```
 
 ### Run the system
 ```bash
-# Add an example command here
+# run on default demo/inputs folder (writes redacted outputs.csv and records.json to demo/outputs/custom_run)
+python -m src.main
+
+# run on any audio file, text file, zip, or folder
+python -m src.main --in-dir path/to/data --out-dir outputs/run1
+
+# force cpu or see all options
+python -m src.main --device cpu
+python -m src.main --help
+
+# run the hidden-test demo with expected-csv metrics
+python demo/run_demo.py
 ```
 
 ### Run evaluation
 ```bash
-# Add an example evaluation command here
+# run synthetic and hidden evaluation suites
+python -m evaluation.run_evaluation --suites synthetic hidden
+
+# run offline unit tests
+pytest -m "not slow" -q
 ```
 
 ### Repository structure
 ```text
-project/
+Dandelion4/
 ├── README.md
+├── interface-spec.md
 ├── requirements.txt
-├── src/
-├── tests/
-├── evaluation/
-└── examples/
+├── demo/           # demo runner, sample inputs, expected outputs
+├── evaluation/     # wer scoring, public benchmark fetcher, unified eval cli
+├── examples/       # synthetic audio, manifests, transcripts
+├── notebooks/      # week 6-7 colab/local notebooks
+├── src/            # main cli, asr, nlp, pipeline, runtime, training
+└── tests/          # offline automated tests
 ```
