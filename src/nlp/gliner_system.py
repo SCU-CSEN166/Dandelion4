@@ -766,8 +766,6 @@ class GLiNERSystem:
 
             import torch
 
-            logging.getLogger("transformers").setLevel(logging.ERROR)
-
             cuda_mod = getattr(torch, "cuda", None)
             target_device = (
                 ("cuda:0" if (cuda_mod is not None and cuda_mod.is_available()) else "cpu")
@@ -778,6 +776,12 @@ class GLiNERSystem:
                 runtime.configure_torch_cpu_threads()
             resolved, local_only = resolve_gliner_model(self.model_id)
             gliner = importlib.import_module("gliner")
+            logging.getLogger("transformers").setLevel(logging.ERROR)
+            try:
+                hf_logging: Any = importlib.import_module("transformers.utils.logging")
+                hf_logging.set_verbosity_error()
+            except Exception:
+                pass
             model = gliner.GLiNER.from_pretrained(resolved, local_files_only=local_only)
             if target_device.startswith("cuda"):
                 model = model.to(target_device)
