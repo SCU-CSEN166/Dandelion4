@@ -2,7 +2,7 @@
 
 **Team:** D4<br>
 **Challenge:** Dandelion Africa<br>
-**Team members:** Terence Zhou, Teresa Wei, Yaozheng Wang<br>
+**Team members:** Terence Zhou, Teresa Wei, Eric Wang<br>
 **Repository:** https://github.com/SCU-CSEN166/Dandelion4<br>
 **Last updated:** 10/30/2026
 
@@ -70,7 +70,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 |---|---|---|---|
 | Terence Zhou | Model Structure | created the repository, worked on the README | programming, filtering, classification |
 | Teresa Wei | Data (Re)Compliation | worked on the README | compile data from HuggingFace |
-| Yaozheng Wang | Postprocessing Data | N/A | anonymization, info extraction |
+| Eric Wang | Postprocessing Data | N/A | anonymization, info extraction |
 | Everyone | Core Tasks | N/A | evaluation, testing, integration |
 
 ### 6. Technical Challenges
@@ -163,7 +163,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 |---|---|---|---|---|
 | Terence Zhou | Text Classification/Redaction | Worked | [cbd51fc](https://github.com/SCU-CSEN166/Dandelion4/commit/cbd51fceaeb775d6a25548ede1eb8493ade829f0) | improve accuracy, store data in JSON |
 | Teresa Wei | Message Generation & JSON Storage | Worked | [ff7c120](https://github.com/SCU-CSEN166/Dandelion4/commit/ff7c120231ad5e361d3402c4e98313612dbd48f9) | improve message variations and quality |
-| Yaozheng Wang | Audio Generation w/ TTS, Audio Transcription, WER measurements | Worked | [b76dd21](https://github.com/SCU-CSEN166/Dandelion4/commit/b76dd21452414fa495e688e2842ff85eb682b0f2) | improve handling of place names and numbers written as words |
+| Eric Wang | Audio Generation w/ TTS, Audio Transcription, WER measurements | Worked | [b76dd21](https://github.com/SCU-CSEN166/Dandelion4/commit/b76dd21452414fa495e688e2842ff85eb682b0f2) | improve handling of place names and numbers written as words |
 
 ---
 
@@ -255,6 +255,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 ### Individual contributions during that week
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
+| Eric Wang | fine-tuned whisper on afrispeech and added transcript cleaning | Worked | [finetune_whisper.py](src/training/finetune_whisper.py), [wer_results.json](evaluation/wer_results.json) | connect audio pipeline with gliner |
 | Terence Zhou | improved text parsing and redaction, added partial JSON conversion | Partly | [4181acb](https://github.com/SCU-CSEN166/Dandelion4/commit/4181acbf69f7993b08182da285774ebfbe401bc1) | parse data sourced from teammates, improve keyword searching, redact JSONs, store in actual JSON file |
 
 ---
@@ -263,15 +264,28 @@ Since it cannot process videos and images it may be inaccurate for real life con
 
 **Deliverable during Week 9 Lab:** Hidden-test results (as provided by the TA), analysis of at least three important failure cases, and a prioritized improvement plan.
 
-### Baseline
+### Baseline (Text)
 - **Submitted system version / commit:** [`f0d2c3d`](https://github.com/SCU-CSEN166/Dandelion4/commit/f0d2c3da71ebd72b2d0e4f1b78b7a5a8c47a42ea)
 - **Hidden-test metrics and leaderboard result:** [`results`](https://github.com/SCU-CSEN166/Dandelion4/blob/main/src/hidden_test_outputs.csv)
 - **Difference from development results:** redacted labels are vaguely labelled as [REDACTED] instead of: eg. [NAME], [LOCATION], [PERSON]; duplicate functionality unimplemented
+
+### Audio & End-to-End Pipeline
+- **Submitted system version / commit:** [9063d44](https://github.com/SCU-CSEN166/Dandelion4/commit/9063d44)
+- **Hidden-test metrics and leaderboard result:** On the 10-clip hidden test ([`demo/outputs/demo_metrics.json`](demo/outputs/demo_metrics.json)):
+  - Relevance: **100.00%**
+  - Participant count exact match: **100.00%**
+  - Strict activity_type and combined attribute exact match: **37.50%**
+  - Redaction placeholder recall: **97.83%** (45/46; 1 resulted from audio pipeline word error)
+  - Duplicate detection: **100.00%**
+  - ASR WER: **9.22%** raw / **10.60%** cleaned
+- **Difference from development results:** synthetic audio got 4.21–4.67% raw WER, while the 10 hidden clips have real speakers and kenyan names/places (9.22% raw WER)
 
 | Failure case / category | What went wrong | Possible cause | Severity / user impact | Proposed fix |
 |---|---|---|---|---|
 | keyword redaction | redacted labels are vaguely labelled as [REDACTED] | small code issue | little impact | insert keyword into redaction label |
 | duplicate checking | duplicates were not marked | unimplemented in code | medium impact | implement it |
+| kenyan name/group errors (e.g., Tumaini -> "Too Many") | unfamiliar kenyan group name got mistranscribed | smaller whisper turbo model struggled on kenyan names | high / missed 1 redaction slot | fine-tune larger full whisper-large-v3 and quantize to int8 |
+| number formatting mismatch | cleaning turned spelled-out numbers into digits, raising WER | reference transcripts kept numbers as words | low / participant counts still matched 8/8 | keep raw ASR WER separate from cleaned text |
 
 ### Changes attempted after stress-testing
 - **Submitted system version / commit:** [`28f0c8f`](https://github.com/SCU-CSEN166/Dandelion4/commit/28f0c8f639fa6e6c26caefbbfd5893bb4464d693)
@@ -282,11 +296,13 @@ Since it cannot process videos and images it may be inaccurate for real life con
 |---|---|---|---|
 | better keyword redaction | Yes | [REDACTED] made less vague, see [anonymize_csv_text](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/src/pipeline/hidden_test_pipeline.py#L177) function | Keep |
 | implemented duplicate checking | Yes | duplicates are now marked, see [find_duplicate_events](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/src/pipeline/hidden_test_pipeline.py#L313) function | Keep |
+| switched to larger whisper-large-v3 quantized to int8 | Yes | hidden-test WER dropped from 9.22% to 7.49%; AfriSpeech 11.58% -> 9.31% and FLEURS 5.00% -> 4.41% | Keep |
 
 ### Individual contributions during that week
 | Member | Work completed | Result (worked / partly / failed) | Evidence | Next step |
 |---|---|---|---|---|
 | Terence Zhou | processed baseline hidden test csv file | Partly | [f0d2c3d](https://github.com/SCU-CSEN166/Dandelion4/commit/f0d2c3da71ebd72b2d0e4f1b78b7a5a8c47a42ea) | tune model against teammate's generated code |
+| Eric Wang | hooked up audio-to-records pipeline and tested on the 10 hidden clips | Worked | [9063d44](https://github.com/SCU-CSEN166/Dandelion4/commit/9063d44) | try larger whisper model quantized to int8 |
 
 ---
 
@@ -295,11 +311,11 @@ Since it cannot process videos and images it may be inaccurate for real life con
 **Deliverable during Week 10 Lab:** Document peer-testing feedback, Responsible AI concerns, changes made in response, and the final runnable system. Submit the final project report as instructed.
 
 ### Peer testing
-- **Team evaluated:** [Team ID]
-- **One thing that worked well:** [Evidence]
-- **One meaningful failure:** [Reproduction steps or example]
-- **One actionable recommendation:** [Specific fix]
-- **Feedback received from another team:** [Summary]
+- **Team evaluated:** Dandelion 1 (https://github.com/SCU-CSEN166/Dandelion1)
+- **One thing that worked well:** their fixed hidden-test pipeline (src/main.py) hit 10/10 on relevance, participant count, and duplicate detection, plus 44/46 PII item recall, and outputs clean messages.csv and follow_ups.csv tables
+- **One meaningful failure:** src/main.py only takes pre-transcribed text/spreadsheets rather than raw audio files directly; also pii_count accuracy was 7/10 with 2 partial redactions
+- **One actionable recommendation:** wire src/transcribe.py into src/main.py so raw voice notes run end-to-end in one command
+- **Feedback received from another team:** they flagged a redaction miss on the hidden test, though it was actually an ASR mistranscription (Tumaini -> "Too Many") rather than a redaction leak, so the real name wasn't exposed; they also asked for clearer end-to-end setup and run instructions at the end of the README, which we are fixing going forward
 
 ### Responsible AI assessment
 - **Potential harms or affected users:** [Who could be affected and how?]
@@ -317,7 +333,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 ### Individual contributions during that week
 | Member | Final implementation / evaluation / documentation contribution | Result (worked / partly / failed) | Evidence | Reflection / remaining work |
 |---|---|---|---|---|
-| [Name] | [Specific work] | [Status] | [Link] | [Reflection] |
+| Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2) | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
 
 
 
