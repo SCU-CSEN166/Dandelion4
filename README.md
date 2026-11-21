@@ -306,7 +306,8 @@ Since it cannot process videos and images it may be inaccurate for real life con
 | better keyword redaction | Yes | [REDACTED] made less vague, see [anonymize_csv_text](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/src/pipeline/hidden_test_pipeline.py#L177) function | Keep |
 | implemented duplicate checking | Yes | duplicates are now marked, see [find_duplicate_events](https://github.com/SCU-CSEN166/Dandelion4/blob/audio/src/pipeline/hidden_test_pipeline.py#L313) function | Keep |
 | switched to larger whisper-large-v3 quantized to int8 | Yes | hidden-test WER dropped from 9.22% to 7.49%; AfriSpeech 11.58% -> 9.31% and FLEURS 5.00% -> 4.41% | Keep |
-| Expanded synthetic dataset for model training | Generated 1,200 fictional WhatsApp health messages across 6 activity categories (200 per category). Added expected activity labels, relevance labels, and entity annotations. | Yes the dataset generation and preparation completed | 1,200 labeled synthetic messages | Dataset provides additional training and evaluation examples |
+| Expanded synthetic dataset for model training | Generated 1,200 fictional WhatsApp health messages across 6 activity categories (200 per category). Added expected activity labels, relevance labels, and entity annotations. | Yes the dataset generation and preparation completed | Synthetic dataset containing 1,200 labeled messages, split into training (840), validation (180), and test (180) sets | Keep the new dataset allows for more examples for training and evaluation|
+
 
 
 
