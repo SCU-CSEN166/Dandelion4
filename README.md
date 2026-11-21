@@ -375,7 +375,7 @@ Since it cannot process videos and images it may be inaccurate for real life con
 |---|---|---|---|---|
 | Eric Wang | re-tuned full whisper-large-v3, quantized to int8, added cli and github release model auto-download; cleaned up and documented codebase, fixed cpu tokenizer warning, and updated setup/reproducibility and interface-spec.md | Worked | [PR #2](https://github.com/SCU-CSEN166/Dandelion4/pull/2), [7f76928](https://github.com/SCU-CSEN166/Dandelion4/commit/7f76928), [746832f](https://github.com/SCU-CSEN166/Dandelion4/commit/746832f), [aa5c1b8](https://github.com/SCU-CSEN166/Dandelion4/commit/aa5c1b8), 291 tests passing, ruff and mypy clean | cpu int8 runs cleanly offline; still misses some balanced afrispeech wer targets so human review is needed |
 | Terence Zhou | documented results, updated/cleaned README | Worked | [dc6200f](https://github.com/SCU-CSEN166/Dandelion4/commit/dc6200ffe1e491dc4ddadecaa18da78cb6f4f3c1), [dc566a4](https://github.com/SCU-CSEN166/Dandelion4/commit/dc566a4a9559d9ff9c04401a9317d6138c09a9ca) | final(?) check of README soon |
-|Built a Streamlit web interface (app.py) for pasted text and uploaded files and connected the interface to the team's existing run_on_input() pipeline. Tested and developed in GitHub Codespace, pushed the frontend in separate branch.| Worked | Continue testing audios |
+|Teresa Wei|Built a Streamlit web interface (app.py) for pasted text and uploaded files and connected the interface to the team's existing run_on_input() pipeline. Tested and developed in GitHub Codespace, pushed the frontend in separate branch.| Worked | [de65aa6d1dc15b2ed6509fcc8276aea62d6e64a8](https://github.com/SCU-CSEN166/Dandelion4/commit/de65aa6)| The interface allows for the pipeline to be more accessible without duplicating model code.|
 
 
 
@@ -438,10 +438,17 @@ python demo/run_demo.py
 ### Streamlit web interface (currently in Frontend branch)
 The streamerlit app allows for a browser based alternative where users can paste whatsapp messages, upload audio or message files and run the existing integrated processing pipeline. Then the user will be allowed to download the outputted CSV or JSON.
 To test the Frontend branch after completing the python 3.12 environment setup above:
-# In the project root, with the virtual environment activated
+### In the project root, with the virtual environment activated
+
+```bash
 python -m pip install streamlit
 python -m src.core.setup_models
-python -m streamlit run app.py --server.address 0.0.0.0 --server.port 8501 --server.fileWatcherType none
+python -m streamlit run app.py \
+  --server.address 0.0.0.0 \
+  --server.port 8501 \
+  --server.fileWatcherType none
+```
+
 In Github Codespaces open the forwarded port 8501. In a local environment use http://localhost:8501. The frontend was successfully launched and used for text messages and audio uploads. 
 
 Outputs are always redacted (no unredacted transcripts are written to disk):
